@@ -526,10 +526,75 @@ Solicito validación técnica para confirmar cotización.`;
      ======================================================== */
   const EMPRESA = {
     nombre: 'ALECOM Proyectos',
+    eslogan: 'Soluciones Arquitectónicas en Vidrio y Aluminio',
     correo: 'alecomproyectos@gmail.com',
     whatsapp: '+51 957 441 379',
+    web: 'alecomproyectos.github.io',
+    instagram: '@alecomproyectos',
     ciudad: 'Lima, Perú',
   };
+
+  /* ========================================================
+     BIBLIOTECA DE RENDERS / IMÁGENES REPRESENTATIVAS
+     ------------------------------------------------------------
+     ⚠️ IMPORTANTE — alcance real de esta función:
+     No se generan renders 3D fotorrealistas variables según la
+     combinación exacta de vidrio + marco + color + accesorios
+     (eso requiere un motor de render o un servicio de generación
+     de imágenes, que no está disponible en este entorno).
+     En su lugar, cada tipo de solución tiene UNA imagen
+     representativa de alta calidad (foto real, no renderizada),
+     seleccionada automáticamente según el tipo de solución
+     elegido en el formulario. Si en el futuro el equipo comercial
+     cuenta con fotos propias de proyectos terminados por
+     categoría, deben reemplazar estas URLs por las propias
+     (lo ideal es usar fotos reales de obra de ALECOM).
+     Fuente actual: fotografías con licencia Unsplash (uso
+     comercial libre, sin atribución requerida) + 1 foto real de
+     ALECOM para fachada. Todas verificadas con licencia gratuita
+     antes de su uso.
+     ======================================================== */
+  const RENDERS_POR_SOLUCION = {
+    fachada:     { url: 'img/proyectos/proyecto-04.jpg', credito: 'Obra ejecutada por ALECOM Proyectos' },
+    muroCortina: { url: 'https://images.unsplash.com/photo-1745015446589-7ee6f702d8c1?w=1400&q=80', credito: 'Imagen referencial — Fabian Kleiser / Unsplash' },
+    ventana:     { url: 'https://images.unsplash.com/photo-1758565811176-ccd94357a844?w=1400&q=80', credito: 'Imagen referencial — Caroline Badran / Unsplash' },
+    mampara:     { url: 'https://images.unsplash.com/photo-1723257891127-0d1ea314a720?w=1400&q=80', credito: 'Imagen referencial — Alex Tyson / Unsplash' },
+    baranda:     { url: 'https://images.unsplash.com/photo-1771904488645-fa6ebf7a2d06?w=1400&q=80', credito: 'Imagen referencial — Wesley Shen / Unsplash' },
+    puerta:      { url: 'img/proyectos/proyecto-04.jpg', credito: 'Obra ejecutada por ALECOM Proyectos' },
+    cerramiento: { url: 'img/proyectos/proyecto-04.jpg', credito: 'Obra ejecutada por ALECOM Proyectos' },
+  };
+
+  // Cache en memoria de imágenes ya convertidas a dataURL, para no
+  // volver a descargarlas si el comercial genera varios PDFs seguidos.
+  const cacheImagenesPdf = {};
+
+  /**
+   * Descarga (o toma de cache) la imagen representativa de una
+   * categoría y la devuelve como dataURL base64, lista para
+   * doc.addImage(). Si falla la descarga (sin internet, imagen
+   * caída, etc.), devuelve null y el PDF se genera sin imagen
+   * en vez de romperse.
+   */
+  async function obtenerImagenRenderComoDataUrl(tipoSolucion){
+    if (cacheImagenesPdf[tipoSolucion]) return cacheImagenesPdf[tipoSolucion];
+
+    const config = RENDERS_POR_SOLUCION[tipoSolucion] || RENDERS_POR_SOLUCION.fachada;
+    try {
+      const respuesta = await fetch(config.url);
+      const blob = await respuesta.blob();
+      const dataUrl = await new Promise((resolve, reject) => {
+        const lector = new FileReader();
+        lector.onload = () => resolve(lector.result);
+        lector.onerror = reject;
+        lector.readAsDataURL(blob);
+      });
+      cacheImagenesPdf[tipoSolucion] = { dataUrl, credito: config.credito };
+      return cacheImagenesPdf[tipoSolucion];
+    } catch (err){
+      console.warn('No se pudo cargar la imagen representativa para el PDF:', err);
+      return null;
+    }
+  }
 
   // Textos descriptivos por tipo de solución, usados para redactar el
   // alcance del servicio en el PDF como párrafo (no como tabla técnica).
@@ -556,7 +621,7 @@ Solicito validación técnica para confirmar cotización.`;
      servicio en texto, y el precio final ya consolidado.
      ======================================================== */
 
-  function generarPdfCliente(){
+  async function generarPdfCliente(){
     if (!ultimoCalculo){
       mostrarAlerta('Primero calcula un presupuesto para poder generar el PDF.');
       return;
@@ -566,164 +631,253 @@ Solicito validación técnica para confirmar cotización.`;
       return;
     }
 
-    const datos = ultimoCalculo;
-    const { jsPDF } = window.jspdf;
-    const doc = new jsPDF({ unit: 'mm', format: 'a4' });
+    // Deshabilitar el botón mientras se descarga la imagen, para evitar
+    // doble clic y para dar feedback de que algo está pasando.
+    const htmlOriginalBoton = btnGenerarPdf.innerHTML;
+    btnGenerarPdf.disabled = true;
+    btnGenerarPdf.innerHTML = 'Generando PDF…';
 
-    const colorNegro = [6, 20, 27];
-    const colorNaranja = [224, 123, 57];
-    const colorGris = [90, 100, 107];
-    const margenX = 20;
-    let y = 22;
+    try {
+      const datos = ultimoCalculo;
+      const { jsPDF } = window.jspdf;
+      const doc = new jsPDF({ unit: 'mm', format: 'a4' });
 
-    // --- Encabezado ---
-    doc.setFont('helvetica', 'bold');
-    doc.setFontSize(20);
-    doc.setTextColor(...colorNegro);
-    doc.text(EMPRESA.nombre, margenX, y);
+      const colorNegro = [6, 20, 27];
+      const colorNaranja = [224, 123, 57];
+      const colorGris = [90, 100, 107];
+      const margenX = 20;
+      const anchoUtil = 210 - margenX * 2;
+      let y = 18;
 
-    doc.setFont('helvetica', 'normal');
-    doc.setFontSize(9.5);
-    doc.setTextColor(...colorGris);
-    y += 6;
-    doc.text(`${EMPRESA.correo}  ·  WhatsApp ${EMPRESA.whatsapp}  ·  ${EMPRESA.ciudad}`, margenX, y);
+      // --- Encabezado: logo + eslogan ---
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(20);
+      doc.setTextColor(...colorNegro);
+      doc.text(EMPRESA.nombre, margenX, y);
 
-    y += 4;
-    doc.setDrawColor(...colorNaranja);
-    doc.setLineWidth(0.8);
-    doc.line(margenX, y, 210 - margenX, y);
+      y += 5.5;
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(9);
+      doc.setTextColor(...colorNaranja);
+      doc.text(EMPRESA.eslogan, margenX, y);
 
-    // --- Título y número de propuesta ---
-    y += 10;
-    doc.setFont('helvetica', 'bold');
-    doc.setFontSize(15);
-    doc.setTextColor(...colorNegro);
-    doc.text('Propuesta de Cotización Preliminar', margenX, y);
+      y += 5;
+      doc.setDrawColor(...colorNaranja);
+      doc.setLineWidth(0.8);
+      doc.line(margenX, y, 210 - margenX, y);
 
-    const fechaHoy = new Date();
-    const numeroPropuesta = 'COT-' + fechaHoy.getFullYear() +
-      String(fechaHoy.getMonth() + 1).padStart(2, '0') +
-      String(fechaHoy.getDate()).padStart(2, '0') + '-' +
-      String(fechaHoy.getHours()).padStart(2, '0') +
-      String(fechaHoy.getMinutes()).padStart(2, '0');
+      // --- Título y número de propuesta ---
+      y += 8;
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(14.5);
+      doc.setTextColor(...colorNegro);
+      doc.text('Propuesta Preliminar', margenX, y);
 
-    y += 7;
-    doc.setFont('helvetica', 'normal');
-    doc.setFontSize(10);
-    doc.setTextColor(...colorGris);
-    doc.text(`N° ${numeroPropuesta}   ·   Fecha: ${fechaHoy.toLocaleDateString('es-PE')}`, margenX, y);
+      const fechaHoy = new Date();
+      const numeroPropuesta = 'COT-' + fechaHoy.getFullYear() +
+        String(fechaHoy.getMonth() + 1).padStart(2, '0') +
+        String(fechaHoy.getDate()).padStart(2, '0') + '-' +
+        String(fechaHoy.getHours()).padStart(2, '0') +
+        String(fechaHoy.getMinutes()).padStart(2, '0');
 
-    // --- Datos del cliente ---
-    y += 12;
-    doc.setFont('helvetica', 'bold');
-    doc.setFontSize(11.5);
-    doc.setTextColor(...colorNegro);
-    doc.text('Datos del cliente', margenX, y);
-    y += 1.5;
-    doc.setDrawColor(225, 225, 225);
-    doc.setLineWidth(0.3);
-    doc.line(margenX, y, 210 - margenX, y);
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(9.5);
+      doc.setTextColor(...colorGris);
+      doc.text(`N° ${numeroPropuesta}`, 210 - margenX, y - 4, { align: 'right' });
+      doc.text(`Emitido: ${fechaHoy.toLocaleDateString('es-PE')}`, 210 - margenX, y + 1, { align: 'right' });
 
-    const cliente = campos.nombreCliente.value.trim() || '—';
-    const ruc = campos.rucCliente.value.trim();
-    const distrito = campos.distrito.value.trim() || '—';
+      // --- Render del producto (área destacada, ~40% de la primera página) ---
+      y += 6;
+      const altoImagen = 80; // ~40% de los ~200mm de área de contenido en A4
+      const imagenInfo = await obtenerImagenRenderComoDataUrl(datos.tipoSolucion);
 
-    y += 7;
-    doc.setFont('helvetica', 'normal');
-    doc.setFontSize(10.5);
-    doc.setTextColor(...colorNegro);
-    doc.text(`Cliente: ${cliente}`, margenX, y);
-    y += 6;
-    doc.text(`RUC / DNI: ${ruc || 'No registrado'}`, margenX, y);
-    y += 6;
-    doc.text(`Distrito del proyecto: ${distrito}`, margenX, y);
+      if (imagenInfo && imagenInfo.dataUrl){
+        try {
+          doc.addImage(imagenInfo.dataUrl, 'JPEG', margenX, y, anchoUtil, altoImagen, undefined, 'FAST');
+          doc.setDrawColor(225, 225, 225);
+          doc.setLineWidth(0.3);
+          doc.rect(margenX, y, anchoUtil, altoImagen);
+          y += altoImagen + 3;
+          doc.setFont('helvetica', 'italic');
+          doc.setFontSize(7.5);
+          doc.setTextColor(150, 150, 150);
+          doc.text(imagenInfo.credito, margenX, y);
+          y += 7;
+        } catch (errImg){
+          console.warn('No se pudo insertar la imagen en el PDF:', errImg);
+        }
+      }
 
-    // --- Detalle del servicio (texto, sin desglose técnico interno) ---
-    y += 12;
-    doc.setFont('helvetica', 'bold');
-    doc.setFontSize(11.5);
-    doc.text('Detalle del servicio', margenX, y);
-    y += 1.5;
-    doc.line(margenX, y, 210 - margenX, y);
+      // --- Resumen de la cotización ---
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(11.5);
+      doc.setTextColor(...colorNegro);
+      doc.text('Resumen de la cotización', margenX, y);
+      y += 1.5;
+      doc.setDrawColor(225, 225, 225);
+      doc.setLineWidth(0.3);
+      doc.line(margenX, y, 210 - margenX, y);
 
-    y += 8;
-    doc.setFont('helvetica', 'normal');
-    doc.setFontSize(10.5);
-    const descripcionBase = DESCRIPCION_SERVICIO[datos.tipoSolucion] || '';
-    const medidasTexto = `Medidas referenciales: ${datos.ancho} m de ancho x ${datos.alto} m de alto` +
-      (datos.cantidad > 1 ? `, cantidad de ${datos.cantidad} unidades` : '') +
-      ` (área aproximada de ${datos.areaTotal.toFixed(2)} m²).`;
+      const cliente = campos.nombreCliente.value.trim() || '—';
+      const ruc = campos.rucCliente.value.trim();
+      const distrito = campos.distrito.value.trim() || '—';
+      const tipoVidrioTexto = TEXTO_VIDRIO[campos.tipoVidrio.value] || '—';
+      const materialTexto = TEXTO_MATERIAL[datos.materialSistema] || '—';
+      const colorAluminioTexto = {
+        natural: 'Natural', negro: 'Negro', blanco: 'Blanco', champagne: 'Champagne', madera: 'Acabado madera',
+      }[campos.colorAluminio.value] || '—';
+      const urgenciaTexto = {
+        normal: 'Normal', urgente: 'Urgente', evaluacion: 'Proyecto en evaluación',
+      }[campos.urgencia.value] || '—';
+      const tienePlanosTexto = campos.tienePlanos.value === 'si' ? 'Sí' : 'No';
+      const accesoriosTexto = datos.accesoriosSeleccionados.length
+        ? datos.accesoriosSeleccionados.map(a => TEXTO_ACCESORIOS[a] || a).join(', ')
+        : 'Sin accesorios especiales';
 
-    const parrafoServicio = `${datos.nombreSolucion}. ${descripcionBase} ${medidasTexto}`;
-    const lineasServicio = doc.splitTextToSize(parrafoServicio, 210 - margenX * 2);
-    doc.text(lineasServicio, margenX, y);
-    y += lineasServicio.length * 5.2 + 4;
+      const filasResumen = [
+        ['Cliente', cliente],
+        ['RUC / DNI', ruc || 'No registrado'],
+        ['Tipo de solución', datos.nombreSolucion],
+        ['Sistema / marco', materialTexto],
+        ['Tipo de vidrio', tipoVidrioTexto],
+        ['Color de aluminio', colorAluminioTexto],
+        ['Accesorios', accesoriosTexto],
+        ['Área total', `${datos.areaTotal.toFixed(2)} m²`],
+        ['Distrito', distrito],
+        ['Urgencia', urgenciaTexto],
+        ['¿Tiene planos o fotos?', tienePlanosTexto],
+      ];
 
-    // Accesorios, en texto simple (sin precio individual).
-    if (datos.accesoriosSeleccionados && datos.accesoriosSeleccionados.length){
-      const nombresAcc = datos.accesoriosSeleccionados.map(a => TEXTO_ACCESORIOS[a] || a);
-      const lineaAcc = `Incluye: ${nombresAcc.join(', ')}.`;
-      const lineasAcc = doc.splitTextToSize(lineaAcc, 210 - margenX * 2);
-      doc.text(lineasAcc, margenX, y);
-      y += lineasAcc.length * 5.2 + 2;
+      y += 6;
+      doc.setFontSize(9.5);
+      filasResumen.forEach(([etiqueta, valor]) => {
+        doc.setFont('helvetica', 'bold');
+        doc.setTextColor(...colorGris);
+        doc.text(etiqueta + ':', margenX, y);
+        doc.setFont('helvetica', 'normal');
+        doc.setTextColor(...colorNegro);
+        const lineasValor = doc.splitTextToSize(String(valor), anchoUtil - 48);
+        doc.text(lineasValor, margenX + 48, y);
+        y += Math.max(lineasValor.length * 4.6, 5.4);
+      });
+
+      // --- Caja de precio final (sin desglose de costos ni utilidad) ---
+      y += 6;
+      const cajaAlto = 24;
+      doc.setFillColor(245, 243, 238);
+      doc.setDrawColor(...colorNaranja);
+      doc.setLineWidth(0.6);
+      doc.roundedRect(margenX, y, anchoUtil, cajaAlto, 2, 2, 'FD');
+
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(9);
+      doc.setTextColor(...colorGris);
+      doc.text('INVERSIÓN TOTAL DEL PROYECTO', margenX + 8, y + 8);
+
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(17);
+      doc.setTextColor(...colorNegro);
+      doc.text(formatearSoles(datos.precioFinal) + ' (incluye IGV)', margenX + 8, y + 18);
+
+      y += cajaAlto + 10;
+
+      // --- Salto de página para especificaciones técnicas y condiciones ---
+      if (y > 230){
+        doc.addPage();
+        y = 22;
+      }
+
+      // --- Especificaciones técnicas ---
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(11.5);
+      doc.setTextColor(...colorNegro);
+      doc.text('Especificaciones técnicas', margenX, y);
+      y += 1.5;
+      doc.setDrawColor(225, 225, 225);
+      doc.line(margenX, y, 210 - margenX, y);
+
+      y += 7;
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(9.5);
+      doc.setTextColor(...colorNegro);
+      const descripcionBase = DESCRIPCION_SERVICIO[datos.tipoSolucion] || '';
+      const medidasTexto = `Medidas referenciales: ${datos.ancho} m de ancho x ${datos.alto} m de alto` +
+        (datos.cantidad > 1 ? `, cantidad de ${datos.cantidad} unidades` : '') +
+        ` (área aproximada de ${datos.areaTotal.toFixed(2)} m²).`;
+      const parrafoServicio = `${descripcionBase} ${medidasTexto} Vidrio especificado: ${tipoVidrioTexto}. Sistema/marco: ${materialTexto}.`;
+      const lineasServicio = doc.splitTextToSize(parrafoServicio, anchoUtil);
+      doc.text(lineasServicio, margenX, y);
+      y += lineasServicio.length * 5 + 4;
+
+      if (datos.accesoriosSeleccionados.length){
+        const lineaAcc = `Accesorios y prestaciones incluidas: ${accesoriosTexto}.`;
+        const lineasAcc = doc.splitTextToSize(lineaAcc, anchoUtil);
+        doc.text(lineasAcc, margenX, y);
+        y += lineasAcc.length * 5 + 4;
+      }
+
+      const lineaInstalacion = 'Consideraciones de instalación: el plazo y procedimiento se confirman tras la visita técnica, según accesos al lugar de trabajo, altura de instalación y condiciones de la estructura existente.';
+      const lineasInstalacion = doc.splitTextToSize(lineaInstalacion, anchoUtil);
+      doc.text(lineasInstalacion, margenX, y);
+      y += lineasInstalacion.length * 5 + 8;
+
+      // --- Recomendación técnica ---
+      const recomendacion = generarRecomendacion(datos);
+      if (recomendacion){
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(11.5);
+        doc.setTextColor(...colorNegro);
+        doc.text('Recomendación técnica', margenX, y);
+        y += 1.5;
+        doc.line(margenX, y, 210 - margenX, y);
+        y += 7;
+        doc.setFont('helvetica', 'italic');
+        doc.setFontSize(9.5);
+        doc.setTextColor(...colorGris);
+        const lineasReco = doc.splitTextToSize(recomendacion.replace(/^Recomendación:\s*/i, ''), anchoUtil);
+        doc.text(lineasReco, margenX, y);
+        y += lineasReco.length * 5 + 8;
+      }
+
+      // --- Nota legal ---
+      if (y > 250){ doc.addPage(); y = 22; }
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(10.5);
+      doc.setTextColor(...colorNegro);
+      doc.text('Nota legal', margenX, y);
+      y += 1.5;
+      doc.setDrawColor(225, 225, 225);
+      doc.line(margenX, y, 210 - margenX, y);
+      y += 6;
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(8.5);
+      doc.setTextColor(...colorGris);
+      const notaLegal = 'El presente documento constituye un presupuesto preliminar referencial. El precio definitivo será validado mediante visita técnica, verificación de medidas, accesorios, herrajes y condiciones reales de instalación. Validez de la propuesta: 15 días calendario desde la fecha de emisión.';
+      const lineasNota = doc.splitTextToSize(notaLegal, anchoUtil);
+      doc.text(lineasNota, margenX, y);
+
+      // --- Pie de página (en todas las páginas generadas) ---
+      const totalPaginas = doc.internal.getNumberOfPages();
+      for (let p = 1; p <= totalPaginas; p++){
+        doc.setPage(p);
+        const piePosY = 287;
+        doc.setDrawColor(225, 225, 225);
+        doc.setLineWidth(0.3);
+        doc.line(margenX, piePosY - 9, 210 - margenX, piePosY - 9);
+        doc.setFont('helvetica', 'normal');
+        doc.setFontSize(8);
+        doc.setTextColor(...colorGris);
+        doc.text(`${EMPRESA.web}  ·  ${EMPRESA.correo}  ·  WhatsApp ${EMPRESA.whatsapp}  ·  ${EMPRESA.instagram}`, margenX, piePosY - 3);
+        doc.text(`Página ${p} de ${totalPaginas}`, 210 - margenX, piePosY - 3, { align: 'right' });
+      }
+
+      const nombreArchivo = `Cotizacion_${numeroPropuesta}_${cliente.replace(/[^a-zA-Z0-9]/g, '_')}.pdf`;
+      doc.save(nombreArchivo);
+
+    } finally {
+      btnGenerarPdf.disabled = false;
+      btnGenerarPdf.innerHTML = htmlOriginalBoton;
     }
-
-    // --- Caja de precio final (sin desglose de costos ni utilidad) ---
-    y += 10;
-    const cajaAlto = 26;
-    doc.setFillColor(245, 243, 238);
-    doc.setDrawColor(...colorNaranja);
-    doc.setLineWidth(0.6);
-    doc.roundedRect(margenX, y, 210 - margenX * 2, cajaAlto, 2, 2, 'FD');
-
-    doc.setFont('helvetica', 'normal');
-    doc.setFontSize(9.5);
-    doc.setTextColor(...colorGris);
-    doc.text('INVERSIÓN TOTAL DEL PROYECTO', margenX + 8, y + 9);
-
-    doc.setFont('helvetica', 'bold');
-    doc.setFontSize(18);
-    doc.setTextColor(...colorNegro);
-    doc.text(formatearSoles(datos.precioFinal) + ' (incluye IGV)', margenX + 8, y + 19);
-
-    y += cajaAlto + 12;
-
-    // --- Condiciones ---
-    doc.setFont('helvetica', 'bold');
-    doc.setFontSize(11.5);
-    doc.setTextColor(...colorNegro);
-    doc.text('Condiciones de la propuesta', margenX, y);
-    y += 1.5;
-    doc.line(margenX, y, 210 - margenX, y);
-
-    y += 7;
-    doc.setFont('helvetica', 'normal');
-    doc.setFontSize(9.5);
-    doc.setTextColor(...colorGris);
-    const condiciones = [
-      'Esta propuesta es preliminar y está sujeta a visita técnica y validación final de medidas en obra.',
-      'El precio puede ajustarse según hallazgos de la visita técnica, accesos, y condiciones del lugar de instalación.',
-      'Validez de la propuesta: 15 días calendario desde la fecha de emisión.',
-      'Para aceptar el servicio o coordinar la visita técnica, contáctanos por WhatsApp o correo.',
-    ];
-    condiciones.forEach((linea) => {
-      const lineas = doc.splitTextToSize('• ' + linea, 210 - margenX * 2);
-      doc.text(lineas, margenX, y);
-      y += lineas.length * 5 + 2;
-    });
-
-    // --- Pie de página ---
-    const piePosY = 287;
-    doc.setDrawColor(225, 225, 225);
-    doc.setLineWidth(0.3);
-    doc.line(margenX, piePosY - 6, 210 - margenX, piePosY - 6);
-    doc.setFont('helvetica', 'normal');
-    doc.setFontSize(8.5);
-    doc.setTextColor(...colorGris);
-    doc.text(`${EMPRESA.nombre}  ·  ${EMPRESA.correo}  ·  WhatsApp ${EMPRESA.whatsapp}`, margenX, piePosY);
-
-    const nombreArchivo = `Cotizacion_${numeroPropuesta}_${cliente.replace(/[^a-zA-Z0-9]/g, '_')}.pdf`;
-    doc.save(nombreArchivo);
   }
 
   /* ========================================================

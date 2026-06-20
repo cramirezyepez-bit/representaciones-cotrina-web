@@ -318,6 +318,7 @@ img{ max-width:100%; display:block; }
   margin-top: 22px;
 }
 .btn-pdf:hover{ background: var(--naranja); color: var(--negro); border-color: var(--naranja); }
+.btn-pdf:disabled{ opacity: 0.6; cursor: wait; pointer-events: none; }
 .pdf-icon{ width: 18px; height: 18px; flex-shrink: 0; }
 .btn-whatsapp{
   background: #25D366;
