@@ -216,6 +216,48 @@ img{ max-width:100%; display:block; }
   color: var(--acero);
   margin: -8px 0 18px;
 }
+.field-hint-tight{ margin: 4px 0 0; }
+
+/* ===== CHECKBOXES DE ACCESORIOS ===== */
+.check-grid{
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px 18px;
+  margin-bottom: 24px;
+}
+@media (max-width: 640px){
+  .check-grid{ grid-template-columns: 1fr; }
+}
+.check-item{
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  font-family: var(--font-body);
+  font-size: 14px;
+  color: var(--negro);
+  cursor: pointer;
+  padding: 7px 0;
+}
+.check-item input[type="checkbox"]{
+  width: 17px;
+  height: 17px;
+  accent-color: var(--naranja);
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.form-warning{
+  display:none;
+  font-family: var(--font-condensed);
+  font-size: 13.5px;
+  color: #8a5a12;
+  background: #FCF1E0;
+  border: 1px solid #E8C893;
+  padding: 11px 16px;
+  border-radius: var(--radius);
+  margin: 8px 0 0;
+}
+.form-warning.is-visible{ display:block; }
 
 .form-alert{
   display:none;
@@ -346,6 +388,39 @@ img{ max-width:100%; display:block; }
   color: var(--acero-claro);
 }
 .result-item-value{ font-size: 16px; font-weight: 600; }
+
+/* ===== DESGLOSE DE COSTOS (uso interno) ===== */
+.breakdown{
+  background: rgba(255,255,255,0.04);
+  border: 1px solid var(--linea);
+  border-radius: var(--radius);
+  padding: 6px 18px;
+  margin-bottom: 20px;
+}
+.breakdown-row{
+  display:flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 11px 0;
+  border-bottom: 1px solid var(--linea);
+  font-size: 13.5px;
+  color: var(--acero-claro);
+}
+.breakdown-row span:last-child{
+  font-family: var(--font-condensed);
+  font-weight: 600;
+  color: var(--hueso);
+  white-space: nowrap;
+}
+.breakdown-row:last-child{ border-bottom: none; }
+.breakdown-row-total{
+  border-top: 1px solid rgba(255,255,255,0.18);
+  margin-top: 4px;
+  padding-top: 14px;
+}
+.breakdown-row-total span{ color: var(--hueso); font-weight: 600; }
+.breakdown-row-utilidad span:last-child{ color: var(--naranja); }
 
 .result-range{
   background: linear-gradient(135deg, rgba(255,106,26,0.16), rgba(255,106,26,0.04));
