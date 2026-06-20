@@ -1,5 +1,5 @@
 /* ============================================================
-   Representaciones Cotrina — Calculadora de presupuesto referencial
+   ALECOM Proyectos — Calculadora de presupuesto referencial
    Reutiliza los tokens del sitio principal (azul profundo · naranja)
 ============================================================ */
 
@@ -178,6 +178,7 @@ img{ max-width:100%; display:block; }
   grid-template-columns: repeat(3, 1fr);
   gap: 16px;
 }
+.field-row-2{ grid-template-columns: repeat(2, 1fr); }
 @media (max-width: 640px){
   .field-row{ grid-template-columns: 1fr; }
 }
@@ -309,11 +310,20 @@ img{ max-width:100%; display:block; }
   background: transparent;
 }
 .btn-ghost:hover{ background: var(--negro); color: var(--hueso); border-color: var(--negro); }
+.btn-pdf{
+  background: var(--hueso);
+  color: var(--negro);
+  border-color: var(--linea);
+  width: 100%;
+  margin-top: 22px;
+}
+.btn-pdf:hover{ background: var(--naranja); color: var(--negro); border-color: var(--naranja); }
+.pdf-icon{ width: 18px; height: 18px; flex-shrink: 0; }
 .btn-whatsapp{
   background: #25D366;
   color: #fff;
   width: 100%;
-  margin-top: 22px;
+  margin-top: 14px;
   padding: 16px 22px;
 }
 .btn-whatsapp:hover{ background: #1FB855; }

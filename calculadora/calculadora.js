@@ -1,5 +1,5 @@
 // ============================================================
-// Representaciones Cotrina — Cotizador interno (equipo comercial)
+// ALECOM Proyectos — Cotizador interno (equipo comercial)
 // Lógica de costos, utilidad, validación de formulario y WhatsApp
 // ============================================================
 
@@ -8,7 +8,7 @@ document.addEventListener('DOMContentLoaded', () => {
   /* ========================================================
      CONFIGURACIÓN DE COSTOS BASADA EN "PRESUPUESTO 26000"
      ========================================================
-     El archivo Excel "Presupuesto 26000" (Representaciones Cotrina)
+     El archivo Excel "Presupuesto 26000" (ALECOM Proyectos)
      contiene 711 hojas: cada una es una cotización histórica real
      ya cerrada con el cliente (número de presupuesto, medidas,
      descripción del sistema y PRECIO FINAL de línea). NO contiene
@@ -178,6 +178,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   const campos = {
     nombreCliente: document.getElementById('nombreCliente'),
+    rucCliente: document.getElementById('rucCliente'),
     tipoSolucion: document.getElementById('tipoSolucion'),
     ancho: document.getElementById('ancho'),
     alto: document.getElementById('alto'),
@@ -194,6 +195,11 @@ document.addEventListener('DOMContentLoaded', () => {
   const accesoriosCheckboxes = Array.from(document.querySelectorAll('input[name="accesorios"]'));
   const accNinguno = document.getElementById('accNinguno');
   const hintMaterial = document.getElementById('hintMaterial');
+  const btnGenerarPdf = document.getElementById('btnGenerarPdf');
+
+  // Guarda el resultado del último cálculo válido, para que el botón
+  // "Generar PDF" no tenga que recalcular ni depender del submit.
+  let ultimoCalculo = null;
 
   /* ========================================================
      UTILIDADES
@@ -516,6 +522,211 @@ Solicito validación técnica para confirmar cotización.`;
   }
 
   /* ========================================================
+     DATOS DE LA EMPRESA (para el encabezado del PDF)
+     ======================================================== */
+  const EMPRESA = {
+    nombre: 'ALECOM Proyectos',
+    correo: 'alecomproyectos@gmail.com',
+    whatsapp: '+51 957 441 379',
+    ciudad: 'Lima, Perú',
+  };
+
+  // Textos descriptivos por tipo de solución, usados para redactar el
+  // alcance del servicio en el PDF como párrafo (no como tabla técnica).
+  const DESCRIPCION_SERVICIO = {
+    fachada: 'Suministro e instalación de fachada de vidrio con sistema de aluminio, según las medidas y especificaciones del proyecto.',
+    mampara: 'Suministro e instalación de mampara de baño en vidrio templado, con acabados y herrajes acordes al diseño del ambiente.',
+    ventana: 'Suministro e instalación de ventana(s) en aluminio o PVC, con cristal y sistema de apertura según especificación.',
+    baranda: 'Suministro e instalación de baranda de vidrio con pasamanos, cumpliendo criterios de seguridad para uso en altura.',
+    puerta: 'Suministro e instalación de puerta de vidrio con marco y herrajes según el tipo de apertura requerido.',
+    muroCortina: 'Suministro e instalación de muro cortina en sistema de aluminio y vidrio, según diseño y cálculo estructural del proyecto.',
+    cerramiento: 'Suministro e instalación de cerramiento de terraza con sistema corredizo o plegable, según el diseño del ambiente.',
+  };
+
+  /* ========================================================
+     GENERACIÓN DE PDF PARA EL CLIENTE
+     ------------------------------------------------------------
+     IMPORTANTE: este PDF es para uso EXTERNO (se entrega al
+     cliente). Por eso NO incluye costo base, % de utilidad,
+     monto de utilidad, adicionales por accesorios/material/vidrio
+     ni costo de instalación por separado — toda esa información
+     es de uso interno del equipo comercial y vive únicamente en
+     el panel de pantalla, nunca en este documento.
+     El PDF solo muestra: datos del cliente, descripción del
+     servicio en texto, y el precio final ya consolidado.
+     ======================================================== */
+
+  function generarPdfCliente(){
+    if (!ultimoCalculo){
+      mostrarAlerta('Primero calcula un presupuesto para poder generar el PDF.');
+      return;
+    }
+    if (typeof window.jspdf === 'undefined'){
+      mostrarAlerta('No se pudo cargar el generador de PDF. Verifica tu conexión e intenta de nuevo.');
+      return;
+    }
+
+    const datos = ultimoCalculo;
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF({ unit: 'mm', format: 'a4' });
+
+    const colorNegro = [6, 20, 27];
+    const colorNaranja = [224, 123, 57];
+    const colorGris = [90, 100, 107];
+    const margenX = 20;
+    let y = 22;
+
+    // --- Encabezado ---
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(20);
+    doc.setTextColor(...colorNegro);
+    doc.text(EMPRESA.nombre, margenX, y);
+
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(9.5);
+    doc.setTextColor(...colorGris);
+    y += 6;
+    doc.text(`${EMPRESA.correo}  ·  WhatsApp ${EMPRESA.whatsapp}  ·  ${EMPRESA.ciudad}`, margenX, y);
+
+    y += 4;
+    doc.setDrawColor(...colorNaranja);
+    doc.setLineWidth(0.8);
+    doc.line(margenX, y, 210 - margenX, y);
+
+    // --- Título y número de propuesta ---
+    y += 10;
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(15);
+    doc.setTextColor(...colorNegro);
+    doc.text('Propuesta de Cotización Preliminar', margenX, y);
+
+    const fechaHoy = new Date();
+    const numeroPropuesta = 'COT-' + fechaHoy.getFullYear() +
+      String(fechaHoy.getMonth() + 1).padStart(2, '0') +
+      String(fechaHoy.getDate()).padStart(2, '0') + '-' +
+      String(fechaHoy.getHours()).padStart(2, '0') +
+      String(fechaHoy.getMinutes()).padStart(2, '0');
+
+    y += 7;
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(10);
+    doc.setTextColor(...colorGris);
+    doc.text(`N° ${numeroPropuesta}   ·   Fecha: ${fechaHoy.toLocaleDateString('es-PE')}`, margenX, y);
+
+    // --- Datos del cliente ---
+    y += 12;
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(11.5);
+    doc.setTextColor(...colorNegro);
+    doc.text('Datos del cliente', margenX, y);
+    y += 1.5;
+    doc.setDrawColor(225, 225, 225);
+    doc.setLineWidth(0.3);
+    doc.line(margenX, y, 210 - margenX, y);
+
+    const cliente = campos.nombreCliente.value.trim() || '—';
+    const ruc = campos.rucCliente.value.trim();
+    const distrito = campos.distrito.value.trim() || '—';
+
+    y += 7;
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(10.5);
+    doc.setTextColor(...colorNegro);
+    doc.text(`Cliente: ${cliente}`, margenX, y);
+    y += 6;
+    doc.text(`RUC / DNI: ${ruc || 'No registrado'}`, margenX, y);
+    y += 6;
+    doc.text(`Distrito del proyecto: ${distrito}`, margenX, y);
+
+    // --- Detalle del servicio (texto, sin desglose técnico interno) ---
+    y += 12;
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(11.5);
+    doc.text('Detalle del servicio', margenX, y);
+    y += 1.5;
+    doc.line(margenX, y, 210 - margenX, y);
+
+    y += 8;
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(10.5);
+    const descripcionBase = DESCRIPCION_SERVICIO[datos.tipoSolucion] || '';
+    const medidasTexto = `Medidas referenciales: ${datos.ancho} m de ancho x ${datos.alto} m de alto` +
+      (datos.cantidad > 1 ? `, cantidad de ${datos.cantidad} unidades` : '') +
+      ` (área aproximada de ${datos.areaTotal.toFixed(2)} m²).`;
+
+    const parrafoServicio = `${datos.nombreSolucion}. ${descripcionBase} ${medidasTexto}`;
+    const lineasServicio = doc.splitTextToSize(parrafoServicio, 210 - margenX * 2);
+    doc.text(lineasServicio, margenX, y);
+    y += lineasServicio.length * 5.2 + 4;
+
+    // Accesorios, en texto simple (sin precio individual).
+    if (datos.accesoriosSeleccionados && datos.accesoriosSeleccionados.length){
+      const nombresAcc = datos.accesoriosSeleccionados.map(a => TEXTO_ACCESORIOS[a] || a);
+      const lineaAcc = `Incluye: ${nombresAcc.join(', ')}.`;
+      const lineasAcc = doc.splitTextToSize(lineaAcc, 210 - margenX * 2);
+      doc.text(lineasAcc, margenX, y);
+      y += lineasAcc.length * 5.2 + 2;
+    }
+
+    // --- Caja de precio final (sin desglose de costos ni utilidad) ---
+    y += 10;
+    const cajaAlto = 26;
+    doc.setFillColor(245, 243, 238);
+    doc.setDrawColor(...colorNaranja);
+    doc.setLineWidth(0.6);
+    doc.roundedRect(margenX, y, 210 - margenX * 2, cajaAlto, 2, 2, 'FD');
+
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(9.5);
+    doc.setTextColor(...colorGris);
+    doc.text('INVERSIÓN TOTAL DEL PROYECTO', margenX + 8, y + 9);
+
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(18);
+    doc.setTextColor(...colorNegro);
+    doc.text(formatearSoles(datos.precioFinal) + ' (incluye IGV)', margenX + 8, y + 19);
+
+    y += cajaAlto + 12;
+
+    // --- Condiciones ---
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(11.5);
+    doc.setTextColor(...colorNegro);
+    doc.text('Condiciones de la propuesta', margenX, y);
+    y += 1.5;
+    doc.line(margenX, y, 210 - margenX, y);
+
+    y += 7;
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(9.5);
+    doc.setTextColor(...colorGris);
+    const condiciones = [
+      'Esta propuesta es preliminar y está sujeta a visita técnica y validación final de medidas en obra.',
+      'El precio puede ajustarse según hallazgos de la visita técnica, accesos, y condiciones del lugar de instalación.',
+      'Validez de la propuesta: 15 días calendario desde la fecha de emisión.',
+      'Para aceptar el servicio o coordinar la visita técnica, contáctanos por WhatsApp o correo.',
+    ];
+    condiciones.forEach((linea) => {
+      const lineas = doc.splitTextToSize('• ' + linea, 210 - margenX * 2);
+      doc.text(lineas, margenX, y);
+      y += lineas.length * 5 + 2;
+    });
+
+    // --- Pie de página ---
+    const piePosY = 287;
+    doc.setDrawColor(225, 225, 225);
+    doc.setLineWidth(0.3);
+    doc.line(margenX, piePosY - 6, 210 - margenX, piePosY - 6);
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(8.5);
+    doc.setTextColor(...colorGris);
+    doc.text(`${EMPRESA.nombre}  ·  ${EMPRESA.correo}  ·  WhatsApp ${EMPRESA.whatsapp}`, margenX, piePosY);
+
+    const nombreArchivo = `Cotizacion_${numeroPropuesta}_${cliente.replace(/[^a-zA-Z0-9]/g, '_')}.pdf`;
+    doc.save(nombreArchivo);
+  }
+
+  /* ========================================================
      EVENTOS
      ======================================================== */
 
@@ -523,6 +734,7 @@ Solicito validación técnica para confirmar cotización.`;
     e.preventDefault();
     if (!validarFormulario()) return;
     const datos = calcularPresupuesto();
+    ultimoCalculo = datos;
     mostrarResultado(datos);
   });
 
@@ -540,6 +752,9 @@ Solicito validación técnica para confirmar cotización.`;
     actualizarObligatoriedadMaterial();
     resultContent.hidden = true;
     resultEmpty.hidden = false;
+    ultimoCalculo = null;
   });
+
+  btnGenerarPdf.addEventListener('click', generarPdfCliente);
 
 });
