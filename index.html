@@ -268,7 +268,7 @@ nav.solid{
 #why{padding:100px 0;background:var(--c1)}
 .why-grid{
   display:grid;
-  grid-template-columns:repeat(12,1fr);
+  grid-template-columns:repeat(5,1fr);
   gap:1px;
   margin-top:52px;
   border:1px solid rgba(255,255,255,.04);
@@ -276,9 +276,7 @@ nav.solid{
 .why-card{
   padding:36px 28px;background:var(--c1);
   transition:background var(--ease);
-  grid-column:span 2;
 }
-.why-card.why-wide{grid-column:span 3}
 .why-card:hover{background:var(--c2)}
 .why-num{font-family:var(--ff-serif);font-size:2.5rem;color:rgba(224,123,57,.18);line-height:1;margin-bottom:14px}
 .why-ico{color:var(--accent);margin-bottom:12px}
@@ -442,7 +440,7 @@ footer{
   .nav-links{display:none}
   .ham{display:flex}
   .why-grid{grid-template-columns:repeat(2,1fr)}
-  .why-card,.why-card.why-wide{grid-column:span 1}
+  .why-card{grid-column:span 1}
 }
 @media(max-width:720px){
   #hero{padding:100px 20px 60px}
@@ -456,7 +454,7 @@ footer{
 @media(max-width:520px){
   .gal-grid{grid-template-columns:1fr}
   .why-grid{grid-template-columns:1fr}
-  .why-card,.why-card.why-wide{grid-column:span 1}
+  .why-card{grid-column:span 1}
   .hero-btns{flex-direction:column;align-items:flex-start}
   .ft-inner{flex-direction:column;align-items:flex-start}
 }
@@ -638,7 +636,7 @@ footer{
     <h2 class="section-title">Calidad en cada detalle</h2>
   </div>
   <div class="why-grid reveal">
-    <div class="why-card why-wide">
+    <div class="why-card">
       <div class="why-num">01</div>
       <div class="why-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M14.7 6.3a1 1 0 000 1.4l1.6 1.6a1 1 0 001.4 0l3.77-3.77a6 6 0 01-7.94 7.94l-6.91 6.91a2.12 2.12 0 01-3-3l6.91-6.91a6 6 0 017.94-7.94l-3.76 3.76z"/></svg></div>
       <h4>Instalación profesional</h4>
@@ -662,7 +660,7 @@ footer{
       <h4>Acabados modernos</h4>
       <p>Diseños limpios y funcionales que se adaptan a cualquier estilo.</p>
     </div>
-    <div class="why-card why-wide">
+    <div class="why-card">
       <div class="why-num">05</div>
       <div class="why-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg></div>
       <h4>Garantía de servicio</h4>
@@ -689,9 +687,9 @@ footer{
       <div class="gal-img" style="background-image:url('img/proyectos/proyecto-06.jpg')"></div>
       <div class="gal-ov"><div class="gal-ov-inner"><div class="gal-ov-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7"/></svg></div><span class="gal-ov-lbl">Ventana corredera</span></div></div>
     </div>
-    <div class="gal-item" data-src="img/proyectos/proyecto-09.jpg" data-lbl="Cerramiento con Persianas">
-      <div class="gal-img" style="background-image:url('img/proyectos/proyecto-09.jpg')"></div>
-      <div class="gal-ov"><div class="gal-ov-inner"><div class="gal-ov-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7"/></svg></div><span class="gal-ov-lbl">Cerramiento con persianas</span></div></div>
+    <div class="gal-item" data-src="https://images.unsplash.com/photo-1571781418606-70265b9cce90?w=1200&q=80" data-lbl="Mampara de Ducha Frameless">
+      <div class="gal-img" style="background-image:url('https://images.unsplash.com/photo-1571781418606-70265b9cce90?w=900&q=80')"></div>
+      <div class="gal-ov"><div class="gal-ov-inner"><div class="gal-ov-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7"/></svg></div><span class="gal-ov-lbl">Mampara de ducha frameless</span></div></div>
     </div>
     <div class="gal-item" data-src="img/proyectos/proyecto-07.jpg" data-lbl="Baranda con Iluminación LED">
       <div class="gal-img" style="background-image:url('img/proyectos/proyecto-07.jpg')"></div>
