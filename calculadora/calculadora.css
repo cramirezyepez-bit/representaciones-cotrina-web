@@ -1,28 +1,28 @@
 /* ============================================================
-   ALECOM — Calculadora de presupuesto referencial
-   Reutiliza tokens del sitio principal (negro · hueso · naranja)
+   Representaciones Cotrina — Calculadora de presupuesto referencial
+   Reutiliza los tokens del sitio principal (azul profundo · naranja)
 ============================================================ */
 
 :root{
-  --negro: #101113;
-  --negro-2: #1A1C1F;
-  --hueso: #F7F5F1;
-  --hueso-2: #EFECE5;
-  --naranja: #FF6A1A;
-  --naranja-2: #E25400;
-  --acero: #8C9097;
-  --acero-claro: #C7CACE;
-  --vidrio: #2B3640;
+  --negro: #06141B;
+  --negro-2: #11212D;
+  --hueso: #F4F1EC;
+  --hueso-2: #E9E4DC;
+  --naranja: #E07B39;
+  --naranja-2: #F0A05A;
+  --acero: #4A5C6A;
+  --acero-claro: #9BA8AB;
+  --vidrio: #253745;
   --linea: rgba(255,255,255,0.12);
-  --linea-oscura: rgba(16,17,19,0.12);
+  --linea-oscura: rgba(6,20,27,0.12);
   --ok: #3FA15E;
 
-  --font-display: 'Archivo Black', sans-serif;
-  --font-condensed: 'Oswald', sans-serif;
-  --font-body: 'Archivo', sans-serif;
+  --font-display: 'DM Serif Display', Georgia, serif;
+  --font-condensed: 'DM Sans', system-ui, sans-serif;
+  --font-body: 'DM Sans', system-ui, sans-serif;
 
   --maxw: 1180px;
-  --radius: 3px;
+  --radius: 10px;
 }
 
 *{ box-sizing: border-box; }

@@ -1,5 +1,5 @@
 // ============================================================
-// ALECOM — Calculadora de presupuesto referencial
+// Representaciones Cotrina — Calculadora de presupuesto referencial
 // Lógica de cálculo, validación de formulario y envío a WhatsApp
 // ============================================================
 
