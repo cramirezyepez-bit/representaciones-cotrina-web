@@ -230,6 +230,13 @@ document.addEventListener('DOMContentLoaded', () => {
       urgente: 'Urgente',
       evaluacion: 'Proyecto en evaluación',
     }[campos.urgencia.value];
+    const colorAluminioTexto = {
+      natural: 'Natural',
+      negro: 'Negro',
+      blanco: 'Blanco',
+      champagne: 'Champagne',
+      madera: 'Acabado madera',
+    }[campos.colorAluminio.value] || 'No especificado';
 
     const mensaje =
 `Hola, quisiera una asesoría técnica para mi proyecto.
@@ -237,6 +244,7 @@ document.addEventListener('DOMContentLoaded', () => {
 *Tipo de solución:* ${datos.nombreSolucion}
 *Medidas:* ${datos.ancho} m (ancho) x ${datos.alto} m (alto) x ${datos.cantidad} unidad(es)
 *Área estimada:* ${datos.areaTotal.toFixed(2)} m²
+*Color de aluminio:* ${colorAluminioTexto}
 *Distrito:* ${distrito}
 *Rango estimado:* ${formatearSoles(datos.rangoFinalMin)} — ${formatearSoles(datos.rangoFinalMax)}
 *Urgencia:* ${urgenciaTexto}
