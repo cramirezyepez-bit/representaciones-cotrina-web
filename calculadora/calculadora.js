@@ -551,8 +551,10 @@ Solicito validación técnica para confirmar cotización.`;
      (lo ideal es usar fotos reales de obra de ALECOM).
      Fuente actual: fotografías con licencia Unsplash (uso
      comercial libre, sin atribución requerida) + 1 foto real de
-     ALECOM para fachada. Todas verificadas con licencia gratuita
-     antes de su uso.
+     ALECOM para fachada. Las 7 categorías tienen ahora una imagen
+     propia y distinta entre sí (antes, puerta y cerramiento
+     reutilizaban por error la foto de fachada). Todas verificadas
+     con licencia gratuita antes de su uso.
      ======================================================== */
   const RENDERS_POR_SOLUCION = {
     fachada:     { url: 'img/proyectos/proyecto-04.jpg', credito: 'Obra ejecutada por ALECOM Proyectos' },
@@ -560,8 +562,8 @@ Solicito validación técnica para confirmar cotización.`;
     ventana:     { url: 'https://images.unsplash.com/photo-1758565811176-ccd94357a844?w=1400&q=80', credito: 'Imagen referencial — Caroline Badran / Unsplash' },
     mampara:     { url: 'https://images.unsplash.com/photo-1723257891127-0d1ea314a720?w=1400&q=80', credito: 'Imagen referencial — Alex Tyson / Unsplash' },
     baranda:     { url: 'https://images.unsplash.com/photo-1771904488645-fa6ebf7a2d06?w=1400&q=80', credito: 'Imagen referencial — Wesley Shen / Unsplash' },
-    puerta:      { url: 'img/proyectos/proyecto-04.jpg', credito: 'Obra ejecutada por ALECOM Proyectos' },
-    cerramiento: { url: 'img/proyectos/proyecto-04.jpg', credito: 'Obra ejecutada por ALECOM Proyectos' },
+    puerta:      { url: 'https://images.unsplash.com/photo-1497366754035-f200968a6e72?w=1400&q=80', credito: 'Imagen referencial — Nastuh Abootalebi / Unsplash' },
+    cerramiento: { url: 'https://images.unsplash.com/photo-1758216862102-04782596be32?w=1400&q=80', credito: 'Imagen referencial — Artur Piterov / Unsplash' },
   };
 
   // Cache en memoria de imágenes ya convertidas a dataURL, para no
