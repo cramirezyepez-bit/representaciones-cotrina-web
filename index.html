@@ -268,15 +268,17 @@ nav.solid{
 #why{padding:100px 0;background:var(--c1)}
 .why-grid{
   display:grid;
-  grid-template-columns:repeat(auto-fit,minmax(260px,1fr));
+  grid-template-columns:repeat(12,1fr);
   gap:1px;
   margin-top:52px;
   border:1px solid rgba(255,255,255,.04);
 }
 .why-card{
-  padding:36px 32px;background:var(--c1);
+  padding:36px 28px;background:var(--c1);
   transition:background var(--ease);
+  grid-column:span 2;
 }
+.why-card.why-wide{grid-column:span 3}
 .why-card:hover{background:var(--c2)}
 .why-num{font-family:var(--ff-serif);font-size:2.5rem;color:rgba(224,123,57,.18);line-height:1;margin-bottom:14px}
 .why-ico{color:var(--accent);margin-bottom:12px}
@@ -291,27 +293,21 @@ nav.solid{
 
 .gal-grid{
   display:grid;
-  grid-template-columns:repeat(12,1fr);
-  grid-auto-rows:130px;
+  grid-template-columns:repeat(3,1fr);
+  grid-template-rows:auto;
   gap:14px;
 }
 .gal-item{
   position:relative;overflow:hidden;border-radius:var(--r-lg);cursor:pointer;
   box-shadow:0 18px 40px -18px rgba(0,0,0,.55);
 }
-.gal-item.size-hero{grid-column:span 7;grid-row:span 3}
-.gal-item.size-wide{grid-column:span 5;grid-row:span 2}
-.gal-item.size-tall{grid-column:span 4;grid-row:span 3}
-.gal-item.size-med{grid-column:span 4;grid-row:span 2}
-.gal-item.size-small{grid-column:span 4;grid-row:span 2}
-.gal-item.size-wide-2{grid-column:span 8;grid-row:span 2}
-.gal-item.size-half{grid-column:span 6;grid-row:span 2}
-
+.gal-item:first-child{grid-row:span 2}
 .gal-img{
-  width:100%;height:100%;
+  width:100%;height:100%;min-height:230px;
   background-size:cover;background-position:center;
   transition:transform .8s cubic-bezier(.25,.46,.45,.94);
 }
+.gal-item:first-child .gal-img{min-height:474px}
 .gal-item::after{
   content:'';position:absolute;inset:0;
   background:linear-gradient(to top,rgba(6,20,27,.55) 0%,transparent 45%);
@@ -445,22 +441,22 @@ footer{
   .thermia-badge{bottom:-14px;right:14px}
   .nav-links{display:none}
   .ham{display:flex}
+  .why-grid{grid-template-columns:repeat(2,1fr)}
+  .why-card,.why-card.why-wide{grid-column:span 1}
 }
 @media(max-width:720px){
   #hero{padding:100px 20px 60px}
-  .gal-grid{grid-template-columns:repeat(2,1fr);grid-auto-rows:170px}
-  .gal-item.size-hero,.gal-item.size-wide-2{grid-column:span 2;grid-row:span 2}
-  .gal-item.size-wide,.gal-item.size-half{grid-column:span 2;grid-row:span 2}
-  .gal-item.size-tall,.gal-item.size-med,.gal-item.size-small{grid-column:span 1;grid-row:span 2}
+  .gal-grid{grid-template-columns:repeat(2,1fr)}
+  .gal-item:first-child{grid-row:span 1}
+  .gal-item:first-child .gal-img{min-height:230px}
   .form-row-2{grid-template-columns:1fr}
   .hero-stats{gap:24px}
   .services-header{flex-direction:column;align-items:flex-start}
 }
 @media(max-width:520px){
-  .gal-grid{grid-template-columns:1fr;grid-auto-rows:220px}
-  .gal-item.size-hero,.gal-item.size-wide-2,.gal-item.size-wide,.gal-item.size-half,
-  .gal-item.size-tall,.gal-item.size-med,.gal-item.size-small{grid-column:span 1;grid-row:span 1}
+  .gal-grid{grid-template-columns:1fr}
   .why-grid{grid-template-columns:1fr}
+  .why-card,.why-card.why-wide{grid-column:span 1}
   .hero-btns{flex-direction:column;align-items:flex-start}
   .ft-inner{flex-direction:column;align-items:flex-start}
 }
@@ -642,7 +638,7 @@ footer{
     <h2 class="section-title">Calidad en cada detalle</h2>
   </div>
   <div class="why-grid reveal">
-    <div class="why-card">
+    <div class="why-card why-wide">
       <div class="why-num">01</div>
       <div class="why-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M14.7 6.3a1 1 0 000 1.4l1.6 1.6a1 1 0 001.4 0l3.77-3.77a6 6 0 01-7.94 7.94l-6.91 6.91a2.12 2.12 0 01-3-3l6.91-6.91a6 6 0 017.94-7.94l-3.76 3.76z"/></svg></div>
       <h4>Instalación profesional</h4>
@@ -666,7 +662,7 @@ footer{
       <h4>Acabados modernos</h4>
       <p>Diseños limpios y funcionales que se adaptan a cualquier estilo.</p>
     </div>
-    <div class="why-card">
+    <div class="why-card why-wide">
       <div class="why-num">05</div>
       <div class="why-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg></div>
       <h4>Garantía de servicio</h4>
@@ -685,44 +681,25 @@ footer{
     <p class="section-sub">Trabajos de ventanas, mamparas, puertas de ducha y fachadas en Lima.</p>
   </div>
   <div class="gal-grid reveal">
-    <div class="gal-item size-hero" data-src="img/proyectos/proyecto-04.jpg" data-lbl="Fachada Arquitectónica">
+    <div class="gal-item" data-src="img/proyectos/proyecto-04.jpg" data-lbl="Fachada Arquitectónica">
       <div class="gal-img" style="background-image:url('img/proyectos/proyecto-04.jpg')"></div>
       <div class="gal-ov"><div class="gal-ov-inner"><div class="gal-ov-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7"/></svg></div><span class="gal-ov-lbl">Fachada arquitectónica</span></div></div>
     </div>
-    <div class="gal-item size-tall" data-src="img/proyectos/proyecto-07.jpg" data-lbl="Baranda con Iluminación LED">
-      <div class="gal-img" style="background-image:url('img/proyectos/proyecto-07.jpg')"></div>
-      <div class="gal-ov"><div class="gal-ov-inner"><div class="gal-ov-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7"/></svg></div><span class="gal-ov-lbl">Baranda con LED</span></div></div>
-    </div>
-
-    <div class="gal-item size-wide-2" data-src="img/proyectos/proyecto-08.jpg" data-lbl="Residencia con Terraza">
-      <div class="gal-img" style="background-image:url('img/proyectos/proyecto-08.jpg')"></div>
-      <div class="gal-ov"><div class="gal-ov-inner"><div class="gal-ov-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7"/></svg></div><span class="gal-ov-lbl">Residencia con terraza</span></div></div>
-    </div>
-    <div class="gal-item size-med" data-src="img/proyectos/proyecto-06.jpg" data-lbl="Ventana Corredera">
+    <div class="gal-item" data-src="img/proyectos/proyecto-06.jpg" data-lbl="Ventana Corredera">
       <div class="gal-img" style="background-image:url('img/proyectos/proyecto-06.jpg')"></div>
       <div class="gal-ov"><div class="gal-ov-inner"><div class="gal-ov-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7"/></svg></div><span class="gal-ov-lbl">Ventana corredera</span></div></div>
     </div>
-
-    <div class="gal-item size-small" data-src="img/proyectos/proyecto-01.jpg" data-lbl="Mampara con Pérgola">
-      <div class="gal-img" style="background-image:url('img/proyectos/proyecto-01.jpg')"></div>
-      <div class="gal-ov"><div class="gal-ov-inner"><div class="gal-ov-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7"/></svg></div><span class="gal-ov-lbl">Mampara con pérgola</span></div></div>
-    </div>
-    <div class="gal-item size-small" data-src="img/proyectos/proyecto-09.jpg" data-lbl="Cerramiento con Persianas">
+    <div class="gal-item" data-src="img/proyectos/proyecto-09.jpg" data-lbl="Cerramiento con Persianas">
       <div class="gal-img" style="background-image:url('img/proyectos/proyecto-09.jpg')"></div>
       <div class="gal-ov"><div class="gal-ov-inner"><div class="gal-ov-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7"/></svg></div><span class="gal-ov-lbl">Cerramiento con persianas</span></div></div>
     </div>
-    <div class="gal-item size-small" data-src="img/proyectos/proyecto-03.jpg" data-lbl="Balcón con Baranda de Vidrio">
+    <div class="gal-item" data-src="img/proyectos/proyecto-07.jpg" data-lbl="Baranda con Iluminación LED">
+      <div class="gal-img" style="background-image:url('img/proyectos/proyecto-07.jpg')"></div>
+      <div class="gal-ov"><div class="gal-ov-inner"><div class="gal-ov-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7"/></svg></div><span class="gal-ov-lbl">Baranda con LED</span></div></div>
+    </div>
+    <div class="gal-item" data-src="img/proyectos/proyecto-03.jpg" data-lbl="Balcón con Baranda de Vidrio">
       <div class="gal-img" style="background-image:url('img/proyectos/proyecto-03.jpg')"></div>
       <div class="gal-ov"><div class="gal-ov-inner"><div class="gal-ov-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7"/></svg></div><span class="gal-ov-lbl">Balcón con baranda de vidrio</span></div></div>
-    </div>
-
-    <div class="gal-item size-half" data-src="img/proyectos/proyecto-02.jpg" data-lbl="Mampara hacia Terraza">
-      <div class="gal-img" style="background-image:url('img/proyectos/proyecto-02.jpg')"></div>
-      <div class="gal-ov"><div class="gal-ov-inner"><div class="gal-ov-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7"/></svg></div><span class="gal-ov-lbl">Mampara hacia terraza</span></div></div>
-    </div>
-    <div class="gal-item size-half" data-src="img/proyectos/proyecto-05.jpg" data-lbl="Ventana con Marco de Madera">
-      <div class="gal-img" style="background-image:url('img/proyectos/proyecto-05.jpg')"></div>
-      <div class="gal-ov"><div class="gal-ov-inner"><div class="gal-ov-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7"/></svg></div><span class="gal-ov-lbl">Ventana con marco de madera</span></div></div>
     </div>
   </div>
 </div>
