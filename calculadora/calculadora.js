@@ -611,67 +611,267 @@ Solicito validación técnica para confirmar cotización.`;
   /* ========================================================
      GENERACIÓN DE PDF PARA EL CLIENTE
      ------------------------------------------------------------
-     IMPORTANTE: este PDF es para uso EXTERNO (se entrega al
-     cliente). Por eso NO incluye costo base, % de utilidad,
-     monto de utilidad, adicionales por accesorios/material/vidrio
-     ni costo de instalación por separado — toda esa información
-     es de uso interno del equipo comercial y vive únicamente en
-     el panel de pantalla, nunca en este documento.
-     El PDF solo muestra: datos del cliente, descripción del
-     servicio en texto, y el precio final ya consolidado.
+     Este PDF se construye como una plantilla HTML/CSS real
+     (no con las primitivas de dibujo de jsPDF), se renderiza
+     off-screen, se captura con html2canvas y se inserta como
+     imagen en un documento jsPDF de tamaño A4. Esto permite un
+     layout de grilla (2 columnas arriba, 3 columnas abajo) fiel
+     al diseño de propuesta comercial premium solicitado.
+
+     Esta versión SÍ incluye el desglose de costos (costo base,
+     materiales/sistema, accesorios, instalación, subtotal,
+     % utilidad, monto de utilidad) dentro del propio PDF, en la
+     columna "DESGLOSE DE COSTOS" — a diferencia de la versión
+     anterior de este documento. Si en el futuro se requiere
+     volver a un PDF sin desglose de costos (solo precio final)
+     para evitar mostrarlo al cliente, comentar/quitar el bloque
+     "columnaCostos" de construirHtmlPdf() y dejar solo el total.
      ======================================================== */
+
+  // Paleta de colores exacta pedida para el PDF (independiente de
+  // la paleta del sitio/cotizador en pantalla, que no se modifica).
+  const PDF_COLOR = {
+    azulMarino: '#07131C',
+    azulMarino2: '#08151E',
+    naranjaCobre: '#D57B37',
+    blanco: '#FFFFFF',
+    negroCarbon: '#1D1D1D',
+    grisOscuro: '#555555',
+    grisMedio: '#6B6B6B',
+    grisClaro: '#D9D9D9',
+    fondoSuave: '#F4F2EE',
+  };
+
+  // Iconos lineales (SVG inline, trazo simple) para cada ítem del
+  // resumen lateral y para el bloque de recomendación.
+  const PDF_ICONOS = {
+    solucion: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M3 21h18M5 21V7l7-4 7 4v14M9 21v-6h6v6"/></svg>',
+    sistema: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3" y="3" width="18" height="18" rx="1"/><path d="M3 9h18M9 21V9"/></svg>',
+    vidrio: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M5 3h14l1 5-8 13L4 8z"/><path d="M5 3l7 5 7-5M4 8h16"/></svg>',
+    color: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="12" r="9"/><path d="M12 3a9 9 0 0 1 0 18z" fill="currentColor" stroke="none"/></svg>',
+    accesorios: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.6a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>',
+    area: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3" y="3" width="18" height="18" rx="1"/><path d="M8 3v4M16 3v4M3 11h18"/></svg>',
+    distrito: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M12 21s7-6.5 7-12a7 7 0 1 0-14 0c0 5.5 7 12 7 12z"/><circle cx="12" cy="9" r="2.4"/></svg>',
+    urgencia: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3.5 2"/></svg>',
+    planos: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6M9 13h6M9 17h6"/></svg>',
+    escudo: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M12 2 4 5v6c0 5 3.5 8.5 8 11 4.5-2.5 8-6 8-11V5z"/><path d="M9 12l2 2 4-4"/></svg>',
+  };
+
+  /**
+   * Construye el HTML completo de la propuesta (string), siguiendo
+   * el layout: encabezado de 2 bloques, sección principal de 2
+   * columnas (render 68% / resumen 32%), sección inferior de 3
+   * columnas (costos / especificaciones / recomendación), y pie
+   * de página de 3 bloques. Todo el CSS va embebido inline en el
+   * propio HTML para que html2canvas lo capture sin depender de
+   * hojas de estilo externas.
+   */
+  function construirHtmlPdf(datos, imagenDataUrl, numeroPropuesta, fechaTexto){
+    const cliente = campos.nombreCliente.value.trim() || '—';
+    const ruc = campos.rucCliente.value.trim() || 'No registrado';
+    const distrito = campos.distrito.value.trim() || '—';
+    const tipoVidrioTexto = TEXTO_VIDRIO[campos.tipoVidrio.value] || '—';
+    const materialTexto = TEXTO_MATERIAL[datos.materialSistema] || '—';
+    const colorAluminioTexto = {
+      natural: 'Natural', negro: 'Negro', blanco: 'Blanco', champagne: 'Champagne', madera: 'Acabado madera',
+    }[campos.colorAluminio.value] || '—';
+    const urgenciaTexto = {
+      normal: 'Normal', urgente: 'Urgente', evaluacion: 'Proyecto en evaluación',
+    }[campos.urgencia.value] || '—';
+    const tienePlanosTexto = campos.tienePlanos.value === 'si' ? 'Sí' : 'No';
+    const accesoriosTexto = datos.accesoriosSeleccionados.length
+      ? datos.accesoriosSeleccionados.map(a => TEXTO_ACCESORIOS[a] || a).join(', ')
+      : 'Sin accesorios especiales';
+
+    const recomendacion = (generarRecomendacion(datos) || '').replace(/^Recomendación:\s*/i, '');
+
+    const filaResumen = (icono, etiqueta, valor) => `
+      <div class="r-item">
+        <span class="r-ico">${PDF_ICONOS[icono]}</span>
+        <span class="r-txt">
+          <span class="r-lbl">${etiqueta}</span>
+          <span class="r-val">${valor}</span>
+        </span>
+      </div>`;
+
+    const filaCosto = (etiqueta, monto, esTotal) => `
+      <div class="c-row${esTotal ? ' c-row-total' : ''}">
+        <span>${etiqueta}</span>
+        <span>${monto}</span>
+      </div>`;
+
+    return `
+      <div id="pdfRoot" style="width:794px;background:${PDF_COLOR.blanco};font-family:'Inter',system-ui,sans-serif;color:${PDF_COLOR.negroCarbon};">
+
+        <style>
+          #pdfRoot *{ box-sizing:border-box; margin:0; padding:0; }
+          #pdfRoot .head{ background:${PDF_COLOR.azulMarino}; padding:22px 36px; display:flex; align-items:center; justify-content:space-between; min-height:92px; }
+          #pdfRoot .head-left{ display:flex; flex-direction:column; gap:4px; }
+          #pdfRoot .head-logo{ color:${PDF_COLOR.blanco}; font-size:21px; font-weight:800; letter-spacing:0.02em; }
+          #pdfRoot .head-eslogan{ color:#AEB7BD; font-size:10.5px; font-weight:500; letter-spacing:0.01em; }
+          #pdfRoot .head-right{ text-align:right; display:flex; flex-direction:column; gap:4px; }
+          #pdfRoot .head-title{ color:${PDF_COLOR.naranjaCobre}; font-size:15px; font-weight:800; letter-spacing:0.06em; }
+          #pdfRoot .head-meta{ color:${PDF_COLOR.blanco}; font-size:10px; opacity:0.85; }
+
+          #pdfRoot .main{ display:flex; padding:28px 36px 10px; gap:24px; }
+          #pdfRoot .col-render{ width:68%; }
+          #pdfRoot .render-img{ width:100%; height:380px; object-fit:cover; border-radius:6px; display:block; }
+          #pdfRoot .render-note{ color:${PDF_COLOR.grisMedio}; font-size:9.5px; margin-top:8px; line-height:1.4; }
+
+          #pdfRoot .col-resumen{ width:32%; }
+          #pdfRoot .r-title{ color:${PDF_COLOR.negroCarbon}; font-size:12.5px; font-weight:800; letter-spacing:0.04em; padding-bottom:8px; border-bottom:2px solid ${PDF_COLOR.naranjaCobre}; margin-bottom:14px; }
+          #pdfRoot .r-item{ display:flex; align-items:flex-start; gap:10px; margin-bottom:13px; }
+          #pdfRoot .r-ico{ width:17px; height:17px; flex-shrink:0; color:${PDF_COLOR.naranjaCobre}; margin-top:1px; }
+          #pdfRoot .r-ico svg{ width:100%; height:100%; }
+          #pdfRoot .r-txt{ display:flex; flex-direction:column; gap:2px; min-width:0; }
+          #pdfRoot .r-lbl{ font-size:8.3px; text-transform:uppercase; letter-spacing:0.04em; color:${PDF_COLOR.grisMedio}; font-weight:600; }
+          #pdfRoot .r-val{ font-size:11px; color:${PDF_COLOR.negroCarbon}; font-weight:700; line-height:1.35; word-break:break-word; }
+
+          #pdfRoot .lower{ display:flex; padding:18px 36px 0; gap:0; margin-top:6px; }
+          #pdfRoot .lower-col{ flex:1; padding:18px 20px; }
+          #pdfRoot .lower-col + .lower-col{ border-left:1px solid ${PDF_COLOR.grisClaro}; }
+          #pdfRoot .lower-title{ font-size:10.5px; font-weight:800; letter-spacing:0.05em; color:${PDF_COLOR.negroCarbon}; margin-bottom:6px; }
+          #pdfRoot .lower-rule{ height:1px; background:${PDF_COLOR.grisClaro}; margin-bottom:12px; }
+
+          #pdfRoot .c-row{ display:flex; justify-content:space-between; gap:8px; font-size:9.5px; color:${PDF_COLOR.grisOscuro}; padding:5px 0; }
+          #pdfRoot .c-row span:last-child{ font-weight:700; color:${PDF_COLOR.negroCarbon}; white-space:nowrap; }
+          #pdfRoot .c-row-total{ border-top:1px solid ${PDF_COLOR.grisClaro}; margin-top:4px; padding-top:8px; }
+          #pdfRoot .c-row-total span{ color:${PDF_COLOR.negroCarbon} !important; font-weight:800 !important; }
+          #pdfRoot .precio-final-box{ background:${PDF_COLOR.azulMarino2}; color:${PDF_COLOR.blanco}; border-radius:6px; padding:12px 14px; margin-top:12px; }
+          #pdfRoot .precio-final-lbl{ font-size:8px; text-transform:uppercase; letter-spacing:0.05em; opacity:0.75; margin-bottom:4px; }
+          #pdfRoot .precio-final-val{ font-size:16.5px; font-weight:800; color:${PDF_COLOR.naranjaCobre}; }
+
+          #pdfRoot .esp-list{ list-style:none; display:flex; flex-direction:column; gap:9px; }
+          #pdfRoot .esp-list li{ font-size:9.5px; color:${PDF_COLOR.grisOscuro}; line-height:1.45; padding-left:13px; position:relative; }
+          #pdfRoot .esp-list li::before{ content:'•'; color:${PDF_COLOR.naranjaCobre}; position:absolute; left:0; font-size:13px; line-height:1; top:-1px; }
+          #pdfRoot .esp-list b{ color:${PDF_COLOR.negroCarbon}; }
+
+          #pdfRoot .reco-text{ font-size:9.8px; color:${PDF_COLOR.grisOscuro}; line-height:1.55; margin-bottom:14px; }
+          #pdfRoot .reco-ico{ width:22px; height:22px; color:${PDF_COLOR.naranjaCobre}; margin-left:auto; opacity:0.85; }
+          #pdfRoot .reco-ico svg{ width:100%; height:100%; }
+
+          #pdfRoot .nota-legal{ margin:14px 36px 0; padding:10px 14px; background:${PDF_COLOR.fondoSuave}; border-radius:5px; font-size:8.3px; color:${PDF_COLOR.grisMedio}; line-height:1.4; }
+
+          #pdfRoot .foot{ background:${PDF_COLOR.azulMarino}; margin-top:18px; padding:16px 36px; display:flex; justify-content:space-between; gap:16px; min-height:58px; align-items:center; }
+          #pdfRoot .foot-block{ color:${PDF_COLOR.blanco}; font-size:8.5px; line-height:1.5; }
+          #pdfRoot .foot-block b{ display:block; font-size:9.5px; margin-bottom:2px; }
+          #pdfRoot .foot-block.right{ text-align:right; }
+        </style>
+
+        <!-- ===== ENCABEZADO ===== -->
+        <div class="head">
+          <div class="head-left">
+            <span class="head-logo">ALECOM PROYECTOS</span>
+            <span class="head-eslogan">${EMPRESA.eslogan}</span>
+          </div>
+          <div class="head-right">
+            <span class="head-title">PROPUESTA PRELIMINAR</span>
+            <span class="head-meta">N° ${numeroPropuesta} &nbsp;·&nbsp; Emitido: ${fechaTexto}</span>
+          </div>
+        </div>
+
+        <!-- ===== SECCIÓN PRINCIPAL: render + resumen ===== -->
+        <div class="main">
+          <div class="col-render">
+            ${imagenDataUrl ? `<img class="render-img" src="${imagenDataUrl}" />` : ''}
+            <p class="render-note">Render referencial basado en las opciones seleccionadas. El diseño final será confirmado en la visita técnica.</p>
+          </div>
+          <div class="col-resumen">
+            <div class="r-title">RESUMEN DE LA COTIZACIÓN</div>
+            ${filaResumen('solucion', 'Tipo de solución', datos.nombreSolucion)}
+            ${filaResumen('sistema', 'Sistema', materialTexto)}
+            ${filaResumen('vidrio', 'Tipo de vidrio', tipoVidrioTexto)}
+            ${filaResumen('sistema', 'Sistema / marco', materialTexto)}
+            ${filaResumen('color', 'Color de aluminio', colorAluminioTexto)}
+            ${filaResumen('accesorios', 'Accesorios', accesoriosTexto)}
+            ${filaResumen('area', 'Área total', datos.areaTotal.toFixed(2) + ' m²')}
+            ${filaResumen('distrito', 'Distrito', distrito)}
+            ${filaResumen('urgencia', 'Nivel de urgencia', urgenciaTexto)}
+            ${filaResumen('planos', '¿Tiene planos o fotos?', tienePlanosTexto)}
+          </div>
+        </div>
+
+        <!-- ===== SECCIÓN INFERIOR: 3 columnas ===== -->
+        <div class="lower">
+          <div class="lower-col">
+            <div class="lower-title">DESGLOSE DE COSTOS</div>
+            <div class="lower-rule"></div>
+            ${filaCosto('Costo base', formatearSoles(datos.costoBase))}
+            ${filaCosto('Materiales y sistema', formatearSoles(datos.adicionalMaterial))}
+            ${filaCosto('Accesorios y adicionales', formatearSoles(datos.adicionalVidrio + datos.adicionalAccesorios))}
+            ${filaCosto('Instalación', formatearSoles(datos.costoInstalacion))}
+            ${filaCosto('Subtotal', formatearSoles(datos.costoTotalAntesUtilidad), true)}
+            ${filaCosto('% Utilidad aplicada', datos.utilidadPct + '%')}
+            ${filaCosto('Monto de utilidad', formatearSoles(datos.montoUtilidad))}
+            <div class="precio-final-box">
+              <div class="precio-final-lbl">Precio final sugerido</div>
+              <div class="precio-final-val">${formatearSoles(datos.precioFinal)}</div>
+            </div>
+          </div>
+
+          <div class="lower-col">
+            <div class="lower-title">ESPECIFICACIONES TÉCNICAS</div>
+            <div class="lower-rule"></div>
+            <ul class="esp-list">
+              <li><b>Vidrio:</b> ${tipoVidrioTexto}, según área y uso especificados.</li>
+              <li><b>Sistema o marco:</b> ${materialTexto}, color ${colorAluminioTexto.toLowerCase()}.</li>
+              <li><b>Herrajes:</b> ${accesoriosTexto}.</li>
+              <li><b>Sellos e instalación:</b> sellado perimetral y fijación según condiciones de obra, confirmados en visita técnica.</li>
+            </ul>
+          </div>
+
+          <div class="lower-col">
+            <div class="lower-title">RECOMENDACIÓN</div>
+            <div class="lower-rule"></div>
+            <p class="reco-text">${recomendacion || 'Validar medidas finales con visita técnica antes de confirmar el presupuesto.'}</p>
+            <span class="reco-ico">${PDF_ICONOS.escudo}</span>
+          </div>
+        </div>
+
+        <!-- ===== NOTA LEGAL ===== -->
+        <div class="nota-legal">
+          Precio preliminar sujeto a visita técnica, validación de medidas, accesorios, herrajes y condiciones de instalación.
+        </div>
+
+        <!-- ===== PIE DE PÁGINA ===== -->
+        <div class="foot">
+          <div class="foot-block">
+            <b>ALECOM Proyectos S.A.C.</b>
+            RUC: [pendiente de registrar]
+          </div>
+          <div class="foot-block">
+            <b>${EMPRESA.web}</b>
+            ${EMPRESA.correo}
+          </div>
+          <div class="foot-block right">
+            <b>WhatsApp ${EMPRESA.whatsapp}</b>
+            ${EMPRESA.instagram}
+          </div>
+        </div>
+
+      </div>
+    `;
+  }
 
   async function generarPdfCliente(){
     if (!ultimoCalculo){
       mostrarAlerta('Primero calcula un presupuesto para poder generar el PDF.');
       return;
     }
-    if (typeof window.jspdf === 'undefined'){
+    if (typeof window.jspdf === 'undefined' || typeof window.html2canvas === 'undefined'){
       mostrarAlerta('No se pudo cargar el generador de PDF. Verifica tu conexión e intenta de nuevo.');
       return;
     }
 
-    // Deshabilitar el botón mientras se descarga la imagen, para evitar
-    // doble clic y para dar feedback de que algo está pasando.
     const htmlOriginalBoton = btnGenerarPdf.innerHTML;
     btnGenerarPdf.disabled = true;
     btnGenerarPdf.innerHTML = 'Generando PDF…';
 
+    let contenedorTemporal = null;
+
     try {
       const datos = ultimoCalculo;
-      const { jsPDF } = window.jspdf;
-      const doc = new jsPDF({ unit: 'mm', format: 'a4' });
-
-      const colorNegro = [6, 20, 27];
-      const colorNaranja = [224, 123, 57];
-      const colorGris = [90, 100, 107];
-      const margenX = 20;
-      const anchoUtil = 210 - margenX * 2;
-      let y = 18;
-
-      // --- Encabezado: logo + eslogan ---
-      doc.setFont('helvetica', 'bold');
-      doc.setFontSize(20);
-      doc.setTextColor(...colorNegro);
-      doc.text(EMPRESA.nombre, margenX, y);
-
-      y += 5.5;
-      doc.setFont('helvetica', 'normal');
-      doc.setFontSize(9);
-      doc.setTextColor(...colorNaranja);
-      doc.text(EMPRESA.eslogan, margenX, y);
-
-      y += 5;
-      doc.setDrawColor(...colorNaranja);
-      doc.setLineWidth(0.8);
-      doc.line(margenX, y, 210 - margenX, y);
-
-      // --- Título y número de propuesta ---
-      y += 8;
-      doc.setFont('helvetica', 'bold');
-      doc.setFontSize(14.5);
-      doc.setTextColor(...colorNegro);
-      doc.text('Propuesta Preliminar', margenX, y);
+      const cliente = campos.nombreCliente.value.trim() || '—';
 
       const fechaHoy = new Date();
       const numeroPropuesta = 'COT-' + fechaHoy.getFullYear() +
@@ -679,202 +879,56 @@ Solicito validación técnica para confirmar cotización.`;
         String(fechaHoy.getDate()).padStart(2, '0') + '-' +
         String(fechaHoy.getHours()).padStart(2, '0') +
         String(fechaHoy.getMinutes()).padStart(2, '0');
+      const fechaTexto = fechaHoy.toLocaleDateString('es-PE');
 
-      doc.setFont('helvetica', 'normal');
-      doc.setFontSize(9.5);
-      doc.setTextColor(...colorGris);
-      doc.text(`N° ${numeroPropuesta}`, 210 - margenX, y - 4, { align: 'right' });
-      doc.text(`Emitido: ${fechaHoy.toLocaleDateString('es-PE')}`, 210 - margenX, y + 1, { align: 'right' });
-
-      // --- Render del producto (área destacada, ~40% de la primera página) ---
-      y += 6;
-      const altoImagen = 80; // ~40% de los ~200mm de área de contenido en A4
+      // 1. Descargar la imagen representativa (con cache y fallback null).
       const imagenInfo = await obtenerImagenRenderComoDataUrl(datos.tipoSolucion);
 
-      if (imagenInfo && imagenInfo.dataUrl){
-        try {
-          doc.addImage(imagenInfo.dataUrl, 'JPEG', margenX, y, anchoUtil, altoImagen, undefined, 'FAST');
-          doc.setDrawColor(225, 225, 225);
-          doc.setLineWidth(0.3);
-          doc.rect(margenX, y, anchoUtil, altoImagen);
-          y += altoImagen + 3;
-          doc.setFont('helvetica', 'italic');
-          doc.setFontSize(7.5);
-          doc.setTextColor(150, 150, 150);
-          doc.text(imagenInfo.credito, margenX, y);
-          y += 7;
-        } catch (errImg){
-          console.warn('No se pudo insertar la imagen en el PDF:', errImg);
-        }
-      }
+      // 2. Construir el HTML de la propuesta y montarlo fuera de pantalla.
+      const htmlPropuesta = construirHtmlPdf(datos, imagenInfo ? imagenInfo.dataUrl : null, numeroPropuesta, fechaTexto);
 
-      // --- Resumen de la cotización ---
-      doc.setFont('helvetica', 'bold');
-      doc.setFontSize(11.5);
-      doc.setTextColor(...colorNegro);
-      doc.text('Resumen de la cotización', margenX, y);
-      y += 1.5;
-      doc.setDrawColor(225, 225, 225);
-      doc.setLineWidth(0.3);
-      doc.line(margenX, y, 210 - margenX, y);
+      contenedorTemporal = document.createElement('div');
+      contenedorTemporal.style.position = 'fixed';
+      contenedorTemporal.style.top = '0';
+      contenedorTemporal.style.left = '-9999px';
+      contenedorTemporal.style.zIndex = '-1';
+      contenedorTemporal.innerHTML = htmlPropuesta;
+      document.body.appendChild(contenedorTemporal);
 
-      const cliente = campos.nombreCliente.value.trim() || '—';
-      const ruc = campos.rucCliente.value.trim();
-      const distrito = campos.distrito.value.trim() || '—';
-      const tipoVidrioTexto = TEXTO_VIDRIO[campos.tipoVidrio.value] || '—';
-      const materialTexto = TEXTO_MATERIAL[datos.materialSistema] || '—';
-      const colorAluminioTexto = {
-        natural: 'Natural', negro: 'Negro', blanco: 'Blanco', champagne: 'Champagne', madera: 'Acabado madera',
-      }[campos.colorAluminio.value] || '—';
-      const urgenciaTexto = {
-        normal: 'Normal', urgente: 'Urgente', evaluacion: 'Proyecto en evaluación',
-      }[campos.urgencia.value] || '—';
-      const tienePlanosTexto = campos.tienePlanos.value === 'si' ? 'Sí' : 'No';
-      const accesoriosTexto = datos.accesoriosSeleccionados.length
-        ? datos.accesoriosSeleccionados.map(a => TEXTO_ACCESORIOS[a] || a).join(', ')
-        : 'Sin accesorios especiales';
+      // Esperar un frame para que las fuentes/estilos se apliquen
+      // antes de capturar (evita texto desalineado en el canvas).
+      await new Promise((resolve) => setTimeout(resolve, 60));
 
-      const filasResumen = [
-        ['Cliente', cliente],
-        ['RUC / DNI', ruc || 'No registrado'],
-        ['Tipo de solución', datos.nombreSolucion],
-        ['Sistema / marco', materialTexto],
-        ['Tipo de vidrio', tipoVidrioTexto],
-        ['Color de aluminio', colorAluminioTexto],
-        ['Accesorios', accesoriosTexto],
-        ['Área total', `${datos.areaTotal.toFixed(2)} m²`],
-        ['Distrito', distrito],
-        ['Urgencia', urgenciaTexto],
-        ['¿Tiene planos o fotos?', tienePlanosTexto],
-      ];
-
-      y += 6;
-      doc.setFontSize(9.5);
-      filasResumen.forEach(([etiqueta, valor]) => {
-        doc.setFont('helvetica', 'bold');
-        doc.setTextColor(...colorGris);
-        doc.text(etiqueta + ':', margenX, y);
-        doc.setFont('helvetica', 'normal');
-        doc.setTextColor(...colorNegro);
-        const lineasValor = doc.splitTextToSize(String(valor), anchoUtil - 48);
-        doc.text(lineasValor, margenX + 48, y);
-        y += Math.max(lineasValor.length * 4.6, 5.4);
+      // 3. Capturar la plantilla como imagen de alta resolución.
+      const nodoPdf = contenedorTemporal.querySelector('#pdfRoot');
+      const canvas = await window.html2canvas(nodoPdf, {
+        scale: 2,
+        useCORS: true,
+        backgroundColor: '#ffffff',
+        logging: false,
       });
+      const imagenCanvas = canvas.toDataURL('image/jpeg', 0.92);
 
-      // --- Caja de precio final (sin desglose de costos ni utilidad) ---
-      y += 6;
-      const cajaAlto = 24;
-      doc.setFillColor(245, 243, 238);
-      doc.setDrawColor(...colorNaranja);
-      doc.setLineWidth(0.6);
-      doc.roundedRect(margenX, y, anchoUtil, cajaAlto, 2, 2, 'FD');
+      // 4. Insertar la imagen capturada en un documento jsPDF A4.
+      const { jsPDF } = window.jspdf;
+      const doc = new jsPDF({ unit: 'mm', format: 'a4' });
+      const anchoA4 = 210;
+      const altoA4 = (canvas.height * anchoA4) / canvas.width;
+      doc.addImage(imagenCanvas, 'JPEG', 0, 0, anchoA4, altoA4);
 
-      doc.setFont('helvetica', 'normal');
-      doc.setFontSize(9);
-      doc.setTextColor(...colorGris);
-      doc.text('INVERSIÓN TOTAL DEL PROYECTO', margenX + 8, y + 8);
-
-      doc.setFont('helvetica', 'bold');
-      doc.setFontSize(17);
-      doc.setTextColor(...colorNegro);
-      doc.text(formatearSoles(datos.precioFinal) + ' (incluye IGV)', margenX + 8, y + 18);
-
-      y += cajaAlto + 10;
-
-      // --- Salto de página para especificaciones técnicas y condiciones ---
-      if (y > 230){
-        doc.addPage();
-        y = 22;
-      }
-
-      // --- Especificaciones técnicas ---
-      doc.setFont('helvetica', 'bold');
-      doc.setFontSize(11.5);
-      doc.setTextColor(...colorNegro);
-      doc.text('Especificaciones técnicas', margenX, y);
-      y += 1.5;
-      doc.setDrawColor(225, 225, 225);
-      doc.line(margenX, y, 210 - margenX, y);
-
-      y += 7;
-      doc.setFont('helvetica', 'normal');
-      doc.setFontSize(9.5);
-      doc.setTextColor(...colorNegro);
-      const descripcionBase = DESCRIPCION_SERVICIO[datos.tipoSolucion] || '';
-      const medidasTexto = `Medidas referenciales: ${datos.ancho} m de ancho x ${datos.alto} m de alto` +
-        (datos.cantidad > 1 ? `, cantidad de ${datos.cantidad} unidades` : '') +
-        ` (área aproximada de ${datos.areaTotal.toFixed(2)} m²).`;
-      const parrafoServicio = `${descripcionBase} ${medidasTexto} Vidrio especificado: ${tipoVidrioTexto}. Sistema/marco: ${materialTexto}.`;
-      const lineasServicio = doc.splitTextToSize(parrafoServicio, anchoUtil);
-      doc.text(lineasServicio, margenX, y);
-      y += lineasServicio.length * 5 + 4;
-
-      if (datos.accesoriosSeleccionados.length){
-        const lineaAcc = `Accesorios y prestaciones incluidas: ${accesoriosTexto}.`;
-        const lineasAcc = doc.splitTextToSize(lineaAcc, anchoUtil);
-        doc.text(lineasAcc, margenX, y);
-        y += lineasAcc.length * 5 + 4;
-      }
-
-      const lineaInstalacion = 'Consideraciones de instalación: el plazo y procedimiento se confirman tras la visita técnica, según accesos al lugar de trabajo, altura de instalación y condiciones de la estructura existente.';
-      const lineasInstalacion = doc.splitTextToSize(lineaInstalacion, anchoUtil);
-      doc.text(lineasInstalacion, margenX, y);
-      y += lineasInstalacion.length * 5 + 8;
-
-      // --- Recomendación técnica ---
-      const recomendacion = generarRecomendacion(datos);
-      if (recomendacion){
-        doc.setFont('helvetica', 'bold');
-        doc.setFontSize(11.5);
-        doc.setTextColor(...colorNegro);
-        doc.text('Recomendación técnica', margenX, y);
-        y += 1.5;
-        doc.line(margenX, y, 210 - margenX, y);
-        y += 7;
-        doc.setFont('helvetica', 'italic');
-        doc.setFontSize(9.5);
-        doc.setTextColor(...colorGris);
-        const lineasReco = doc.splitTextToSize(recomendacion.replace(/^Recomendación:\s*/i, ''), anchoUtil);
-        doc.text(lineasReco, margenX, y);
-        y += lineasReco.length * 5 + 8;
-      }
-
-      // --- Nota legal ---
-      if (y > 250){ doc.addPage(); y = 22; }
-      doc.setFont('helvetica', 'bold');
-      doc.setFontSize(10.5);
-      doc.setTextColor(...colorNegro);
-      doc.text('Nota legal', margenX, y);
-      y += 1.5;
-      doc.setDrawColor(225, 225, 225);
-      doc.line(margenX, y, 210 - margenX, y);
-      y += 6;
-      doc.setFont('helvetica', 'normal');
-      doc.setFontSize(8.5);
-      doc.setTextColor(...colorGris);
-      const notaLegal = 'El presente documento constituye un presupuesto preliminar referencial. El precio definitivo será validado mediante visita técnica, verificación de medidas, accesorios, herrajes y condiciones reales de instalación. Validez de la propuesta: 15 días calendario desde la fecha de emisión.';
-      const lineasNota = doc.splitTextToSize(notaLegal, anchoUtil);
-      doc.text(lineasNota, margenX, y);
-
-      // --- Pie de página (en todas las páginas generadas) ---
-      const totalPaginas = doc.internal.getNumberOfPages();
-      for (let p = 1; p <= totalPaginas; p++){
-        doc.setPage(p);
-        const piePosY = 287;
-        doc.setDrawColor(225, 225, 225);
-        doc.setLineWidth(0.3);
-        doc.line(margenX, piePosY - 9, 210 - margenX, piePosY - 9);
-        doc.setFont('helvetica', 'normal');
-        doc.setFontSize(8);
-        doc.setTextColor(...colorGris);
-        doc.text(`${EMPRESA.web}  ·  ${EMPRESA.correo}  ·  WhatsApp ${EMPRESA.whatsapp}  ·  ${EMPRESA.instagram}`, margenX, piePosY - 3);
-        doc.text(`Página ${p} de ${totalPaginas}`, 210 - margenX, piePosY - 3, { align: 'right' });
-      }
+      // Si el contenido excede una página A4, jsPDF simplemente corta
+      // la imagen en la primera página; para esta plantilla (pensada
+      // para caber en una sola página A4) esto es aceptable. Si en el
+      // futuro el resumen crece mucho (muchos accesorios), considerar
+      // paginar la captura en vez de una sola imagen larga.
 
       const nombreArchivo = `Cotizacion_${numeroPropuesta}_${cliente.replace(/[^a-zA-Z0-9]/g, '_')}.pdf`;
       doc.save(nombreArchivo);
 
     } finally {
+      if (contenedorTemporal && contenedorTemporal.parentNode){
+        contenedorTemporal.parentNode.removeChild(contenedorTemporal);
+      }
       btnGenerarPdf.disabled = false;
       btnGenerarPdf.innerHTML = htmlOriginalBoton;
     }
