@@ -558,6 +558,7 @@ Solicito validación técnica para confirmar cotización.`;
 
   function generarPdfCliente(){
     console.log('[DIAGNOSTICO] generarPdfCliente() invocada. ultimoCalculo=', ultimoCalculo);
+    try {
     if (!ultimoCalculo){
       mostrarAlerta('Primero calcula un presupuesto para poder generar el PDF.');
       return;
@@ -724,7 +725,12 @@ Solicito validación técnica para confirmar cotización.`;
     doc.text(`${EMPRESA.nombre}  ·  ${EMPRESA.correo}  ·  WhatsApp ${EMPRESA.whatsapp}`, margenX, piePosY);
 
     const nombreArchivo = `Cotizacion_${numeroPropuesta}_${cliente.replace(/[^a-zA-Z0-9]/g, '_')}.pdf`;
+    console.log('[DIAGNOSTICO] llegando a doc.save con nombreArchivo=', nombreArchivo);
     doc.save(nombreArchivo);
+    console.log('[DIAGNOSTICO] doc.save() ejecutado sin lanzar excepcion');
+    } catch(errDiag) {
+      console.log('[DIAGNOSTICO] EXCEPCION CAPTURADA:', errDiag.message, errDiag.stack);
+    }
   }
 
   /* ========================================================
