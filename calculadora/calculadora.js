@@ -557,6 +557,7 @@ Solicito validación técnica para confirmar cotización.`;
      ======================================================== */
 
   function generarPdfCliente(){
+    console.log('[DIAGNOSTICO] generarPdfCliente() invocada. ultimoCalculo=', ultimoCalculo);
     if (!ultimoCalculo){
       mostrarAlerta('Primero calcula un presupuesto para poder generar el PDF.');
       return;
