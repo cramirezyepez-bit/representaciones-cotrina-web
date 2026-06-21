@@ -547,7 +547,7 @@ Solicito validación técnica para confirmar cotización.`;
     correo: 'cotrinaproyectos@gmail.com',
     whatsapp: '+51 957 441 379',
     web: 'alecomproyectos.github.io',
-    instagram: '@alecomproyectos',
+    instagram: '@representacionescotrina',
     ciudad: 'Lima, Perú',
   };
 
