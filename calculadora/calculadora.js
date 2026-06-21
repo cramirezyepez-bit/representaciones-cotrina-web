@@ -179,6 +179,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const campos = {
     nombreCliente: document.getElementById('nombreCliente'),
     rucCliente: document.getElementById('rucCliente'),
+    tipoCliente: document.getElementById('tipoCliente'),
     tipoSolucion: document.getElementById('tipoSolucion'),
     ancho: document.getElementById('ancho'),
     alto: document.getElementById('alto'),
@@ -372,6 +373,7 @@ document.addEventListener('DOMContentLoaded', () => {
     return {
       tipoSolucion,
       nombreSolucion: refBase.nombre,
+      tipoCliente: campos.tipoCliente ? campos.tipoCliente.value : 'residencial',
       ancho, alto, cantidad,
       areaPorUnidad, areaTotal,
       costoBase,
@@ -390,7 +392,7 @@ document.addEventListener('DOMContentLoaded', () => {
      RECOMENDACIONES TÉCNICAS POR COMBINACIÓN
      ======================================================== */
 
-  function generarRecomendacion(datos){
+  function generarRecomendacionBase(datos){
     const { tipoSolucion, materialSistema, tipoVidrio: _tv } = datos;
     const tipoVidrio = campos.tipoVidrio.value;
     const accesorios = datos.accesoriosSeleccionados;
@@ -423,6 +425,21 @@ document.addEventListener('DOMContentLoaded', () => {
       cerramiento: 'Para cerramientos de terraza, el sistema corredizo o plegable es el más usado para maximizar la apertura hacia el exterior. El ancho libre por hoja es clave.',
     };
     return generica[tipoSolucion] || 'Validar medidas finales con visita técnica antes de confirmar el presupuesto.';
+  }
+
+  // Frase adicional para clientes profesionales (arquitecto, diseñador,
+  // constructora) — se añade al final de la recomendación técnica sin
+  // alterar la lógica de negocio existente por combinación.
+  const CIERRE_PROFESIONAL = {
+    arquitecto: ' Quedamos a disposición de tu estudio para coordinar planos y detalles constructivos antes de la visita técnica.',
+    'diseñador': ' Podemos coordinar directamente contigo los acabados y especificaciones para mantener la coherencia del proyecto.',
+    constructora: ' Quedamos disponibles para coordinar cronograma de obra y condiciones de instalación con tu equipo técnico.',
+  };
+
+  function generarRecomendacion(datos){
+    const base = generarRecomendacionBase(datos);
+    const cierre = CIERRE_PROFESIONAL[datos.tipoCliente];
+    return cierre ? base + cierre : base;
   }
 
   /* ========================================================

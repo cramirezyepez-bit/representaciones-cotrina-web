@@ -339,6 +339,32 @@ nav.solid{
 .tb-text p{font-size:.82rem;color:var(--c4)}
 
 
+/* ─── PARA ARQUITECTOS ───────────────────────── */
+#para-arquitectos{
+  padding:clamp(64px,8vw,100px) 0;
+  background:var(--c2);
+  border-top:1px solid rgba(224,123,57,.18);
+  border-bottom:1px solid rgba(224,123,57,.18);
+  position:relative;overflow:hidden;
+}
+.pa-grid{
+  display:grid;grid-template-columns:1.3fr 1fr;gap:56px;align-items:center;
+}
+.pa-content .eyebrow{margin-bottom:14px}
+.pa-title{font-family:var(--ff-header);font-size:clamp(1.5rem,2.8vw,2.1rem);font-weight:400;color:var(--white);line-height:1.25;margin-bottom:14px;max-width:480px}
+.pa-text{font-size:.92rem;color:var(--c4);line-height:1.7;max-width:460px;margin-bottom:24px}
+.pa-points{display:flex;flex-direction:column;gap:10px;margin-bottom:28px}
+.pa-point{display:flex;align-items:flex-start;gap:10px;font-size:.85rem;color:var(--c5)}
+.pa-point svg{width:15px;height:15px;color:var(--accent);flex-shrink:0;margin-top:2px}
+.pa-actions{display:flex;gap:12px;flex-wrap:wrap}
+.pa-side{
+  border-left:1px solid rgba(255,255,255,.1);padding-left:40px;
+}
+.pa-stat{margin-bottom:24px}
+.pa-stat:last-child{margin-bottom:0}
+.pa-stat-num{font-family:var(--ff-header);font-size:2.2rem;color:var(--accent2);line-height:1}
+.pa-stat-lbl{font-size:.7rem;letter-spacing:.1em;text-transform:uppercase;color:var(--c4);margin-top:4px}
+
 /* ─── WHY ─────────────────────────────────────── */
 #why{padding:clamp(100px,14vw,180px) 0;background:var(--c1)}
 .why-grid{
@@ -547,6 +573,9 @@ footer{
   .srv-grid{grid-template-columns:1fr 1fr}
   .srv-card:first-child{grid-column:span 2;grid-row:span 1}
   .hero-watermark{font-size:min(34vw,260px)}
+  .pa-grid{grid-template-columns:1fr;gap:36px}
+  .pa-side{border-left:none;padding-left:0;border-top:1px solid rgba(255,255,255,.1);padding-top:28px;display:flex;gap:32px}
+  .pa-stat{margin-bottom:0}
 }
 @media(max-width:720px){
   #hero{padding:100px 20px 60px}
@@ -757,6 +786,52 @@ footer{
 </div>
 </section>
 
+<!-- ░ PARA ARQUITECTOS ░ -->
+<section id="para-arquitectos">
+<div class="container">
+  <div class="pa-grid">
+    <div class="pa-content reveal">
+      <span class="eyebrow">Para profesionales</span>
+      <h2 class="pa-title">¿Eres arquitecto, diseñador de interiores o llevas un proyecto en obra?</h2>
+      <p class="pa-text">Trabajamos directamente con estudios de arquitectura, diseñadores de interiores y constructoras desde la etapa de diseño — interpretando planos, coordinando medidas en obra y proponiendo el sistema técnico adecuado para cada proyecto.</p>
+      <div class="pa-points">
+        <div class="pa-point">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+          Lectura de planos y coordinación técnica directa con tu equipo
+        </div>
+        <div class="pa-point">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+          Sistemas de aluminio Thermia con respaldo de fabricante
+        </div>
+        <div class="pa-point">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+          Atención prioritaria para proyectos en etapa de especificación
+        </div>
+      </div>
+      <div class="pa-actions">
+        <a href="#contact" class="btn btn-primary">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+          Coordinar un proyecto
+        </a>
+        <a href="https://wa.me/51957441379?text=Hola%2C%20soy%20arquitecto%2Fdise%C3%B1ador%20y%20quisiera%20coordinar%20un%20proyecto" target="_blank" class="btn btn-ghost">
+          Hablar por WhatsApp
+        </a>
+      </div>
+    </div>
+    <div class="pa-side reveal">
+      <div class="pa-stat">
+        <div class="pa-stat-num">15+</div>
+        <div class="pa-stat-lbl">Años de experiencia técnica</div>
+      </div>
+      <div class="pa-stat">
+        <div class="pa-stat-num">800+</div>
+        <div class="pa-stat-lbl">Proyectos ejecutados</div>
+      </div>
+    </div>
+  </div>
+</div>
+</section>
+
 <!-- ░ WHY ░ -->
 <section id="why">
 <div class="container">
@@ -884,6 +959,16 @@ footer{
               <label for="fp">Teléfono *</label>
               <input type="tel" id="fp" placeholder="+51 999 999 999" required/>
             </div>
+          </div>
+          <div class="fg">
+            <label for="fperfil">¿Cómo nos contactas?</label>
+            <select id="fperfil">
+              <option value="">Seleccionar...</option>
+              <option>Cliente residencial</option>
+              <option>Arquitecto / Estudio de arquitectura</option>
+              <option>Diseñador de interiores</option>
+              <option>Constructora / Inmobiliaria</option>
+            </select>
           </div>
           <div class="fg">
             <label for="fs">Servicio requerido</label>
