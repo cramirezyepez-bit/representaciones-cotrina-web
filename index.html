@@ -98,9 +98,9 @@ nav.solid{
 /* Logo */
 .nav-logo{display:flex;align-items:center;gap:14px}
 .logo-divider{width:1px;height:30px;background:var(--accent);flex-shrink:0}
-.logo-text-wrap{display:flex;flex-direction:column;line-height:1}
-.logo-name{font-family:var(--ff-header);font-size:1.15rem;font-weight:400;color:var(--white);letter-spacing:.02em;line-height:1.1;display:block}
-.logo-tagline{font-size:.62rem;letter-spacing:.22em;text-transform:uppercase;color:var(--c4);margin-top:3px;display:block}
+.logo-text-wrap{display:flex;align-items:center;gap:7px}
+.logo-name{font-family:var(--ff-header);font-size:1.05rem;font-weight:400;color:var(--white);letter-spacing:.12em;line-height:1}
+.logo-tagline{font-family:var(--ff-header);font-size:1.05rem;font-weight:400;letter-spacing:.12em;text-transform:uppercase;color:var(--c4);line-height:1}
 
 /* Links */
 .nav-links{display:flex;align-items:center;gap:32px}
@@ -142,20 +142,18 @@ nav.solid{
   background:var(--c0);
 }
 .hero-visual{
-  position:absolute;top:0;right:0;bottom:0;
-  width:60%;
+  position:absolute;inset:0;
   overflow:hidden;
 }
 .hero-visual::before{
   content:'';position:absolute;inset:0;z-index:1;
   background:
-    linear-gradient(90deg, var(--c0) 0%, rgba(7,17,31,.55) 18%, rgba(7,17,31,.15) 45%, transparent 65%),
-    linear-gradient(180deg, rgba(7,17,31,.25) 0%, transparent 30%, transparent 70%, rgba(7,17,31,.45) 100%);
+    linear-gradient(90deg, var(--c0) 0%, rgba(7,17,31,.82) 22%, rgba(7,17,31,.5) 42%, rgba(7,17,31,.18) 60%, rgba(7,17,31,.08) 100%);
 }
 .hero-bg{
-  position:absolute;top:-6%;left:-10%;right:-6%;bottom:-6%;
+  position:absolute;top:-6%;left:-6%;right:-6%;bottom:-6%;
   background:url('https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=1900&q=85') center/cover no-repeat;
-  filter:saturate(.92) brightness(.94);
+  filter:saturate(.95) brightness(.96);
   will-change:transform;
 }
 .hero-inner{
@@ -553,16 +551,13 @@ footer{
   .pa-grid{grid-template-columns:1fr;gap:28px}
   .pa-side{min-height:240px}
   .pa-stat{margin-bottom:0}
-  .hero-visual{width:68%}
   .hero-inner{max-width:60%}
 }
 @media(max-width:720px){
   #hero{padding:120px 20px 70px;min-height:90vh}
-  .hero-visual{width:100%;left:0}
   .hero-visual::before{
     background:linear-gradient(180deg, rgba(7,17,31,.55) 0%, rgba(7,17,31,.5) 45%, rgba(7,17,31,.88) 100%);
   }
-  .hero-bg{left:-6%}
   .hero-inner{max-width:100%;margin:0;padding:120px 20px 70px}
   #hero h1{font-size:clamp(1.7rem,7vw,2.3rem)}
   .hero-p{max-width:100%}
