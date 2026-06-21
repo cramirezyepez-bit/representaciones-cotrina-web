@@ -546,7 +546,7 @@ Solicito validación técnica para confirmar cotización.`;
     eslogan: 'Soluciones Arquitectónicas en Vidrio y Aluminio',
     correo: 'cotrinaproyectos@gmail.com',
     whatsapp: '+51 957 441 379',
-    web: 'alecomproyectos.github.io',
+    web: 'cotrinaproyectos.github.io',
     instagram: '@representacionescotrina',
     ciudad: 'Lima, Perú',
   };
