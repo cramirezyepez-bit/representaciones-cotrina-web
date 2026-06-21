@@ -49,13 +49,13 @@ img{display:block;max-width:100%}
 /* ─── UTILS ──────────────────────────────────── */
 .container{max-width:1140px;margin:0 auto;padding:0 24px}
 .eyebrow{
-  display:inline-flex;align-items:center;gap:8px;
-  font-size:.7rem;font-weight:600;letter-spacing:.18em;
+  display:inline-flex;align-items:center;gap:10px;
+  font-size:.68rem;font-weight:600;letter-spacing:.24em;
   text-transform:uppercase;color:var(--accent);
-  margin-bottom:14px;
+  margin-bottom:16px;
 }
-.eyebrow::before{content:'';width:20px;height:1px;background:var(--accent)}
-.section-title{font-family:var(--ff-serif);font-size:clamp(1.9rem,4vw,2.8rem);font-weight:400;color:var(--white);line-height:1.2;margin-bottom:14px}
+.eyebrow::before{content:'';width:24px;height:1px;background:var(--accent)}
+.section-title{font-family:var(--ff-serif);font-size:clamp(2rem,4.4vw,3.1rem);font-weight:400;color:var(--white);line-height:1.15;letter-spacing:-.01em;margin-bottom:14px}
 .section-sub{font-size:.97rem;color:var(--c4);max-width:480px;line-height:1.75}
 .divider{width:40px;height:2px;background:var(--accent);margin:20px 0}
 
@@ -104,16 +104,19 @@ nav.solid{
 .logo-tagline{font-size:.6rem;letter-spacing:.16em;text-transform:uppercase;color:var(--c4);margin-top:2px}
 
 /* Links */
-.nav-links{display:flex;align-items:center;gap:28px}
-.nav-links a{font-size:.8rem;letter-spacing:.05em;color:var(--c4);transition:color .25s}
+.nav-links{display:flex;align-items:center;gap:32px}
+.nav-links a{font-size:.72rem;letter-spacing:.12em;text-transform:uppercase;color:var(--c4);transition:color .25s;font-weight:500}
 .nav-links a:hover{color:var(--white)}
 .nav-cta{
   background:var(--accent);color:#fff;
-  padding:9px 20px;border-radius:var(--r);
-  font-size:.78rem;font-weight:500;
+  padding:10px 22px;border-radius:2px;
+  font-size:.68rem;font-weight:600;letter-spacing:.12em;text-transform:uppercase;
   transition:var(--ease);
 }
 .nav-cta:hover{background:var(--accent2);color:#fff}
+
+/* Scroll progress indicator — recurso editorial discreto */
+.nav-progress{position:absolute;bottom:0;left:0;height:1px;background:var(--accent);width:0%;transition:width .1s linear}
 
 /* Hamburger */
 .ham{display:none;flex-direction:column;gap:5px;background:none;border:none;cursor:pointer;padding:4px}
@@ -148,6 +151,16 @@ nav.solid{
   opacity:.6;pointer-events:none;
 }
 .hero-inner{position:relative;z-index:1;max-width:1140px;margin:0 auto;width:100%}
+
+/* Numeración editorial lateral — recurso de portafolio de estudio */
+.hero-edition{
+  display:flex;align-items:center;gap:14px;margin-bottom:36px;
+  opacity:0;animation:up .7s 0s forwards;
+}
+.hero-edition .he-num{font-family:var(--ff-serif);font-size:1.1rem;color:var(--accent2)}
+.hero-edition .he-line{width:48px;height:1px;background:var(--c3)}
+.hero-edition .he-lbl{font-size:.66rem;letter-spacing:.2em;text-transform:uppercase;color:var(--c4)}
+
 .hero-badge{
   display:inline-flex;align-items:center;gap:8px;
   background:rgba(224,123,57,.12);border:1px solid rgba(224,123,57,.25);
@@ -159,16 +172,19 @@ nav.solid{
 .hero-dot{width:6px;height:6px;border-radius:50%;background:var(--accent);flex-shrink:0}
 #hero h1{
   font-family:var(--ff-serif);
-  font-size:clamp(2.4rem,6.5vw,5rem);
-  font-weight:400;color:var(--white);line-height:1.1;
-  max-width:720px;
+  font-size:clamp(2.8rem,8.5vw,6.4rem);
+  font-weight:400;color:var(--white);line-height:.98;
+  letter-spacing:-.01em;
+  max-width:760px;
   opacity:0;animation:up .8s .25s forwards;
 }
 #hero h1 em{font-style:italic;color:var(--accent2)}
 .hero-p{
-  font-size:1rem;color:var(--c4);max-width:460px;
-  line-height:1.8;margin:20px 0 36px;
+  font-size:1rem;color:var(--c4);max-width:420px;
+  line-height:1.8;margin:24px 0 36px;
   opacity:0;animation:up .8s .4s forwards;
+  position:relative;padding-left:20px;
+  border-left:1px solid rgba(224,123,57,.4);
 }
 .hero-btns{
   display:flex;gap:12px;flex-wrap:wrap;
@@ -191,12 +207,20 @@ nav.solid{
 .hero-scroll-ind span{font-size:.6rem;letter-spacing:.18em;text-transform:uppercase;color:var(--c3)}
 .scroll-line{width:1px;height:36px;background:linear-gradient(to bottom,var(--c3),transparent);animation:scrollAnim 2s ease infinite}
 
+/* Marca de agua tipográfica lateral, fuera de flujo, puramente decorativa */
+.hero-watermark{
+  position:absolute;top:50%;right:-2vw;transform:translateY(-50%);
+  font-family:var(--ff-serif);font-size:min(22vw,260px);color:rgba(255,255,255,.025);
+  line-height:1;pointer-events:none;user-select:none;white-space:nowrap;z-index:0;
+}
+
 /* ─── SERVICES ───────────────────────────────── */
 #services{padding:100px 0;background:var(--c1)}
 .services-header{display:flex;justify-content:space-between;align-items:flex-end;flex-wrap:wrap;gap:24px;margin-bottom:52px}
 .srv-grid{
   display:grid;
-  grid-template-columns:repeat(auto-fit,minmax(200px,1fr));
+  grid-template-columns:1.4fr 1fr 1fr;
+  grid-template-rows:auto auto;
   gap:2px;
 }
 .srv-card{
@@ -213,6 +237,22 @@ nav.solid{
 }
 .srv-card:hover{background:#2d4455;transform:translateY(-4px)}
 .srv-card:hover::after{transform:scaleX(1)}
+
+/* La primera card (servicio insignia) ocupa el doble de alto y ancho — asimetría editorial */
+.srv-card:first-child{
+  grid-row:span 2;grid-column:span 1;
+  display:flex;flex-direction:column;justify-content:flex-end;
+  padding:40px 32px;
+}
+.srv-card:first-child .srv-icon{width:52px;height:52px;margin-bottom:auto}
+.srv-card:first-child .srv-icon svg{width:26px;height:26px}
+.srv-card:first-child h3{font-family:var(--ff-serif);font-size:1.7rem;font-weight:400;margin-top:24px}
+.srv-card:first-child p{font-size:.92rem;max-width:280px}
+.srv-card-num{
+  position:absolute;top:28px;right:28px;
+  font-family:var(--ff-serif);font-size:.9rem;color:rgba(255,255,255,.25);
+}
+
 .srv-icon{
   width:44px;height:44px;margin-bottom:20px;
   display:flex;align-items:center;justify-content:center;
@@ -224,9 +264,9 @@ nav.solid{
 .srv-card p{font-size:.84rem;color:var(--c4);line-height:1.65}
 .srv-tag{
   display:inline-block;margin-top:16px;
-  font-size:.65rem;letter-spacing:.12em;text-transform:uppercase;
+  font-size:.62rem;letter-spacing:.16em;text-transform:uppercase;
   color:var(--accent);border:1px solid rgba(224,123,57,.25);
-  padding:3px 10px;border-radius:40px;
+  padding:3px 10px;border-radius:2px;
 }
 
 /* ─── THERMIA ─────────────────────────────────── */
@@ -272,17 +312,23 @@ nav.solid{
   gap:1px;
   margin-top:52px;
   border:1px solid rgba(255,255,255,.04);
+  position:relative;
 }
 .why-card{
-  padding:36px 28px;background:var(--c1);
+  padding:40px 26px;background:var(--c1);
   transition:background var(--ease);
+  position:relative;
 }
 .why-card:hover{background:var(--c2)}
-.why-num{font-family:var(--ff-serif);font-size:2.5rem;color:rgba(224,123,57,.18);line-height:1;margin-bottom:14px}
+.why-card:not(:last-child)::after{
+  content:'';position:absolute;top:40px;bottom:40px;right:0;width:1px;
+  background:rgba(255,255,255,.06);
+}
+.why-num{font-family:var(--ff-serif);font-size:3.2rem;color:rgba(224,123,57,.22);line-height:1;margin-bottom:18px;letter-spacing:-.02em}
 .why-ico{color:var(--accent);margin-bottom:12px}
-.why-ico svg{width:28px;height:28px}
-.why-card h4{font-size:.95rem;font-weight:600;color:var(--white);margin-bottom:6px}
-.why-card p{font-size:.83rem;color:var(--c4);line-height:1.65}
+.why-ico svg{width:26px;height:26px}
+.why-card h4{font-size:.92rem;font-weight:600;color:var(--white);margin-bottom:6px;letter-spacing:.01em}
+.why-card p{font-size:.82rem;color:var(--c4);line-height:1.65}
 
 /* ─── GALLERY ─────────────────────────────────── */
 #gallery{padding:100px 0;background:var(--c0)}
@@ -296,20 +342,32 @@ nav.solid{
   gap:14px;
 }
 .gal-item{
-  position:relative;overflow:hidden;border-radius:var(--r-lg);cursor:pointer;
+  position:relative;overflow:hidden;border-radius:2px;cursor:pointer;
   box-shadow:0 18px 40px -18px rgba(0,0,0,.55);
 }
 .gal-item:first-child{grid-row:span 2}
 .gal-img{
   width:100%;height:100%;min-height:230px;
   background-size:cover;background-position:center;
-  transition:transform .8s cubic-bezier(.25,.46,.45,.94);
+  transition:transform .9s cubic-bezier(.25,.46,.45,.94);
+  filter:saturate(.92) contrast(1.04);
 }
 .gal-item:first-child .gal-img{min-height:474px}
 .gal-item::after{
   content:'';position:absolute;inset:0;
-  background:linear-gradient(to top,rgba(6,20,27,.55) 0%,transparent 45%);
+  background:linear-gradient(to top,rgba(6,20,27,.75) 0%,rgba(6,20,27,.1) 38%,transparent 60%);
   pointer-events:none;
+}
+/* Categoría rotada verticalmente + numeración — recurso de portafolio editorial */
+.gal-meta{
+  position:absolute;left:18px;bottom:18px;z-index:2;
+  display:flex;align-items:flex-end;gap:10px;pointer-events:none;
+}
+.gal-meta-num{font-family:var(--ff-serif);font-size:.8rem;color:rgba(255,255,255,.55)}
+.gal-meta-cat{
+  writing-mode:vertical-rl;text-orientation:mixed;
+  font-size:.62rem;letter-spacing:.18em;text-transform:uppercase;color:var(--c4);
+  transform:rotate(180deg);
 }
 .gal-ov{
   position:absolute;inset:0;
@@ -329,6 +387,8 @@ nav.solid{
 .gal-ov-lbl{font-size:.7rem;letter-spacing:.14em;text-transform:uppercase;color:var(--accent2)}
 .gal-item:hover .gal-img{transform:scale(1.08)}
 .gal-item:hover .gal-ov{opacity:1}
+.gal-item:hover .gal-meta{opacity:0;transition:opacity .25s}
+
 
 /* Lightbox */
 .lb{display:none;position:fixed;inset:0;background:rgba(0,0,0,.92);z-index:200;align-items:center;justify-content:center}
@@ -441,6 +501,11 @@ footer{
   .ham{display:flex}
   .why-grid{grid-template-columns:repeat(2,1fr)}
   .why-card{grid-column:span 1}
+  .why-card:not(:last-child)::after{display:none}
+  .why-card:nth-child(odd)::after{content:'';position:absolute;top:40px;bottom:40px;right:0;width:1px;background:rgba(255,255,255,.06);display:block}
+  .srv-grid{grid-template-columns:1fr 1fr}
+  .srv-card:first-child{grid-column:span 2;grid-row:span 1}
+  .hero-watermark{font-size:min(34vw,260px)}
 }
 @media(max-width:720px){
   #hero{padding:100px 20px 60px}
@@ -450,11 +515,17 @@ footer{
   .form-row-2{grid-template-columns:1fr}
   .hero-stats{gap:24px}
   .services-header{flex-direction:column;align-items:flex-start}
+  .srv-grid{grid-template-columns:1fr}
+  .srv-card:first-child{grid-column:span 1}
+  .hero-edition .he-lbl{font-size:.6rem}
+  .hero-watermark{display:none}
+  .gal-meta-cat{font-size:.58rem}
 }
 @media(max-width:520px){
   .gal-grid{grid-template-columns:1fr}
   .why-grid{grid-template-columns:1fr}
   .why-card{grid-column:span 1}
+  .why-card::after,.why-card:nth-child(odd)::after{display:none}
   .hero-btns{flex-direction:column;align-items:flex-start}
   .ft-inner{flex-direction:column;align-items:flex-start}
 }
@@ -487,6 +558,7 @@ footer{
     <span></span><span></span><span></span>
   </button>
 </div>
+<div class="nav-progress" id="navProgress"></div>
 </nav>
 
 <!-- ░ MOBILE MENU ░ -->
@@ -503,7 +575,13 @@ footer{
 <section id="hero">
   <div class="hero-bg"></div>
   <div class="hero-noise"></div>
+  <span class="hero-watermark" aria-hidden="true">ALECOM</span>
   <div class="hero-inner">
+    <div class="hero-edition">
+      <span class="he-num">01</span>
+      <span class="he-line"></span>
+      <span class="he-lbl">Vidrio &amp; Aluminio · Lima, Perú</span>
+    </div>
     <div class="hero-badge">
       <span class="hero-dot"></span>
       Distribuidor Oficial Thermia · Lima, Perú
@@ -549,9 +627,10 @@ footer{
       </div>
       <h3>Ventanas</h3>
       <p>Corredizas, proyectantes y batientes en aluminio y vidrio templado.</p>
-      <span class="srv-tag">Residencial & Comercial</span>
+      <span class="srv-tag">Residencial &amp; Comercial</span>
     </div>
     <div class="srv-card">
+      <span class="srv-card-num">02</span>
       <div class="srv-icon">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="3" width="20" height="18" rx="1"/><line x1="12" y1="3" x2="12" y2="21"/></svg>
       </div>
@@ -560,6 +639,7 @@ footer{
       <span class="srv-tag">Interiores</span>
     </div>
     <div class="srv-card">
+      <span class="srv-card-num">03</span>
       <div class="srv-icon">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 3h7v18H3z"/><path d="M14 3h7v18h-7"/></svg>
       </div>
@@ -568,6 +648,7 @@ footer{
       <span class="srv-tag">Baños</span>
     </div>
     <div class="srv-card">
+      <span class="srv-card-num">04</span>
       <div class="srv-icon">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
       </div>
@@ -576,6 +657,7 @@ footer{
       <span class="srv-tag">Comercial</span>
     </div>
     <div class="srv-card">
+      <span class="srv-card-num">05</span>
       <div class="srv-icon">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M11 4a2 2 0 114 0v1a1 1 0 001 1h3a1 1 0 011 1v3a1 1 0 01-1 1h-1a2 2 0 100 4h1a1 1 0 011 1v3a1 1 0 01-1 1h-3a1 1 0 01-1-1v-1a2 2 0 10-4 0v1a1 1 0 01-1 1H7a1 1 0 01-1-1v-3a1 1 0 00-1-1H4a2 2 0 110-4h1a1 1 0 001-1V7a1 1 0 011-1h3a1 1 0 001-1V4z"/></svg>
       </div>
@@ -678,22 +760,27 @@ footer{
   <div class="gal-grid reveal">
     <div class="gal-item" data-src="img/proyectos/proyecto-04.jpg" data-lbl="Fachada Arquitectónica">
       <div class="gal-img" style="background-image:url('img/proyectos/proyecto-04.jpg')"></div>
+      <div class="gal-meta"><span class="gal-meta-num">01</span><span class="gal-meta-cat">Fachadas</span></div>
       <div class="gal-ov"><div class="gal-ov-inner"><div class="gal-ov-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7"/></svg></div><span class="gal-ov-lbl">Fachada arquitectónica</span></div></div>
     </div>
     <div class="gal-item" data-src="https://images.unsplash.com/photo-1622137276463-5d2b374cad11?w=1200&q=80" data-lbl="Fachada Minimalista en Concreto">
       <div class="gal-img" style="background-image:url('https://images.unsplash.com/photo-1622137276463-5d2b374cad11?w=900&q=80')"></div>
+      <div class="gal-meta"><span class="gal-meta-num">02</span><span class="gal-meta-cat">Fachadas</span></div>
       <div class="gal-ov"><div class="gal-ov-inner"><div class="gal-ov-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7"/></svg></div><span class="gal-ov-lbl">Fachada minimalista en concreto</span></div></div>
     </div>
     <div class="gal-item" data-src="https://images.unsplash.com/photo-1571781418606-70265b9cce90?w=1200&q=80" data-lbl="Mampara de Ducha Frameless">
       <div class="gal-img" style="background-image:url('https://images.unsplash.com/photo-1571781418606-70265b9cce90?w=900&q=80')"></div>
+      <div class="gal-meta"><span class="gal-meta-num">03</span><span class="gal-meta-cat">Mamparas</span></div>
       <div class="gal-ov"><div class="gal-ov-inner"><div class="gal-ov-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7"/></svg></div><span class="gal-ov-lbl">Mampara de ducha frameless</span></div></div>
     </div>
     <div class="gal-item" data-src="https://images.unsplash.com/photo-1598257212525-34d72ccf27c3?w=1200&q=80" data-lbl="Arquitectura Residencial Contemporánea">
       <div class="gal-img" style="background-image:url('https://images.unsplash.com/photo-1598257212525-34d72ccf27c3?w=900&q=80')"></div>
+      <div class="gal-meta"><span class="gal-meta-num">04</span><span class="gal-meta-cat">Residencial</span></div>
       <div class="gal-ov"><div class="gal-ov-inner"><div class="gal-ov-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7"/></svg></div><span class="gal-ov-lbl">Arquitectura residencial contemporánea</span></div></div>
     </div>
     <div class="gal-item" data-src="https://images.unsplash.com/photo-1523217582562-09d0def993a6?w=1200&q=80" data-lbl="Residencia Moderna con Jardín">
       <div class="gal-img" style="background-image:url('https://images.unsplash.com/photo-1523217582562-09d0def993a6?w=900&q=80')"></div>
+      <div class="gal-meta"><span class="gal-meta-num">05</span><span class="gal-meta-cat">Residencial</span></div>
       <div class="gal-ov"><div class="gal-ov-inner"><div class="gal-ov-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7"/></svg></div><span class="gal-ov-lbl">Residencia moderna con jardín</span></div></div>
     </div>
   </div>
@@ -800,7 +887,12 @@ footer{
 <script>
 // Nav scroll
 const navEl=document.getElementById('nav');
-window.addEventListener('scroll',()=>navEl.classList.toggle('solid',scrollY>40));
+const navProgress=document.getElementById('navProgress');
+window.addEventListener('scroll',()=>{
+  navEl.classList.toggle('solid',scrollY>40);
+  const max=document.documentElement.scrollHeight-window.innerHeight;
+  navProgress.style.width=(max>0?(scrollY/max*100):0)+'%';
+});
 
 // Mobile menu
 const ham=document.getElementById('ham'),mob=document.getElementById('mobMenu'),mc=document.getElementById('mobClose');
