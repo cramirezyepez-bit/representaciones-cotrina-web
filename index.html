@@ -224,13 +224,14 @@ nav.solid{
   transition:var(--ease);
   cursor:default;
   display:flex;flex-direction:column;
+  border:1px solid var(--border-soft);
 }
 .srv-card::after{
   content:'';position:absolute;bottom:0;left:0;right:0;height:2px;
   background:var(--accent);transform:scaleX(0);transform-origin:left;
   transition:transform .4s ease;
 }
-.srv-card:hover{background:#28394a;transform:translateY(-4px)}
+.srv-card:hover{transform:translateY(-4px) scale(1.02);box-shadow:0 24px 50px -20px rgba(0,0,0,.45);border-color:rgba(217,133,59,.25)}
 .srv-card:hover::after{transform:scaleX(1)}
 
 .srv-card-num{
@@ -268,7 +269,7 @@ nav.solid{
 }
 .thermia-img{
   width:100%;height:clamp(420px,46vw,560px);border-radius:2px;overflow:hidden;
-  background:url('https://images.unsplash.com/photo-1486325212027-8081e485255e?w=1100&q=85') center/cover;
+  background:url('https://images.unsplash.com/photo-1546628484-186b26f3e572?w=1100&q=85') center/cover;
   position:relative;
   filter:saturate(.85) contrast(1.05);
 }
@@ -721,8 +722,8 @@ footer{
     </div>
     <div class="thermia-content reveal">
       <span class="eyebrow">Alianza de marca</span>
-      <h2 class="section-title">Distribuidor<br>Thermia</h2>
-      <p class="section-sub">Trabajamos con sistemas de aluminio Thermia, reconocidos por su calidad, diseño y durabilidad.</p>
+      <h2 class="section-title">Distribuidor Thermia</h2>
+      <p class="section-sub">Trabajamos con sistemas de aluminio Thermia reconocidos por su diseño, eficiencia y durabilidad.</p>
       <div class="thermia-benefits">
         <div class="tb-row">
           <div class="tb-check"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg></div>
@@ -738,7 +739,7 @@ footer{
         </div>
         <div class="tb-row">
           <div class="tb-check"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg></div>
-          <div class="tb-text"><h4>Garantía del fabricante</h4><p>Como distribuidores autorizados, respaldamos cada producto.</p></div>
+          <div class="tb-text"><h4>Respaldo oficial</h4><p>Como distribuidores autorizados, respaldamos cada producto.</p></div>
         </div>
       </div>
     </div>
