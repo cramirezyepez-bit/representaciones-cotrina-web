@@ -323,12 +323,19 @@ nav.solid{
 .pa-point svg{width:15px;height:15px;color:var(--accent);flex-shrink:0;margin-top:2px}
 .pa-actions{display:flex;gap:12px;flex-wrap:wrap}
 .pa-side{
-  border-left:1px solid rgba(255,255,255,.1);padding-left:40px;
+  position:relative;border-radius:4px;overflow:hidden;
+  min-height:380px;
+  background:
+    linear-gradient(180deg, rgba(8,19,30,.15) 0%, rgba(8,19,30,.75) 100%),
+    url('https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=900&q=85') center/cover no-repeat;
 }
-.pa-stat{margin-bottom:24px}
-.pa-stat:last-child{margin-bottom:0}
+.pa-stats{
+  position:absolute;bottom:0;left:0;right:0;
+  display:flex;gap:36px;padding:28px 30px;
+}
+.pa-stat{margin-bottom:0}
 .pa-stat-num{font-family:var(--ff-header);font-size:2.2rem;color:var(--accent2);line-height:1}
-.pa-stat-lbl{font-size:.7rem;letter-spacing:.1em;text-transform:uppercase;color:var(--c4);margin-top:4px}
+.pa-stat-lbl{font-size:.7rem;letter-spacing:.1em;text-transform:uppercase;color:var(--c5);margin-top:4px}
 
 /* ─── WHY ─────────────────────────────────────── */
 #why{padding:clamp(100px,14vw,180px) 0;background:var(--c1)}
@@ -536,8 +543,8 @@ footer{
   .why-card:not(:last-child)::after{display:none}
   .why-card:nth-child(odd)::after{content:'';position:absolute;top:40px;bottom:40px;right:0;width:1px;background:rgba(255,255,255,.06);display:block}
   .srv-grid{grid-template-columns:1fr 1fr}
-  .pa-grid{grid-template-columns:1fr;gap:36px}
-  .pa-side{border-left:none;padding-left:0;border-top:1px solid rgba(255,255,255,.1);padding-top:28px;display:flex;gap:32px}
+  .pa-grid{grid-template-columns:1fr;gap:28px}
+  .pa-side{min-height:240px}
   .pa-stat{margin-bottom:0}
 }
 @media(max-width:720px){
@@ -753,25 +760,24 @@ footer{
   <div class="pa-grid">
     <div class="pa-content reveal">
       <span class="eyebrow">Para profesionales</span>
-      <h2 class="pa-title">¿Eres arquitecto, diseñador de interiores o llevas un proyecto en obra?</h2>
-      <p class="pa-text">Trabajamos directamente con estudios de arquitectura, diseñadores de interiores y constructoras desde la etapa de diseño — interpretando planos, coordinando medidas en obra y proponiendo el sistema técnico adecuado para cada proyecto.</p>
+      <h2 class="pa-title">Trabajamos contigo, desde el diseño hasta la obra.</h2>
+      <p class="pa-text">Acompañamos a arquitectos, diseñadores y constructoras con soluciones en aluminio Thermia, interpretación de planos y coordinación técnica.</p>
       <div class="pa-points">
         <div class="pa-point">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
-          Lectura de planos y coordinación técnica directa con tu equipo
+          Coordinación técnica personalizada
         </div>
         <div class="pa-point">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
-          Sistemas de aluminio Thermia con respaldo de fabricante
+          Sistemas Thermia con respaldo oficial
         </div>
         <div class="pa-point">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
-          Atención prioritaria para proyectos en etapa de especificación
+          Acompañamiento en cada etapa
         </div>
       </div>
       <div class="pa-actions">
         <a href="#contact" class="btn btn-primary">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
           Coordinar un proyecto
         </a>
         <a href="https://wa.me/51957441379?text=Hola%2C%20soy%20arquitecto%2Fdise%C3%B1ador%20y%20quisiera%20coordinar%20un%20proyecto" target="_blank" class="btn btn-ghost">
@@ -780,13 +786,15 @@ footer{
       </div>
     </div>
     <div class="pa-side reveal">
-      <div class="pa-stat">
-        <div class="pa-stat-num">15+</div>
-        <div class="pa-stat-lbl">Años de experiencia técnica</div>
-      </div>
-      <div class="pa-stat">
-        <div class="pa-stat-num">800+</div>
-        <div class="pa-stat-lbl">Proyectos ejecutados</div>
+      <div class="pa-stats">
+        <div class="pa-stat">
+          <div class="pa-stat-num">15+</div>
+          <div class="pa-stat-lbl">Años de experiencia</div>
+        </div>
+        <div class="pa-stat">
+          <div class="pa-stat-num">800+</div>
+          <div class="pa-stat-lbl">Proyectos ejecutados</div>
+        </div>
       </div>
     </div>
   </div>
