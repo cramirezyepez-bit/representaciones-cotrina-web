@@ -276,23 +276,27 @@ nav.solid{
   position:relative;
 }
 .thermia-img{
-  width:100%;height:400px;border-radius:var(--r-lg);overflow:hidden;
+  width:100%;height:420px;border-radius:2px;overflow:hidden;
   background:url('https://images.unsplash.com/photo-1486325212027-8081e485255e?w=800&q=80') center/cover;
   position:relative;
+  filter:saturate(.85) contrast(1.05);
 }
 .thermia-img::after{
   content:'';position:absolute;inset:0;
-  background:linear-gradient(135deg,rgba(6,20,27,.3) 0%,transparent 60%);
-  border-radius:var(--r-lg);
+  background:linear-gradient(160deg,rgba(6,20,27,.55) 0%,rgba(224,123,57,.08) 45%,transparent 75%);
+}
+.thermia-visual::before{
+  content:'';position:absolute;top:18px;left:18px;right:-18px;bottom:-18px;
+  border:1px solid rgba(224,123,57,.3);z-index:-1;pointer-events:none;
 }
 .thermia-badge{
-  position:absolute;bottom:-20px;right:-20px;
-  background:var(--accent);color:#fff;
-  padding:20px 24px;border-radius:var(--r);
+  position:absolute;bottom:0;right:0;transform:translate(28%,28%);
+  background:var(--c0);border:1px solid var(--accent);color:#fff;
+  padding:22px 26px;border-radius:2px;
   text-align:center;
 }
-.thermia-badge .tb-big{font-family:var(--ff-serif);font-size:1.4rem;display:block;line-height:1}
-.thermia-badge .tb-sm{font-size:.65rem;letter-spacing:.12em;text-transform:uppercase;opacity:.85;margin-top:4px;display:block}
+.thermia-badge .tb-big{font-family:var(--ff-serif);font-size:1.5rem;display:block;line-height:1;color:var(--accent2)}
+.thermia-badge .tb-sm{font-size:.62rem;letter-spacing:.16em;text-transform:uppercase;opacity:.85;margin-top:5px;display:block;color:var(--c5)}
 .thermia-content .section-title{margin-bottom:16px}
 .thermia-benefits{margin-top:32px;display:flex;flex-direction:column;gap:16px}
 .tb-row{display:flex;align-items:flex-start;gap:14px}
@@ -303,6 +307,7 @@ nav.solid{
 .tb-check svg{width:14px;height:14px}
 .tb-text h4{font-size:.92rem;font-weight:500;color:var(--white);margin-bottom:2px}
 .tb-text p{font-size:.82rem;color:var(--c4)}
+
 
 /* ─── WHY ─────────────────────────────────────── */
 #why{padding:100px 0;background:var(--c1)}
@@ -423,19 +428,23 @@ nav.solid{
 
 /* Form */
 .form-box{
-  background:var(--c2);padding:36px;border-radius:var(--r-lg);
-  border:1px solid rgba(255,255,255,.05);
+  background:transparent;padding:40px;border-radius:2px;
+  border:1px solid rgba(255,255,255,.1);
+  position:relative;
+}
+.form-box::before{
+  content:'';position:absolute;top:0;left:0;width:24px;height:1px;background:var(--accent);
 }
 .form-box h3{font-family:var(--ff-serif);font-size:1.5rem;color:var(--white);margin-bottom:24px;font-weight:400}
 .fg{margin-bottom:14px}
 .fg label{
-  display:block;font-size:.68rem;letter-spacing:.1em;text-transform:uppercase;
+  display:block;font-size:.66rem;letter-spacing:.14em;text-transform:uppercase;
   color:var(--c4);font-weight:500;margin-bottom:6px;
 }
 .fg input,.fg select,.fg textarea{
   width:100%;padding:11px 14px;
-  background:var(--c1);border:1px solid var(--c3);
-  border-radius:var(--r);font-family:var(--ff-sans);
+  background:var(--c0);border:1px solid var(--c3);
+  border-radius:2px;font-family:var(--ff-sans);
   font-size:.87rem;color:var(--c5);outline:none;
   transition:border-color .25s;resize:none;
 }
@@ -496,7 +505,8 @@ footer{
 /* ─── RESPONSIVE ──────────────────────────────── */
 @media(max-width:960px){
   .thermia-grid,.contact-grid{grid-template-columns:1fr;gap:48px}
-  .thermia-badge{bottom:-14px;right:14px}
+  .thermia-badge{position:absolute;bottom:-18px;right:14px;transform:none;padding:16px 18px}
+  .thermia-visual::before{right:18px;bottom:18px}
   .nav-links{display:none}
   .ham{display:flex}
   .why-grid{grid-template-columns:repeat(2,1fr)}
