@@ -145,10 +145,11 @@ nav.solid{
   padding:120px 24px 80px;
 }
 .hero-bg{
-  position:absolute;inset:0;
+  position:absolute;top:-8%;left:0;right:0;bottom:-8%;
   background:
     linear-gradient(to bottom right, rgba(6,20,27,.5) 0%, rgba(17,33,45,.32) 45%, rgba(6,20,27,.18) 100%),
     url('https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=1900&q=85') center/cover no-repeat;
+  will-change:transform;
 }
 .hero-noise{
   position:absolute;inset:0;
@@ -156,6 +157,17 @@ nav.solid{
   opacity:.6;pointer-events:none;
 }
 .hero-inner{position:relative;z-index:1;max-width:1140px;margin:0 auto;width:100%}
+
+/* Líneas guía arquitectónicas — refuerzan la sensación de grilla editorial (punto 8 del brief) */
+.hero-guides{position:absolute;inset:0;z-index:0;pointer-events:none;max-width:1140px;margin:0 auto;display:none}
+@media(min-width:961px){
+  .hero-guides{display:block}
+  .hero-guides::before,.hero-guides::after{
+    content:'';position:absolute;top:0;bottom:0;width:1px;background:rgba(255,255,255,.07);
+  }
+  .hero-guides::before{left:0}
+  .hero-guides::after{left:62%}
+}
 
 /* Numeración editorial lateral — recurso de portafolio de estudio. Reducida para menor protagonismo del texto */
 .hero-edition{
@@ -224,8 +236,8 @@ nav.solid{
 
 
 /* ─── SERVICES ───────────────────────────────── */
-#services{padding:100px 0;background:var(--c1)}
-.services-header{display:flex;justify-content:space-between;align-items:flex-end;flex-wrap:wrap;gap:24px;margin-bottom:52px}
+#services{padding:clamp(100px,14vw,180px) 0;background:var(--c1)}
+.services-header{display:flex;justify-content:space-between;align-items:flex-end;flex-wrap:wrap;gap:24px;margin-bottom:clamp(52px,6vw,84px)}
 .srv-grid{
   display:grid;
   grid-template-columns:1.4fr 1fr 1fr;
@@ -280,14 +292,19 @@ nav.solid{
 }
 
 /* ─── THERMIA ─────────────────────────────────── */
-#thermia{padding:100px 0;background:var(--c0)}
-.thermia-grid{display:grid;grid-template-columns:1fr 1fr;gap:80px;align-items:center}
+#thermia{padding:clamp(100px,14vw,180px) 0;background:var(--c0)}
+.thermia-grid{display:grid;grid-template-columns:1fr 1fr;gap:80px;align-items:center;position:relative}
+.thermia-grid::before{
+  content:'';position:absolute;top:-40px;bottom:-40px;left:calc(50% - 40px);width:1px;
+  background:rgba(255,255,255,.07);
+}
+@media(max-width:960px){.thermia-grid::before{display:none}}
 .thermia-visual{
   position:relative;
 }
 .thermia-img{
-  width:100%;height:420px;border-radius:2px;overflow:hidden;
-  background:url('https://images.unsplash.com/photo-1486325212027-8081e485255e?w=800&q=80') center/cover;
+  width:100%;height:clamp(420px,46vw,560px);border-radius:2px;overflow:hidden;
+  background:url('https://images.unsplash.com/photo-1486325212027-8081e485255e?w=1100&q=85') center/cover;
   position:relative;
   filter:saturate(.85) contrast(1.05);
 }
@@ -309,10 +326,13 @@ nav.solid{
 .thermia-badge .tb-sm{font-size:.62rem;letter-spacing:.16em;text-transform:uppercase;opacity:.85;margin-top:5px;display:block;color:var(--c5)}
 .thermia-content .section-title{margin-bottom:16px}
 .thermia-benefits{margin-top:32px;display:flex;flex-direction:column;gap:16px}
-.tb-row{display:flex;align-items:flex-start;gap:14px}
+.tb-row{display:flex;align-items:flex-start;gap:14px;transition:transform .35s ease;padding:4px;border-radius:8px}
+.tb-row:hover{transform:translateX(4px)}
+.tb-row:hover .tb-check{background:rgba(224,123,57,.22)}
 .tb-check{
   width:28px;height:28px;background:rgba(224,123,57,.12);border-radius:6px;
   display:flex;align-items:center;justify-content:center;flex-shrink:0;color:var(--accent);margin-top:1px;
+  transition:background .35s ease;
 }
 .tb-check svg{width:14px;height:14px}
 .tb-text h4{font-size:.92rem;font-weight:500;color:var(--white);margin-bottom:2px}
@@ -320,12 +340,12 @@ nav.solid{
 
 
 /* ─── WHY ─────────────────────────────────────── */
-#why{padding:100px 0;background:var(--c1)}
+#why{padding:clamp(100px,14vw,180px) 0;background:var(--c1)}
 .why-grid{
   display:grid;
   grid-template-columns:repeat(5,1fr);
   gap:1px;
-  margin-top:52px;
+  margin-top:clamp(52px,6vw,84px);
   border:1px solid rgba(255,255,255,.04);
   position:relative;
 }
@@ -346,8 +366,8 @@ nav.solid{
 .why-card p{font-size:.82rem;color:var(--c4);line-height:1.65}
 
 /* ─── GALLERY ─────────────────────────────────── */
-#gallery{padding:100px 0;background:var(--c0)}
-.gal-header{text-align:center;margin-bottom:52px}
+#gallery{padding:clamp(100px,14vw,180px) 0;background:var(--c0)}
+.gal-header{text-align:center;margin-bottom:clamp(52px,6vw,84px)}
 .gal-header .section-sub{margin:0 auto}
 
 .gal-grid{
@@ -364,7 +384,7 @@ nav.solid{
 .gal-img{
   width:100%;height:100%;min-height:230px;
   background-size:cover;background-position:center;
-  transition:transform .9s cubic-bezier(.25,.46,.45,.94);
+  transition:transform .9s cubic-bezier(.25,.46,.45,.94),background-position .1s linear;
   filter:saturate(.92) contrast(1.04);
 }
 .gal-item:first-child .gal-img{min-height:474px}
@@ -414,7 +434,7 @@ nav.solid{
 .lb-x:hover{color:#fff}
 
 /* ─── CONTACT ─────────────────────────────────── */
-#contact{padding:100px 0;background:var(--c1)}
+#contact{padding:clamp(100px,14vw,180px) 0;background:var(--c1)}
 .contact-grid{display:grid;grid-template-columns:1fr 1.1fr;gap:72px;align-items:start}
 .contact-info .section-title{margin-bottom:12px}
 .contact-details{margin-top:36px;display:flex;flex-direction:column;gap:20px}
@@ -605,6 +625,7 @@ footer{
   <div class="hero-bg"></div>
   <div class="hero-noise"></div>
   <span class="hero-watermark" aria-hidden="true">ALECOM</span>
+  <div class="hero-guides" aria-hidden="true"></div>
   <div class="hero-inner">
     <div class="hero-edition">
       <span class="he-num">01</span>
@@ -787,7 +808,7 @@ footer{
     <p class="section-sub">Trabajos de ventanas, mamparas, puertas de ducha y fachadas en Lima.</p>
   </div>
   <div class="gal-grid reveal">
-    <div class="gal-item" data-src="img/proyectos/proyecto-04.jpg" data-lbl="Fachada Arquitectónica">
+    <div class="gal-item" data-src="img/proyectos/proyecto-04.jpg" data-lbl="Fachada Arquitectónica" data-parallax="true">
       <div class="gal-img" style="background-image:url('img/proyectos/proyecto-04.jpg')"></div>
       <div class="gal-meta"><span class="gal-meta-num">01</span><span class="gal-meta-cat">Fachadas</span></div>
       <div class="gal-ov"><div class="gal-ov-inner"><div class="gal-ov-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7"/></svg></div><span class="gal-ov-lbl">Fachada arquitectónica</span></div></div>
@@ -917,10 +938,41 @@ footer{
 // Nav scroll
 const navEl=document.getElementById('nav');
 const navProgress=document.getElementById('navProgress');
+const heroBgEl=document.querySelector('#hero .hero-bg');
+let parallaxTicking=false;
 window.addEventListener('scroll',()=>{
   navEl.classList.toggle('solid',scrollY>40);
   const max=document.documentElement.scrollHeight-window.innerHeight;
   navProgress.style.width=(max>0?(scrollY/max*100):0)+'%';
+  if(!parallaxTicking){
+    parallaxTicking=true;
+    requestAnimationFrame(()=>{
+      if(heroBgEl && scrollY<window.innerHeight*1.2){
+        heroBgEl.style.transform=`translateY(${scrollY*0.18}px)`;
+      }
+      parallaxTicking=false;
+    });
+  }
+});
+
+// Efecto de profundidad sutil en la imagen destacada de la galería (punto 4 del brief)
+const galParallaxItem=document.querySelector('.gal-item[data-parallax] .gal-img');
+let galTicking=false;
+function updateGalParallax(){
+  if(!galParallaxItem) return;
+  const rect=galParallaxItem.getBoundingClientRect();
+  const vh=window.innerHeight;
+  if(rect.bottom>0 && rect.top<vh){
+    const progress=(rect.top+rect.height/2-vh/2)/vh; // -0.5..0.5 aprox
+    const offset=50+progress*14; // oscila suavemente alrededor del centro
+    galParallaxItem.style.backgroundPosition=`center ${offset}%`;
+  }
+}
+window.addEventListener('scroll',()=>{
+  if(!galTicking){
+    galTicking=true;
+    requestAnimationFrame(()=>{updateGalParallax();galTicking=false;});
+  }
 });
 
 // Mobile menu
