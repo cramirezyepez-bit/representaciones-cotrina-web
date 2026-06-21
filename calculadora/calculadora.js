@@ -855,6 +855,55 @@ Solicito validación técnica para confirmar cotización.`;
     `;
   }
 
+  /**
+   * Espera a que todas las <img> dentro de `contenedor` terminen de
+   * cargar y decodificar. Usa img.decode() cuando está disponible
+   * (más fiable que 'load' para garantizar que el frame ya se puede
+   * pintar en un canvas); si decode() no existe o falla, recurre a
+   * los eventos load/error. Cada imagen tiene un timeout individual
+   * de 4s para que una imagen caída nunca cuelgue la generación del
+   * PDF completo — en ese caso simplemente se continúa sin bloquear.
+   *
+   * Causa raíz del bug histórico de "render en blanco" en el PDF: se
+   * usaba un setTimeout fijo de 60ms antes de llamar a html2canvas,
+   * insuficiente cuando la imagen va embebida como dataURL base64
+   * (puede pesar varios cientos de KB y tardar más en decodificarse
+   * en el navegador del usuario). No era un problema de CORS: el
+   * fetch de la imagen ya se completaba con éxito antes de este
+   * punto — el fallo era de timing en el pintado del <img>.
+   */
+  function esperarImagenesListas(contenedor){
+    const imgs = Array.from(contenedor.querySelectorAll('img'));
+    if (!imgs.length) return Promise.resolve();
+
+    const esperarUna = (img) => new Promise((resolve) => {
+      const finalizar = () => resolve();
+      const timeoutId = setTimeout(finalizar, 4000);
+
+      const yaCargada = img.complete && img.naturalWidth > 0;
+      if (yaCargada && typeof img.decode === 'function'){
+        img.decode().then(() => { clearTimeout(timeoutId); finalizar(); }).catch(() => { clearTimeout(timeoutId); finalizar(); });
+        return;
+      }
+      if (yaCargada){
+        clearTimeout(timeoutId);
+        finalizar();
+        return;
+      }
+      img.addEventListener('load', () => {
+        if (typeof img.decode === 'function'){
+          img.decode().then(() => { clearTimeout(timeoutId); finalizar(); }).catch(() => { clearTimeout(timeoutId); finalizar(); });
+        } else {
+          clearTimeout(timeoutId);
+          finalizar();
+        }
+      }, { once: true });
+      img.addEventListener('error', () => { clearTimeout(timeoutId); finalizar(); }, { once: true });
+    });
+
+    return Promise.all(imgs.map(esperarUna));
+  }
+
   async function generarPdfCliente(){
     if (!ultimoCalculo){
       mostrarAlerta('Primero calcula un presupuesto para poder generar el PDF.');
@@ -897,9 +946,13 @@ Solicito validación técnica para confirmar cotización.`;
       contenedorTemporal.innerHTML = htmlPropuesta;
       document.body.appendChild(contenedorTemporal);
 
-      // Esperar un frame para que las fuentes/estilos se apliquen
-      // antes de capturar (evita texto desalineado en el canvas).
-      await new Promise((resolve) => setTimeout(resolve, 60));
+      // Esperar a que TODAS las imágenes del contenedor temporal
+      // terminen de cargar y decodificar antes de capturar.
+      await esperarImagenesListas(contenedorTemporal);
+
+      // Frame adicional de seguridad para que el navegador termine de
+      // aplicar fuentes/estilos tras la decodificación de imágenes.
+      await new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)));
 
       // 3. Capturar la plantilla como imagen de alta resolución.
       const nodoPdf = contenedorTemporal.querySelector('#pdfRoot');

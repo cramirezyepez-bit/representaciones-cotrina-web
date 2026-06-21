@@ -74,7 +74,7 @@ img{ max-width:100%; display:block; }
   position: relative;
   background: var(--negro);
   color: var(--hueso);
-  padding: 64px 24px 84px;
+  padding: clamp(64px,8vw,96px) 24px clamp(84px,9vw,110px);
   overflow: hidden;
 }
 .hero-grid-lines{
@@ -154,7 +154,7 @@ img{ max-width:100%; display:block; }
   padding-bottom: 16px;
   border-bottom: 1px solid var(--linea-oscura);
 }
-.calc-card-head-spaced{ margin-top: 34px; }
+.calc-card-head-spaced{ margin-top: 44px; }
 .calc-step{
   font-family: var(--font-condensed);
   font-weight: 600;
