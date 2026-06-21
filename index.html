@@ -368,42 +368,37 @@ nav.solid{
 
 .gal-grid{
   display:grid;
-  grid-template-columns:repeat(3,1fr);
-  grid-template-rows:auto;
-  gap:14px;
+  grid-template-columns:repeat(2,1fr);
+  gap:36px;
 }
 .gal-item{
-  position:relative;overflow:hidden;border-radius:2px;cursor:pointer;
-  box-shadow:0 18px 40px -18px rgba(0,0,0,.55);
+  position:relative;overflow:hidden;border-radius:4px;cursor:pointer;
+  box-shadow:0 24px 50px -22px rgba(0,0,0,.55);
 }
-.gal-item:first-child{grid-row:span 2}
 .gal-img{
-  width:100%;height:100%;min-height:230px;
+  width:100%;height:420px;
   background-size:cover;background-position:center;
-  transition:transform .9s cubic-bezier(.25,.46,.45,.94),background-position .1s linear;
+  transition:transform 1s cubic-bezier(.25,.46,.45,.94);
   filter:saturate(.92) contrast(1.04);
 }
-.gal-item:first-child .gal-img{min-height:474px}
 .gal-item::after{
   content:'';position:absolute;inset:0;
-  background:linear-gradient(to top,rgba(8,19,30,.75) 0%,rgba(8,19,30,.1) 38%,transparent 60%);
+  background:linear-gradient(to top,rgba(8,19,30,.82) 0%,rgba(8,19,30,.15) 45%,transparent 65%);
   pointer-events:none;
 }
-/* Categoría rotada verticalmente + numeración — recurso de portafolio editorial */
 .gal-meta{
-  position:absolute;left:18px;bottom:18px;z-index:2;
-  display:flex;align-items:flex-end;gap:10px;pointer-events:none;
+  position:absolute;left:28px;bottom:28px;z-index:2;
+  pointer-events:none;
 }
-.gal-meta-num{font-family:var(--ff-serif);font-size:.8rem;color:rgba(255,255,255,.55)}
+.gal-meta-num{font-family:var(--ff-header);font-size:1.1rem;color:var(--accent2);display:block;margin-bottom:4px}
 .gal-meta-cat{
-  writing-mode:vertical-rl;text-orientation:mixed;
-  font-family:var(--ff-sub);
-  font-size:.62rem;letter-spacing:.18em;text-transform:uppercase;color:var(--c4);
-  transform:rotate(180deg);
+  font-family:var(--ff-header);
+  font-size:1.5rem;font-weight:300;color:var(--white);
+  display:block;letter-spacing:.01em;
 }
 .gal-ov{
   position:absolute;inset:0;
-  background:rgba(8,19,30,.5);
+  background:rgba(8,19,30,.55);
   display:flex;align-items:center;justify-content:center;
   opacity:0;transition:opacity var(--ease);
   z-index:1;
@@ -417,7 +412,7 @@ nav.solid{
 }
 .gal-ov-icon svg{width:18px;height:18px}
 .gal-ov-lbl{font-family:var(--ff-sub);font-size:.7rem;letter-spacing:.14em;text-transform:uppercase;color:var(--accent2)}
-.gal-item:hover .gal-img{transform:scale(1.08)}
+.gal-item:hover .gal-img{transform:scale(1.05)}
 .gal-item:hover .gal-ov{opacity:1}
 .gal-item:hover .gal-meta{opacity:0;transition:opacity .25s}
 
@@ -555,13 +550,11 @@ footer{
   .hero-points{flex-direction:column;gap:14px}
   .hero-btns{width:100%}
   .hero-btns .btn{flex:1;justify-content:center}
-  .gal-grid{grid-template-columns:repeat(2,1fr)}
-  .gal-item:first-child{grid-row:span 1}
-  .gal-item:first-child .gal-img{min-height:230px}
+  .gal-img{height:300px}
   .form-row-2{grid-template-columns:1fr}
   .services-header{flex-direction:column;align-items:flex-start}
   .srv-grid{grid-template-columns:1fr}
-  .gal-meta-cat{font-size:.58rem}
+  .gal-meta-cat{font-size:1.2rem}
 }
 @media(max-width:520px){
   .gal-grid{grid-template-columns:1fr}
@@ -848,30 +841,25 @@ footer{
     <p class="section-sub">Trabajos de ventanas, mamparas, puertas de ducha y fachadas en Lima.</p>
   </div>
   <div class="gal-grid reveal">
-    <div class="gal-item" data-src="img/proyectos/proyecto-04.jpg" data-lbl="Fachada Arquitectónica" data-parallax="true">
+    <div class="gal-item" data-src="img/proyectos/proyecto-04.jpg" data-lbl="Fachadas">
       <div class="gal-img" style="background-image:url('img/proyectos/proyecto-04.jpg')"></div>
       <div class="gal-meta"><span class="gal-meta-num">01</span><span class="gal-meta-cat">Fachadas</span></div>
       <div class="gal-ov"><div class="gal-ov-inner"><div class="gal-ov-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7"/></svg></div><span class="gal-ov-lbl">Fachada arquitectónica</span></div></div>
     </div>
-    <div class="gal-item" data-src="https://images.unsplash.com/photo-1622137276463-5d2b374cad11?w=1200&q=80" data-lbl="Fachada Minimalista en Concreto">
-      <div class="gal-img" style="background-image:url('https://images.unsplash.com/photo-1622137276463-5d2b374cad11?w=900&q=80')"></div>
-      <div class="gal-meta"><span class="gal-meta-num">02</span><span class="gal-meta-cat">Fachadas</span></div>
-      <div class="gal-ov"><div class="gal-ov-inner"><div class="gal-ov-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7"/></svg></div><span class="gal-ov-lbl">Fachada minimalista en concreto</span></div></div>
-    </div>
-    <div class="gal-item" data-src="https://images.unsplash.com/photo-1571781418606-70265b9cce90?w=1200&q=80" data-lbl="Mampara de Ducha Frameless">
+    <div class="gal-item" data-src="https://images.unsplash.com/photo-1571781418606-70265b9cce90?w=1200&q=80" data-lbl="Mamparas">
       <div class="gal-img" style="background-image:url('https://images.unsplash.com/photo-1571781418606-70265b9cce90?w=900&q=80')"></div>
-      <div class="gal-meta"><span class="gal-meta-num">03</span><span class="gal-meta-cat">Mamparas</span></div>
+      <div class="gal-meta"><span class="gal-meta-num">02</span><span class="gal-meta-cat">Mamparas</span></div>
       <div class="gal-ov"><div class="gal-ov-inner"><div class="gal-ov-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7"/></svg></div><span class="gal-ov-lbl">Mampara de ducha frameless</span></div></div>
     </div>
-    <div class="gal-item" data-src="https://images.unsplash.com/photo-1598257212525-34d72ccf27c3?w=1200&q=80" data-lbl="Arquitectura Residencial Contemporánea">
-      <div class="gal-img" style="background-image:url('https://images.unsplash.com/photo-1598257212525-34d72ccf27c3?w=900&q=80')"></div>
-      <div class="gal-meta"><span class="gal-meta-num">04</span><span class="gal-meta-cat">Residencial</span></div>
-      <div class="gal-ov"><div class="gal-ov-inner"><div class="gal-ov-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7"/></svg></div><span class="gal-ov-lbl">Arquitectura residencial contemporánea</span></div></div>
+    <div class="gal-item" data-src="https://images.unsplash.com/photo-1758565811176-ccd94357a844?w=1200&q=80" data-lbl="Ventanas">
+      <div class="gal-img" style="background-image:url('https://images.unsplash.com/photo-1758565811176-ccd94357a844?w=900&q=80')"></div>
+      <div class="gal-meta"><span class="gal-meta-num">03</span><span class="gal-meta-cat">Ventanas</span></div>
+      <div class="gal-ov"><div class="gal-ov-inner"><div class="gal-ov-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7"/></svg></div><span class="gal-ov-lbl">Ventana de aluminio</span></div></div>
     </div>
-    <div class="gal-item" data-src="https://images.unsplash.com/photo-1523217582562-09d0def993a6?w=1200&q=80" data-lbl="Residencia Moderna con Jardín">
-      <div class="gal-img" style="background-image:url('https://images.unsplash.com/photo-1523217582562-09d0def993a6?w=900&q=80')"></div>
-      <div class="gal-meta"><span class="gal-meta-num">05</span><span class="gal-meta-cat">Residencial</span></div>
-      <div class="gal-ov"><div class="gal-ov-inner"><div class="gal-ov-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7"/></svg></div><span class="gal-ov-lbl">Residencia moderna con jardín</span></div></div>
+    <div class="gal-item" data-src="https://images.unsplash.com/photo-1622137276463-5d2b374cad11?w=1200&q=80" data-lbl="Puertas de ducha">
+      <div class="gal-img" style="background-image:url('https://images.unsplash.com/photo-1622137276463-5d2b374cad11?w=900&q=80')"></div>
+      <div class="gal-meta"><span class="gal-meta-num">04</span><span class="gal-meta-cat">Puertas de ducha</span></div>
+      <div class="gal-ov"><div class="gal-ov-inner"><div class="gal-ov-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7"/></svg></div><span class="gal-ov-lbl">Puerta de ducha</span></div></div>
     </div>
   </div>
 </div>
