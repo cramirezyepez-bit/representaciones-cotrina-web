@@ -7,25 +7,27 @@
 <title>COTRINA Proyectos</title>
 <link rel="preconnect" href="https://fonts.googleapis.com"/>
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
-<link href="https://fonts.googleapis.com/css2?family=Tenor+Sans&family=Poppins:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@200;300;400;500;600&display=swap" rel="stylesheet"/>
 <style>
 /* ─── TOKENS ─────────────────────────────────── */
 :root{
-  --c0:#06141B;   /* fondo profundo */
-  --c1:#11212D;   /* fondo secciones */
-  --c2:#253745;   /* superficies / cards */
-  --c3:#4A5C6A;   /* bordes / líneas */
-  --c4:#9BA8AB;   /* texto secundario */
-  --c5:#CCD0CF;   /* texto primario claro */
-  --white:#FFFFFF;
-  --accent:#E07B39;  /* naranja logo */
-  --accent2:#F0A05A; /* naranja suave */
+  --c0:#08131E;   /* fondo principal */
+  --c1:#0B151D;   /* fondo secundario */
+  --c1b:#14202B;  /* fondo secundario alterno */
+  --c2:#1F3040;   /* tarjetas */
+  --c3:#4A5C6A;   /* bordes / líneas auxiliares */
+  --c4:#A9B2BA;   /* texto secundario */
+  --c5:#F4F4F2;   /* texto principal */
+  --white:#F4F4F2;
+  --accent:#D9853B;  /* naranja acento */
+  --accent2:#E49B55; /* naranja hover */
+  --border-soft:rgba(255,255,255,.08);
 
-  --ff-header:'Tenor Sans',Georgia,serif;
-  --ff-sub:'Poppins',system-ui,sans-serif;
-  --ff-body:'Inter',system-ui,sans-serif;
+  --ff-header:'Oswald',system-ui,sans-serif;
+  --ff-sub:'Oswald',system-ui,sans-serif;
+  --ff-body:'Oswald',system-ui,sans-serif;
   --ff-sans:var(--ff-body);
-  --ff-serif:var(--ff-body);
+  --ff-serif:var(--ff-header);
 
   --r:10px;
   --r-lg:16px;
@@ -59,7 +61,7 @@ img{display:block;max-width:100%}
   margin-bottom:16px;
 }
 .eyebrow::before{content:'';width:24px;height:1px;background:var(--accent)}
-.section-title{font-family:var(--ff-header);font-size:clamp(2rem,4.4vw,3.1rem);font-weight:400;color:var(--white);line-height:1.15;letter-spacing:-.01em;margin-bottom:14px}
+.section-title{font-family:var(--ff-header);font-size:clamp(2rem,4.4vw,3.1rem);font-weight:300;color:var(--white);line-height:1.15;letter-spacing:-.01em;margin-bottom:14px}
 .section-sub{font-size:.97rem;color:var(--c4);max-width:480px;line-height:1.75}
 .divider{width:40px;height:2px;background:var(--accent);margin:20px 0}
 
@@ -72,7 +74,7 @@ img{display:block;max-width:100%}
   transition:var(--ease);white-space:nowrap;
 }
 .btn-primary{background:var(--accent);color:#fff}
-.btn-primary:hover{background:var(--accent2);transform:translateY(-2px);box-shadow:0 8px 28px rgba(224,123,57,.35)}
+.btn-primary:hover{background:var(--accent2);transform:translateY(-2px);box-shadow:0 8px 28px rgba(217,133,59,.35)}
 .btn-ghost{background:transparent;color:var(--c5);border:1px solid var(--c3)}
 .btn-ghost:hover{border-color:var(--c5);color:var(--white);transform:translateY(-2px)}
 .btn-wa{background:#25D366;color:#fff}
@@ -86,9 +88,9 @@ nav{
   transition:var(--ease);
 }
 nav.solid{
-  background:rgba(6,20,27,.93);
+  background:rgba(8,19,30,.93);
   backdrop-filter:blur(18px);
-  border-bottom:1px solid rgba(255,255,255,.05);
+  border-bottom:1px solid var(--border-soft);
   padding:12px 24px;
 }
 .nav-wrap{max-width:1140px;margin:0 auto;display:flex;align-items:center;justify-content:space-between;gap:24px}
@@ -114,12 +116,12 @@ nav.solid{
 .nav-cta{
   font-family:var(--ff-sub);
   background:transparent;color:var(--c5);
-  border:1px solid rgba(255,255,255,.22);
+  border:1px solid var(--accent);
   padding:9px 20px;border-radius:24px;
   font-size:.68rem;font-weight:500;letter-spacing:.1em;text-transform:uppercase;
   transition:var(--ease);
 }
-.nav-cta:hover{background:rgba(255,255,255,.06);border-color:rgba(255,255,255,.4);color:var(--white)}
+.nav-cta:hover{background:rgba(217,133,59,.1);border-color:var(--accent2);color:var(--white)}
 
 /* Scroll progress indicator — recurso editorial discreto */
 .nav-progress{position:absolute;bottom:0;left:0;height:1px;background:var(--accent);width:0%;transition:width .1s linear}
@@ -148,7 +150,7 @@ nav.solid{
 .hero-bg{
   position:absolute;top:-8%;left:0;right:0;bottom:-8%;
   background:
-    linear-gradient(180deg, rgba(6,20,27,.62) 0%, rgba(6,20,27,.46) 55%, rgba(6,20,27,.68) 100%),
+    linear-gradient(180deg, rgba(8,19,30,.62) 0%, rgba(8,19,30,.46) 55%, rgba(8,19,30,.68) 100%),
     url('https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=1900&q=85') center/cover no-repeat;
   will-change:transform;
 }
@@ -221,7 +223,7 @@ nav.solid{
   background:var(--accent);transform:scaleX(0);transform-origin:left;
   transition:transform .4s ease;
 }
-.srv-card:hover{background:#2d4455;transform:translateY(-4px)}
+.srv-card:hover{background:#28394a;transform:translateY(-4px)}
 .srv-card:hover::after{transform:scaleX(1)}
 
 .srv-card-num{
@@ -232,7 +234,7 @@ nav.solid{
 .srv-icon{
   width:44px;height:44px;margin-bottom:20px;
   display:flex;align-items:center;justify-content:center;
-  background:rgba(224,123,57,.1);border-radius:var(--r);
+  background:rgba(217,133,59,.1);border-radius:var(--r);
   color:var(--accent);
 }
 .srv-icon svg{width:22px;height:22px}
@@ -242,7 +244,7 @@ nav.solid{
   display:inline-block;margin-top:16px;align-self:flex-start;
   font-family:var(--ff-sub);
   font-size:.62rem;letter-spacing:.16em;text-transform:uppercase;
-  color:var(--accent);border:1px solid rgba(224,123,57,.25);
+  color:var(--accent);border:1px solid rgba(217,133,59,.25);
   padding:3px 10px;border-radius:2px;
 }
 
@@ -265,11 +267,11 @@ nav.solid{
 }
 .thermia-img::after{
   content:'';position:absolute;inset:0;
-  background:linear-gradient(160deg,rgba(6,20,27,.55) 0%,rgba(224,123,57,.08) 45%,transparent 75%);
+  background:linear-gradient(160deg,rgba(8,19,30,.55) 0%,rgba(217,133,59,.08) 45%,transparent 75%);
 }
 .thermia-visual::before{
   content:'';position:absolute;top:18px;left:18px;right:-18px;bottom:-18px;
-  border:1px solid rgba(224,123,57,.3);z-index:-1;pointer-events:none;
+  border:1px solid rgba(217,133,59,.3);z-index:-1;pointer-events:none;
 }
 .thermia-badge{
   position:absolute;bottom:0;right:0;transform:translate(28%,28%);
@@ -283,9 +285,9 @@ nav.solid{
 .thermia-benefits{margin-top:32px;display:flex;flex-direction:column;gap:16px}
 .tb-row{display:flex;align-items:flex-start;gap:14px;transition:transform .35s ease;padding:4px;border-radius:8px}
 .tb-row:hover{transform:translateX(4px)}
-.tb-row:hover .tb-check{background:rgba(224,123,57,.22)}
+.tb-row:hover .tb-check{background:rgba(217,133,59,.22)}
 .tb-check{
-  width:28px;height:28px;background:rgba(224,123,57,.12);border-radius:6px;
+  width:28px;height:28px;background:rgba(217,133,59,.12);border-radius:6px;
   display:flex;align-items:center;justify-content:center;flex-shrink:0;color:var(--accent);margin-top:1px;
   transition:background .35s ease;
 }
@@ -298,8 +300,8 @@ nav.solid{
 #para-arquitectos{
   padding:clamp(64px,8vw,100px) 0;
   background:var(--c2);
-  border-top:1px solid rgba(224,123,57,.18);
-  border-bottom:1px solid rgba(224,123,57,.18);
+  border-top:1px solid rgba(217,133,59,.18);
+  border-bottom:1px solid rgba(217,133,59,.18);
   position:relative;overflow:hidden;
 }
 .pa-grid{
@@ -340,7 +342,7 @@ nav.solid{
   content:'';position:absolute;top:40px;bottom:40px;right:0;width:1px;
   background:rgba(255,255,255,.06);
 }
-.why-num{font-family:var(--ff-serif);font-size:3.2rem;color:rgba(224,123,57,.22);line-height:1;margin-bottom:18px;letter-spacing:-.02em}
+.why-num{font-family:var(--ff-serif);font-size:3.2rem;color:rgba(217,133,59,.22);line-height:1;margin-bottom:18px;letter-spacing:-.02em}
 .why-ico{color:var(--accent);margin-bottom:12px}
 .why-ico svg{width:26px;height:26px}
 .why-card h4{font-size:.92rem;font-weight:600;color:var(--white);margin-bottom:6px;letter-spacing:.01em}
@@ -371,7 +373,7 @@ nav.solid{
 .gal-item:first-child .gal-img{min-height:474px}
 .gal-item::after{
   content:'';position:absolute;inset:0;
-  background:linear-gradient(to top,rgba(6,20,27,.75) 0%,rgba(6,20,27,.1) 38%,transparent 60%);
+  background:linear-gradient(to top,rgba(8,19,30,.75) 0%,rgba(8,19,30,.1) 38%,transparent 60%);
   pointer-events:none;
 }
 /* Categoría rotada verticalmente + numeración — recurso de portafolio editorial */
@@ -388,7 +390,7 @@ nav.solid{
 }
 .gal-ov{
   position:absolute;inset:0;
-  background:rgba(6,20,27,.5);
+  background:rgba(8,19,30,.5);
   display:flex;align-items:center;justify-content:center;
   opacity:0;transition:opacity var(--ease);
   z-index:1;
@@ -534,7 +536,7 @@ footer{
   #hero{padding:120px 20px 70px;min-height:90vh}
   #hero .hero-bg{
     background:
-      linear-gradient(180deg, rgba(6,20,27,.66) 0%, rgba(6,20,27,.5) 55%, rgba(6,20,27,.72) 100%),
+      linear-gradient(180deg, rgba(8,19,30,.66) 0%, rgba(8,19,30,.5) 55%, rgba(8,19,30,.72) 100%),
       url('https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=1200&q=85') center/cover no-repeat;
   }
   #hero h1{font-size:clamp(1.7rem,7vw,2.3rem);max-width:100%}
@@ -567,19 +569,17 @@ footer{
   <a href="#" class="nav-logo">
     <div class="logo-circle">
       <svg viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
-        <path d="M4 8h24M4 16h16M4 24h20" stroke="#E07B39" stroke-width="2" stroke-linecap="round"/>
-        <rect x="20" y="14" width="10" height="12" rx="1" stroke="#9BA8AB" stroke-width="1.5"/>
+        <path d="M4 8h24M4 16h20M4 24h16" stroke="#F4F4F2" stroke-width="2" stroke-linecap="round"/>
       </svg>
     </div>
     <div class="logo-text-wrap">
-      <span class="logo-name">COTRINA Proyectos</span>
+      <span class="logo-name">COTRINA PROYECTOS</span>
     </div>
   </a>
   <ul class="nav-links">
-    <li><a href="#services">Servicios</a></li>
-    <li><a href="#thermia">Thermia</a></li>
     <li><a href="#why">Nosotros</a></li>
     <li><a href="#gallery">Proyectos</a></li>
+    <li><a href="#services">Servicios</a></li>
     <li><a href="#contact" class="nav-cta">Cotizar</a></li>
   </ul>
   <button class="ham" id="ham" aria-label="Menú">
@@ -592,10 +592,9 @@ footer{
 <!-- ░ MOBILE MENU ░ -->
 <div class="mob-menu" id="mobMenu">
   <button class="mob-close" id="mobClose">✕</button>
-  <a href="#services" onclick="closeMob()">Servicios</a>
-  <a href="#thermia" onclick="closeMob()">Thermia</a>
   <a href="#why" onclick="closeMob()">Nosotros</a>
   <a href="#gallery" onclick="closeMob()">Proyectos</a>
+  <a href="#services" onclick="closeMob()">Servicios</a>
   <a href="#contact" onclick="closeMob()">Cotizar</a>
 </div>
 
@@ -944,12 +943,12 @@ footer{
 <!-- ░ FOOTER ░ -->
 <footer>
 <div class="ft-inner">
-  <span class="ft-logo">COTRINA Proyectos</span>
+  <span class="ft-logo">COTRINA PROYECTOS</span>
   <div class="ft-links">
-    <a href="#services">Servicios</a>
-    <a href="#thermia">Thermia</a>
+    <a href="#why">Nosotros</a>
     <a href="#gallery">Proyectos</a>
-    <a href="#contact">Contacto</a>
+    <a href="#services">Servicios</a>
+    <a href="#contact">Cotizar</a>
   </div>
   <span class="ft-copy">© 2024 COTRINA Proyectos. Lima, Perú</span>
 </div>
