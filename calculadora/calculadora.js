@@ -1,5 +1,5 @@
 // ============================================================
-// ALECOM Proyectos — Cotizador interno (equipo comercial)
+// COTRINA Proyectos — Cotizador interno (equipo comercial)
 // Lógica de costos, utilidad, validación de formulario y WhatsApp
 // ============================================================
 
@@ -8,7 +8,7 @@ document.addEventListener('DOMContentLoaded', () => {
   /* ========================================================
      CONFIGURACIÓN DE COSTOS BASADA EN "PRESUPUESTO 26000"
      ========================================================
-     El archivo Excel "Presupuesto 26000" (ALECOM Proyectos)
+     El archivo Excel "Presupuesto 26000" (COTRINA Proyectos)
      contiene 711 hojas: cada una es una cotización histórica real
      ya cerrada con el cliente (número de presupuesto, medidas,
      descripción del sistema y PRECIO FINAL de línea). NO contiene
@@ -542,9 +542,9 @@ Solicito validación técnica para confirmar cotización.`;
      DATOS DE LA EMPRESA (para el encabezado del PDF)
      ======================================================== */
   const EMPRESA = {
-    nombre: 'ALECOM Proyectos',
+    nombre: 'COTRINA Proyectos',
     eslogan: 'Soluciones Arquitectónicas en Vidrio y Aluminio',
-    correo: 'alecomproyectos@gmail.com',
+    correo: 'cotrinaproyectos@gmail.com',
     whatsapp: '+51 957 441 379',
     web: 'alecomproyectos.github.io',
     instagram: '@alecomproyectos',
@@ -565,16 +565,16 @@ Solicito validación técnica para confirmar cotización.`;
      elegido en el formulario. Si en el futuro el equipo comercial
      cuenta con fotos propias de proyectos terminados por
      categoría, deben reemplazar estas URLs por las propias
-     (lo ideal es usar fotos reales de obra de ALECOM).
+     (lo ideal es usar fotos reales de obra de COTRINA).
      Fuente actual: fotografías con licencia Unsplash (uso
      comercial libre, sin atribución requerida) + 1 foto real de
-     ALECOM para fachada. Las 7 categorías tienen ahora una imagen
+     COTRINA para fachada. Las 7 categorías tienen ahora una imagen
      propia y distinta entre sí (antes, puerta y cerramiento
      reutilizaban por error la foto de fachada). Todas verificadas
      con licencia gratuita antes de su uso.
      ======================================================== */
   const RENDERS_POR_SOLUCION = {
-    fachada:     { url: 'img/proyectos/proyecto-04.jpg', credito: 'Obra ejecutada por ALECOM Proyectos' },
+    fachada:     { url: 'img/proyectos/proyecto-04.jpg', credito: 'Obra ejecutada por COTRINA Proyectos' },
     muroCortina: { url: 'https://images.unsplash.com/photo-1745015446589-7ee6f702d8c1?w=1400&q=80', credito: 'Imagen referencial — Fabian Kleiser / Unsplash' },
     ventana:     { url: 'https://images.unsplash.com/photo-1758565811176-ccd94357a844?w=1400&q=80', credito: 'Imagen referencial — Caroline Badran / Unsplash' },
     mampara:     { url: 'https://images.unsplash.com/photo-1723257891127-0d1ea314a720?w=1400&q=80', credito: 'Imagen referencial — Alex Tyson / Unsplash' },
@@ -780,7 +780,7 @@ Solicito validación técnica para confirmar cotización.`;
         <!-- ===== ENCABEZADO ===== -->
         <div class="head">
           <div class="head-left">
-            <span class="head-logo">ALECOM PROYECTOS</span>
+            <span class="head-logo">COTRINA PROYECTOS</span>
             <span class="head-eslogan">${EMPRESA.eslogan}</span>
           </div>
           <div class="head-right">
@@ -855,7 +855,7 @@ Solicito validación técnica para confirmar cotización.`;
         <!-- ===== PIE DE PÁGINA ===== -->
         <div class="foot">
           <div class="foot-block">
-            <b>ALECOM Proyectos S.A.C.</b>
+            <b>COTRINA Proyectos S.A.C.</b>
             RUC: [pendiente de registrar]
           </div>
           <div class="foot-block">
