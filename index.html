@@ -305,16 +305,27 @@ nav.solid{
 
 /* ─── PARA ARQUITECTOS ───────────────────────── */
 #para-arquitectos{
-  background:var(--c1b);
   position:relative;overflow:hidden;
-  display:flex;align-items:stretch;
   min-height:640px;
+  display:flex;align-items:stretch;
+}
+.pa-bg{
+  position:absolute;inset:-3%;
+  background:url('https://images.unsplash.com/photo-1761778371592-c39fe1148a94?w=1900&q=85') center/cover no-repeat;
+  filter:saturate(.9) brightness(.85);
+}
+.pa-bg::after{
+  content:'';position:absolute;inset:0;
+  background:
+    linear-gradient(90deg, var(--c1b) 0%, var(--c1b) 8%, rgba(19,31,44,.94) 22%, rgba(19,31,44,.75) 36%, rgba(19,31,44,.4) 52%, rgba(19,31,44,.12) 68%, transparent 82%),
+    linear-gradient(180deg, rgba(7,17,31,.1) 0%, transparent 30%, transparent 65%, rgba(7,17,31,.4) 100%);
 }
 .pa-grid{
-  display:flex;width:100%;align-items:stretch;gap:0;
+  position:relative;z-index:1;
+  display:flex;width:100%;align-items:stretch;
 }
 .pa-content{
-  width:42%;flex-shrink:0;
+  width:46%;flex-shrink:0;
   display:flex;flex-direction:column;justify-content:center;
   padding:80px clamp(24px,6vw,80px) 80px clamp(24px,6vw,80px);
 }
@@ -331,21 +342,13 @@ nav.solid{
 .pa-point-sub{font-size:.82rem;color:var(--c4);line-height:1.5}
 .pa-actions{display:flex;gap:12px;flex-wrap:wrap}
 .pa-side{
-  position:relative;overflow:hidden;
-  width:58%;flex-shrink:0;
-}
-.pa-side::before{
-  content:'';position:absolute;inset:-3%;
-  background:url('https://images.unsplash.com/photo-1761778371592-c39fe1148a94?w=1300&q=85') center/cover no-repeat;
-  filter:blur(2px) saturate(.92) brightness(.9);
-}
-.pa-side::after{
-  content:'';position:absolute;inset:0;
-  background:linear-gradient(180deg, rgba(7,17,31,.15) 0%, rgba(7,17,31,.22) 55%, rgba(7,17,31,.5) 100%);
+  position:relative;
+  width:54%;flex-shrink:0;
+  display:flex;flex-direction:column;justify-content:center;
 }
 .pa-stats{
-  position:absolute;top:80px;left:48px;z-index:1;
   display:flex;flex-direction:column;gap:24px;
+  padding-left:48px;
 }
 .pa-stat{margin-bottom:0;position:relative;padding-bottom:24px}
 .pa-stat:not(:last-child)::after{
@@ -562,9 +565,13 @@ footer{
   .why-card{grid-column:span 1}
   .srv-grid{grid-template-columns:1fr 1fr}
   #para-arquitectos{flex-direction:column;min-height:auto}
+  .pa-bg::after{
+    background:linear-gradient(180deg, var(--c1b) 0%, var(--c1b) 38%, rgba(19,31,44,.7) 55%, rgba(19,31,44,.25) 75%, transparent 100%);
+  }
   .pa-grid{flex-direction:column}
-  .pa-content{width:100%;padding:56px clamp(20px,5vw,60px)}
-  .pa-side{width:100%;min-height:320px}
+  .pa-content{width:100%;padding:56px clamp(20px,5vw,60px) 24px}
+  .pa-side{width:100%;min-height:280px;justify-content:flex-end;padding-bottom:40px}
+  .pa-stats{padding-left:clamp(20px,5vw,60px)}
   .hero-inner{max-width:60%}
 }
 @media(max-width:720px){
@@ -759,6 +766,7 @@ footer{
 
 <!-- ░ PARA ARQUITECTOS ░ -->
 <section id="para-arquitectos">
+  <div class="pa-bg"></div>
   <div class="pa-grid">
     <div class="pa-content reveal">
       <span class="eyebrow">Para profesionales</span>
