@@ -908,7 +908,7 @@ footer{
   </div>
   <div class="gal-grid reveal">
     <div class="gal-item" data-src="img/proyectos/fachada-concreto-piscina-v2.jpg" data-lbl="Fachadas">
-      <div class="gal-img" style="background-image:url('img/proyectos/fachada-concreto-piscina-v2.jpg');background-position:center 32%"></div>
+      <div class="gal-img" style="background-image:url('img/proyectos/fachada-concreto-piscina-v2.jpg');background-position:center 18%"></div>
       <div class="gal-meta">
         <span class="gal-meta-num">01</span>
         <div class="gal-meta-body">
@@ -919,7 +919,7 @@ footer{
       <span class="gal-arrow"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span>
     </div>
     <div class="gal-item" data-src="img/proyectos/mampara-vista-balcon.jpg" data-lbl="Mamparas">
-      <div class="gal-img" style="background-image:url('img/proyectos/mampara-vista-balcon.jpg');background-position:38% center"></div>
+      <div class="gal-img" style="background-image:url('img/proyectos/mampara-vista-balcon.jpg');background-position:38% 62%"></div>
       <div class="gal-meta">
         <span class="gal-meta-num">02</span>
         <div class="gal-meta-body">
@@ -930,7 +930,7 @@ footer{
       <span class="gal-arrow"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span>
     </div>
     <div class="gal-item" data-src="img/proyectos/ventana-esquina-luz.jpg" data-lbl="Ventanas">
-      <div class="gal-img" style="background-image:url('img/proyectos/ventana-esquina-luz.jpg');background-position:35% 30%"></div>
+      <div class="gal-img" style="background-image:url('img/proyectos/ventana-esquina-luz.jpg');background-position:35% 15%"></div>
       <div class="gal-meta">
         <span class="gal-meta-num">03</span>
         <div class="gal-meta-body">
@@ -941,7 +941,7 @@ footer{
       <span class="gal-arrow"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span>
     </div>
     <div class="gal-item" data-src="img/proyectos/puerta-ducha-negra.jpg" data-lbl="Puertas de ducha">
-      <div class="gal-img" style="background-image:url('img/proyectos/puerta-ducha-negra.jpg');background-position:center 22%"></div>
+      <div class="gal-img" style="background-image:url('img/proyectos/puerta-ducha-negra.jpg');background-position:center 10%"></div>
       <div class="gal-meta">
         <span class="gal-meta-num">04</span>
         <div class="gal-meta-body">
@@ -1144,10 +1144,12 @@ let lbIndex=0;
 
 function openLb(i){
   lbIndex=i;
-  renderLb();
   lb.classList.add('open');
-  requestAnimationFrame(()=>lb.classList.add('show'));
   document.body.style.overflow='hidden';
+  requestAnimationFrame(()=>{
+    lb.classList.add('show');
+    renderLb();
+  });
 }
 function renderLb(){
   const it=galItems[lbIndex];
@@ -1156,6 +1158,17 @@ function renderLb(){
   lbImg.style.opacity='0';
   const img=new Image();
   img.onload=()=>{
+    const stage=document.querySelector('.lb-stage');
+    const maxW=stage.clientWidth*0.96, maxH=stage.clientHeight*0.96;
+    const ratio=Math.min(maxW/img.naturalWidth, maxH/img.naturalHeight);
+    lbImg.style.width=(img.naturalWidth*ratio)+'px';
+    lbImg.style.height=(img.naturalHeight*ratio)+'px';
+    lbImg.style.backgroundImage=`url('${it.dataset.src}')`;
+    lbImg.style.opacity='1';
+  };
+  img.onerror=()=>{
+    // Red de seguridad: si la imagen no carga, al menos mostrar algo en vez de quedar en blanco
+    lbImg.style.width='60vw';lbImg.style.height='60vh';
     lbImg.style.backgroundImage=`url('${it.dataset.src}')`;
     lbImg.style.opacity='1';
   };
