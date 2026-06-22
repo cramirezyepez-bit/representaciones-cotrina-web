@@ -404,14 +404,9 @@ nav.solid{
 }
 .gal-img{
   width:100%;height:340px;
-  background-size:cover;background-position:center;
+  background-size:cover;
   transition:transform 1s cubic-bezier(.25,.46,.45,.94);
   filter:saturate(.92) contrast(1.04);
-}
-/* Fachadas: imagen vertical mostrada completa, sin recorte, centrada con fondo propio */
-.gal-item[data-fit="contain"]{background:var(--c2)}
-.gal-item[data-fit="contain"] .gal-img{
-  background-size:contain;background-repeat:no-repeat;background-position:center;
 }
 .gal-item::after{
   content:'';position:absolute;inset:0;
@@ -446,11 +441,33 @@ nav.solid{
 
 
 /* Lightbox */
-.lb{display:none;position:fixed;inset:0;background:rgba(0,0,0,.92);z-index:200;align-items:center;justify-content:center}
+.lb{
+  display:none;position:fixed;inset:0;
+  background:rgba(7,17,31,.88);backdrop-filter:blur(14px);
+  z-index:200;align-items:center;justify-content:center;
+  opacity:0;transition:opacity .3s ease;
+}
 .lb.open{display:flex}
-.lb-img{max-width:90vw;max-height:85vh;border-radius:var(--r);background:center/contain no-repeat;width:80vw;height:75vh}
-.lb-x{position:absolute;top:20px;right:24px;background:none;border:none;color:rgba(255,255,255,.6);font-size:2rem;cursor:pointer;line-height:1}
-.lb-x:hover{color:#fff}
+.lb.show{opacity:1}
+.lb-stage{position:relative;width:90vw;height:85vh;display:flex;align-items:center;justify-content:center;overflow:hidden}
+.lb-img{
+  max-width:90vw;max-height:85vh;width:auto;height:auto;
+  background:center/contain no-repeat;
+  border-radius:4px;
+  transition:transform .3s ease,opacity .25s ease;
+  cursor:zoom-in;
+  box-shadow:0 30px 70px -20px rgba(0,0,0,.6);
+}
+.lb-img.zoomed{cursor:zoom-out}
+.lb-x{position:absolute;top:20px;right:24px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.15);width:42px;height:42px;border-radius:50%;color:rgba(255,255,255,.8);font-size:1.3rem;cursor:pointer;line-height:1;display:flex;align-items:center;justify-content:center;transition:var(--ease);z-index:2}
+.lb-x:hover{color:#fff;background:rgba(255,255,255,.12)}
+.lb-nav{position:absolute;top:50%;transform:translateY(-50%);width:46px;height:46px;border-radius:50%;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.15);color:rgba(255,255,255,.85);display:flex;align-items:center;justify-content:center;cursor:pointer;transition:var(--ease);z-index:2}
+.lb-nav:hover{background:var(--accent);border-color:var(--accent);color:#fff}
+.lb-nav svg{width:20px;height:20px}
+.lb-prev{left:18px}
+.lb-next{right:18px}
+.lb-caption{position:absolute;bottom:18px;left:0;right:0;text-align:center;color:rgba(255,255,255,.7);font-family:var(--ff-sub);font-size:.78rem;letter-spacing:.06em}
+.lb-counter{position:absolute;top:24px;left:24px;color:rgba(255,255,255,.55);font-family:var(--ff-sub);font-size:.72rem;letter-spacing:.1em}
 
 /* ─── CONTACT ─────────────────────────────────── */
 #contact{padding:clamp(100px,14vw,180px) 0;background:var(--c1)}
@@ -595,6 +612,13 @@ footer{
   .form-row-2{grid-template-columns:1fr}
   .services-header{flex-direction:column;align-items:flex-start}
   .srv-grid{grid-template-columns:1fr}
+  .lb-stage{width:94vw;height:78vh}
+  .lb-img{max-width:94vw;max-height:70vh}
+  .lb-nav{width:38px;height:38px}
+  .lb-prev{left:6px}
+  .lb-next{right:6px}
+  .lb-x{top:14px;right:14px;width:38px;height:38px}
+  .lb-counter{top:16px;left:16px}
 }
 @media(max-width:520px){
   .gal-grid{grid-template-columns:1fr}
@@ -883,8 +907,8 @@ footer{
     <p class="section-sub">Trabajos de ventanas, mamparas, puertas de ducha y fachadas en Lima.</p>
   </div>
   <div class="gal-grid reveal">
-    <div class="gal-item" data-fit="contain" data-src="img/proyectos/fachada-balcon-madera.jpg" data-lbl="Fachadas">
-      <div class="gal-img" style="background-image:url('img/proyectos/fachada-balcon-madera.jpg')"></div>
+    <div class="gal-item" data-src="img/proyectos/fachada-concreto-piscina-v2.jpg" data-lbl="Fachadas">
+      <div class="gal-img" style="background-image:url('img/proyectos/fachada-concreto-piscina-v2.jpg');background-position:center 32%"></div>
       <div class="gal-meta">
         <span class="gal-meta-num">01</span>
         <div class="gal-meta-body">
@@ -894,8 +918,8 @@ footer{
       </div>
       <span class="gal-arrow"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span>
     </div>
-    <div class="gal-item" data-src="https://images.unsplash.com/photo-1571781418606-70265b9cce90?w=1200&q=80" data-lbl="Mamparas">
-      <div class="gal-img" style="background-image:url('https://images.unsplash.com/photo-1571781418606-70265b9cce90?w=900&q=80')"></div>
+    <div class="gal-item" data-src="img/proyectos/mampara-vista-balcon.jpg" data-lbl="Mamparas">
+      <div class="gal-img" style="background-image:url('img/proyectos/mampara-vista-balcon.jpg');background-position:38% center"></div>
       <div class="gal-meta">
         <span class="gal-meta-num">02</span>
         <div class="gal-meta-body">
@@ -905,8 +929,8 @@ footer{
       </div>
       <span class="gal-arrow"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span>
     </div>
-    <div class="gal-item" data-src="https://images.unsplash.com/photo-1758565811176-ccd94357a844?w=1200&q=80" data-lbl="Ventanas">
-      <div class="gal-img" style="background-image:url('https://images.unsplash.com/photo-1758565811176-ccd94357a844?w=900&q=80')"></div>
+    <div class="gal-item" data-src="img/proyectos/ventana-esquina-luz.jpg" data-lbl="Ventanas">
+      <div class="gal-img" style="background-image:url('img/proyectos/ventana-esquina-luz.jpg');background-position:35% 30%"></div>
       <div class="gal-meta">
         <span class="gal-meta-num">03</span>
         <div class="gal-meta-body">
@@ -916,8 +940,8 @@ footer{
       </div>
       <span class="gal-arrow"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span>
     </div>
-    <div class="gal-item" data-src="https://images.unsplash.com/photo-1622137276463-5d2b374cad11?w=1200&q=80" data-lbl="Puertas de ducha">
-      <div class="gal-img" style="background-image:url('https://images.unsplash.com/photo-1622137276463-5d2b374cad11?w=900&q=80')"></div>
+    <div class="gal-item" data-src="img/proyectos/puerta-ducha-negra.jpg" data-lbl="Puertas de ducha">
+      <div class="gal-img" style="background-image:url('img/proyectos/puerta-ducha-negra.jpg');background-position:center 22%"></div>
       <div class="gal-meta">
         <span class="gal-meta-num">04</span>
         <div class="gal-meta-body">
@@ -933,8 +957,14 @@ footer{
 
 <!-- Lightbox -->
 <div class="lb" id="lb">
-  <button class="lb-x" id="lbX">✕</button>
-  <div class="lb-img" id="lbImg"></div>
+  <button class="lb-x" id="lbX" aria-label="Cerrar">✕</button>
+  <button class="lb-nav lb-prev" id="lbPrev" aria-label="Anterior"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 18l-6-6 6-6"/></svg></button>
+  <div class="lb-stage">
+    <div class="lb-img" id="lbImg"></div>
+  </div>
+  <button class="lb-nav lb-next" id="lbNext" aria-label="Siguiente"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 6l6 6-6 6"/></svg></button>
+  <span class="lb-counter" id="lbCounter"></span>
+  <span class="lb-caption" id="lbCaption"></span>
 </div>
 
 <!-- ░ CONTACT ░ -->
@@ -1105,18 +1135,59 @@ document.querySelectorAll('.srv-grid .srv-card,.why-grid .why-card,.thermia-bene
   io.observe(el);
 });
 
-// Gallery lightbox
+// Gallery lightbox premium: navegación, zoom, teclado
 const lb=document.getElementById('lb'),lbImg=document.getElementById('lbImg'),lbX=document.getElementById('lbX');
-document.querySelectorAll('.gal-item').forEach(it=>{
-  it.addEventListener('click',()=>{
+const lbPrev=document.getElementById('lbPrev'),lbNext=document.getElementById('lbNext');
+const lbCounter=document.getElementById('lbCounter'),lbCaption=document.getElementById('lbCaption');
+const galItems=Array.from(document.querySelectorAll('.gal-item'));
+let lbIndex=0;
+
+function openLb(i){
+  lbIndex=i;
+  renderLb();
+  lb.classList.add('open');
+  requestAnimationFrame(()=>lb.classList.add('show'));
+  document.body.style.overflow='hidden';
+}
+function renderLb(){
+  const it=galItems[lbIndex];
+  lbImg.classList.remove('zoomed');
+  lbImg.style.transform='scale(1)';
+  lbImg.style.opacity='0';
+  const img=new Image();
+  img.onload=()=>{
     lbImg.style.backgroundImage=`url('${it.dataset.src}')`;
-    lb.classList.add('open');document.body.style.overflow='hidden';
-  });
-});
+    lbImg.style.opacity='1';
+  };
+  img.src=it.dataset.src;
+  lbCaption.textContent=it.dataset.lbl||'';
+  lbCounter.textContent=`${lbIndex+1} / ${galItems.length}`;
+}
+function closeLb(){
+  lb.classList.remove('show');
+  setTimeout(()=>{lb.classList.remove('open');document.body.style.overflow=''},250);
+}
+function lbGo(delta){
+  lbIndex=(lbIndex+delta+galItems.length)%galItems.length;
+  renderLb();
+}
+
+galItems.forEach((it,i)=>it.addEventListener('click',()=>openLb(i)));
 lbX.addEventListener('click',closeLb);
-lb.addEventListener('click',e=>{if(e.target===lb)closeLb()});
-document.addEventListener('keydown',e=>{if(e.key==='Escape')closeLb()});
-function closeLb(){lb.classList.remove('open');document.body.style.overflow=''}
+lbPrev.addEventListener('click',e=>{e.stopPropagation();lbGo(-1)});
+lbNext.addEventListener('click',e=>{e.stopPropagation();lbGo(1)});
+lb.addEventListener('click',e=>{if(e.target===lb||e.target.classList.contains('lb-stage'))closeLb()});
+lbImg.addEventListener('click',e=>{
+  e.stopPropagation();
+  lbImg.classList.toggle('zoomed');
+  lbImg.style.transform=lbImg.classList.contains('zoomed')?'scale(1.8)':'scale(1)';
+});
+document.addEventListener('keydown',e=>{
+  if(!lb.classList.contains('open'))return;
+  if(e.key==='Escape')closeLb();
+  if(e.key==='ArrowLeft')lbGo(-1);
+  if(e.key==='ArrowRight')lbGo(1);
+});
 
 // Form
 function sendForm(e){
