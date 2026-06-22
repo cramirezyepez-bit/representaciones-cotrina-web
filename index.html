@@ -408,6 +408,11 @@ nav.solid{
   transition:transform 1s cubic-bezier(.25,.46,.45,.94);
   filter:saturate(.92) contrast(1.04);
 }
+/* Fachadas: imagen vertical mostrada completa, sin recorte, centrada con fondo propio */
+.gal-item[data-fit="contain"]{background:var(--c2)}
+.gal-item[data-fit="contain"] .gal-img{
+  background-size:contain;background-repeat:no-repeat;background-position:center;
+}
 .gal-item::after{
   content:'';position:absolute;inset:0;
   background:linear-gradient(to top,rgba(7,17,31,.92) 0%,rgba(7,17,31,.5) 32%,rgba(7,17,31,.05) 60%);
@@ -878,8 +883,8 @@ footer{
     <p class="section-sub">Trabajos de ventanas, mamparas, puertas de ducha y fachadas en Lima.</p>
   </div>
   <div class="gal-grid reveal">
-    <div class="gal-item" data-src="img/proyectos/fachada-concreto-piscina.jpg" data-lbl="Fachadas">
-      <div class="gal-img" style="background-image:url('img/proyectos/fachada-concreto-piscina.jpg')"></div>
+    <div class="gal-item" data-fit="contain" data-src="img/proyectos/fachada-balcon-madera.jpg" data-lbl="Fachadas">
+      <div class="gal-img" style="background-image:url('img/proyectos/fachada-balcon-madera.jpg')"></div>
       <div class="gal-meta">
         <span class="gal-meta-num">01</span>
         <div class="gal-meta-body">
