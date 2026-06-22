@@ -305,18 +305,22 @@ nav.solid{
 
 /* ─── PARA ARQUITECTOS ───────────────────────── */
 #para-arquitectos{
-  padding:clamp(64px,8vw,100px) 0;
-  background:var(--c2);
-  border-top:1px solid rgba(217,119,50,.18);
-  border-bottom:1px solid rgba(217,119,50,.18);
+  background:var(--c1b);
   position:relative;overflow:hidden;
+  display:flex;align-items:stretch;
+  min-height:640px;
 }
 .pa-grid{
-  display:grid;grid-template-columns:1.3fr 1fr;gap:56px;align-items:center;
+  display:flex;width:100%;align-items:stretch;gap:0;
+}
+.pa-content{
+  width:42%;flex-shrink:0;
+  display:flex;flex-direction:column;justify-content:center;
+  padding:80px clamp(24px,6vw,80px) 80px clamp(24px,6vw,80px);
 }
 .pa-content .eyebrow{margin-bottom:14px}
-.pa-title{font-family:var(--ff-header);font-size:clamp(1.5rem,2.8vw,2.1rem);font-weight:400;color:var(--white);line-height:1.25;margin-bottom:14px;max-width:480px}
-.pa-text{font-size:.92rem;color:var(--c4);line-height:1.7;max-width:460px;margin-bottom:24px}
+.pa-title{font-family:var(--ff-header);font-size:clamp(1.6rem,3vw,2.3rem);font-weight:400;color:var(--white);line-height:1.25;margin-bottom:18px}
+.pa-text{font-size:.92rem;color:var(--c4);line-height:1.7;margin-bottom:28px}
 .pa-points{display:flex;flex-direction:column;margin-bottom:28px}
 .pa-point{display:flex;align-items:flex-start;gap:14px;padding:16px 0;border-bottom:1px solid var(--border-soft)}
 .pa-points .pa-point:first-child{padding-top:0}
@@ -327,19 +331,22 @@ nav.solid{
 .pa-point-sub{font-size:.82rem;color:var(--c4);line-height:1.5}
 .pa-actions{display:flex;gap:12px;flex-wrap:wrap}
 .pa-side{
-  position:relative;border-radius:4px;overflow:hidden;
-  min-height:380px;
+  position:relative;overflow:hidden;
+  width:58%;flex-shrink:0;
   background:
-    linear-gradient(180deg, rgba(7,17,31,.15) 0%, rgba(7,17,31,.75) 100%),
-    url('https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=900&q=85') center/cover no-repeat;
+    linear-gradient(180deg, rgba(7,17,31,.1) 0%, rgba(7,17,31,.2) 60%, rgba(7,17,31,.55) 100%),
+    url('https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=1300&q=85') center/cover no-repeat;
 }
 .pa-stats{
-  position:absolute;bottom:0;left:0;right:0;
-  display:flex;gap:36px;padding:28px 30px;
+  position:absolute;bottom:48px;left:48px;
+  display:flex;align-items:stretch;gap:36px;
 }
-.pa-stat{margin-bottom:0}
-.pa-stat-num{font-family:var(--ff-header);font-size:2.2rem;color:var(--accent2);line-height:1}
-.pa-stat-lbl{font-size:.7rem;letter-spacing:.1em;text-transform:uppercase;color:var(--c5);margin-top:4px}
+.pa-stat{margin-bottom:0;position:relative;padding-right:36px}
+.pa-stat:not(:last-child)::after{
+  content:'';position:absolute;top:4px;bottom:4px;right:0;width:1px;background:rgba(255,255,255,.2);
+}
+.pa-stat-num{font-family:var(--ff-header);font-size:2.3rem;font-weight:400;color:var(--accent);line-height:1}
+.pa-stat-lbl{font-family:var(--ff-sub);font-size:.7rem;letter-spacing:.1em;text-transform:uppercase;color:var(--c5);margin-top:6px;line-height:1.4;max-width:110px}
 
 /* ─── WHY ─────────────────────────────────────── */
 #why{padding:clamp(100px,14vw,180px) 0;background:var(--c1)}
@@ -548,9 +555,10 @@ footer{
   .why-grid{grid-template-columns:repeat(2,1fr)}
   .why-card{grid-column:span 1}
   .srv-grid{grid-template-columns:1fr 1fr}
-  .pa-grid{grid-template-columns:1fr;gap:28px}
-  .pa-side{min-height:240px}
-  .pa-stat{margin-bottom:0}
+  #para-arquitectos{flex-direction:column;min-height:auto}
+  .pa-grid{flex-direction:column}
+  .pa-content{width:100%;padding:56px clamp(20px,5vw,60px)}
+  .pa-side{width:100%;min-height:320px}
   .hero-inner{max-width:60%}
 }
 @media(max-width:720px){
@@ -745,7 +753,6 @@ footer{
 
 <!-- ░ PARA ARQUITECTOS ░ -->
 <section id="para-arquitectos">
-<div class="container">
   <div class="pa-grid">
     <div class="pa-content reveal">
       <span class="eyebrow">Para profesionales</span>
@@ -798,7 +805,6 @@ footer{
       </div>
     </div>
   </div>
-</div>
 </section>
 
 <!-- ░ WHY ░ -->
