@@ -522,11 +522,9 @@ footer{
   max-width:1140px;margin:0 auto;
   display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:16px;
 }
-.ft-logo{display:flex;align-items:center;gap:10px}
-.ft-logo-icon{width:24px;height:24px;flex-shrink:0}
-.ft-logo-text{display:flex;flex-direction:column;line-height:1.15}
-.ft-logo-text b{font-family:var(--ff-header);font-size:.95rem;font-weight:500;color:var(--white);letter-spacing:.02em}
-.ft-logo-text span{font-size:.6rem;letter-spacing:.18em;text-transform:uppercase;color:var(--c4)}
+.ft-logo{display:flex;align-items:center;gap:12px}
+.ft-logo .logo-divider{height:18px}
+.ft-logo .logo-name,.ft-logo .logo-tagline{font-size:.95rem;letter-spacing:.08em}
 .ft-links{display:flex;gap:20px;flex-wrap:wrap}
 .ft-links a{font-size:.75rem;color:var(--c4);transition:color .2s}
 .ft-links a:hover{color:var(--white)}
@@ -1019,12 +1017,12 @@ footer{
 <footer>
 <div class="ft-inner">
   <span class="ft-logo">
-    <svg class="ft-logo-icon" viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg">
-      <rect x="4" y="20" width="22" height="16" rx="1.5" transform="skewX(-15)" fill="#F4E4D2"/>
-      <rect x="12" y="14" width="22" height="16" rx="1.5" transform="skewX(-15)" fill="#E5572E"/>
-      <rect x="20" y="8" width="20" height="16" rx="1.5" transform="skewX(-15)" fill="#B8311E"/>
-    </svg>
-    <span class="ft-logo-text"><b>COTRINA</b><span>Proyectos</span></span>
+    <span class="logo-divider"></span>
+    <span class="logo-text-wrap">
+      <span class="logo-name">COTRINA</span>
+      <span class="logo-tagline">Proyectos</span>
+    </span>
+    <span class="logo-divider"></span>
   </span>
   <div class="ft-links">
     <a href="#why">Nosotros</a>
@@ -1032,7 +1030,7 @@ footer{
     <a href="#services">Servicios</a>
     <a href="#contact">Cotizar</a>
   </div>
-  <span class="ft-copy">© 2024 COTRINA Proyectos. Lima, Perú</span>
+  <span class="ft-copy">© 2026 COTRINA Proyectos. Lima, Perú</span>
 </div>
 </footer>
 
