@@ -272,13 +272,15 @@ nav.solid{
 }
 .thermia-img{
   width:100%;height:clamp(420px,46vw,560px);border-radius:2px;overflow:hidden;
-  background:url('https://images.unsplash.com/photo-1497366754035-f200968a6e72?w=1100&q=85') center/cover;
+  background:url('img/proyectos/thermia-perfil-aluminio.jpg') center/cover;
   position:relative;
-  filter:saturate(.9) contrast(1.05) brightness(1.05);
+  filter:contrast(1.05);
 }
 .thermia-img::after{
   content:'';position:absolute;inset:0;
-  background:linear-gradient(160deg,rgba(7,17,31,.55) 0%,rgba(217,119,50,.08) 45%,transparent 75%);
+  background:
+    radial-gradient(ellipse at center, rgba(7,17,31,.18) 0%, rgba(7,17,31,.42) 100%),
+    linear-gradient(160deg,rgba(7,17,31,.35) 0%,rgba(217,119,50,.06) 45%,rgba(7,17,31,.3) 100%);
 }
 .thermia-badge{
   position:absolute;bottom:24px;left:24px;
