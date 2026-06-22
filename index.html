@@ -84,23 +84,23 @@ img{display:block;max-width:100%}
 /* ─── NAV ────────────────────────────────────── */
 nav{
   position:fixed;top:0;left:0;right:0;z-index:100;
-  padding:18px 24px;
+  padding:18px 0;
   transition:var(--ease);
 }
 nav.solid{
   background:rgba(7,17,31,.93);
   backdrop-filter:blur(18px);
   border-bottom:1px solid var(--border-soft);
-  padding:12px 24px;
+  padding:12px 0;
 }
-.nav-wrap{max-width:1140px;margin:0 auto;display:flex;align-items:center;justify-content:space-between;gap:24px}
+.nav-wrap{width:100%;padding:0 clamp(24px,6vw,80px);display:flex;align-items:center;justify-content:space-between;gap:24px}
 
 /* Logo */
 .nav-logo{display:flex;align-items:center;gap:12px}
-.logo-mark{width:30px;height:30px;flex-shrink:0;display:block}
+.logo-divider{width:1px;height:28px;background:var(--accent);flex-shrink:0}
 .logo-text-wrap{display:flex;align-items:center;gap:7px}
-.logo-name{font-family:var(--ff-header);font-size:1.05rem;font-weight:400;color:var(--white);letter-spacing:.12em;line-height:1}
-.logo-tagline{font-family:var(--ff-header);font-size:1.05rem;font-weight:400;letter-spacing:.12em;text-transform:uppercase;color:var(--c4);line-height:1}
+.logo-name{font-family:var(--ff-header);font-size:1.3rem;font-weight:400;color:var(--white);letter-spacing:.1em;line-height:1}
+.logo-tagline{font-family:var(--ff-header);font-size:1.3rem;font-weight:400;letter-spacing:.1em;text-transform:uppercase;color:var(--c4);line-height:1}
 
 /* Links */
 .nav-links{display:flex;align-items:center;gap:32px}
@@ -585,15 +585,12 @@ footer{
 <nav id="nav">
 <div class="nav-wrap">
   <a href="#" class="nav-logo">
-    <svg class="logo-mark" viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg">
-      <rect x="4" y="20" width="22" height="16" rx="1.5" transform="skewX(-15)" fill="#F4E4D2"/>
-      <rect x="12" y="14" width="22" height="16" rx="1.5" transform="skewX(-15)" fill="#E5572E"/>
-      <rect x="20" y="8" width="20" height="16" rx="1.5" transform="skewX(-15)" fill="#B8311E"/>
-    </svg>
+    <span class="logo-divider"></span>
     <div class="logo-text-wrap">
       <span class="logo-name">COTRINA</span>
       <span class="logo-tagline">Proyectos</span>
     </div>
+    <span class="logo-divider"></span>
   </a>
   <ul class="nav-links">
     <li><a href="#why">Nosotros</a></li>
