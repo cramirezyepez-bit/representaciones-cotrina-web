@@ -310,15 +310,14 @@ nav.solid{
   display:flex;align-items:stretch;
 }
 .pa-bg{
-  position:absolute;inset:-3%;
-  background:url('https://images.unsplash.com/photo-1761778371592-c39fe1148a94?w=1900&q=85') center/cover no-repeat;
-  filter:saturate(.9) brightness(.85);
+  position:absolute;inset:0;
+  background:url('img/proyectos/para-profesionales-bg.jpg') center right / cover no-repeat;
 }
 .pa-bg::after{
   content:'';position:absolute;inset:0;
   background:
-    linear-gradient(90deg, var(--c1b) 0%, var(--c1b) 8%, rgba(19,31,44,.94) 22%, rgba(19,31,44,.75) 36%, rgba(19,31,44,.4) 52%, rgba(19,31,44,.12) 68%, transparent 82%),
-    linear-gradient(180deg, rgba(7,17,31,.1) 0%, transparent 30%, transparent 65%, rgba(7,17,31,.4) 100%);
+    linear-gradient(90deg, var(--c1b) 0%, rgba(19,31,44,.85) 14%, rgba(19,31,44,.5) 28%, rgba(19,31,44,.15) 42%, transparent 56%),
+    linear-gradient(180deg, rgba(7,17,31,.25) 0%, transparent 25%, transparent 70%, rgba(7,17,31,.35) 100%);
 }
 .pa-grid{
   position:relative;z-index:1;
@@ -565,8 +564,9 @@ footer{
   .why-card{grid-column:span 1}
   .srv-grid{grid-template-columns:1fr 1fr}
   #para-arquitectos{flex-direction:column;min-height:auto}
+  .pa-bg{background-position:center}
   .pa-bg::after{
-    background:linear-gradient(180deg, var(--c1b) 0%, var(--c1b) 38%, rgba(19,31,44,.7) 55%, rgba(19,31,44,.25) 75%, transparent 100%);
+    background:linear-gradient(180deg, var(--c1b) 0%, var(--c1b) 42%, rgba(19,31,44,.8) 58%, rgba(19,31,44,.4) 78%, rgba(19,31,44,.15) 100%);
   }
   .pa-grid{flex-direction:column}
   .pa-content{width:100%;padding:56px clamp(20px,5vw,60px) 24px}
