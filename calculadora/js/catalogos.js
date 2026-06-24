@@ -27,18 +27,41 @@ export const TIPOS_SOLUCION = {
 };
 
 // Tipos de apertura simples (FASE 1, sin combinaciones mixtas).
+//
+// `factor`: % adicional sobre el costo base del ítem (igual mecánica
+// que FACTOR_VIDRIO/FACTOR_PERFIL). "Fijo" es la línea base (0%).
+//
+// Derivados de comparaciones reales en ALECOM_Tarifario_Precios_2026.xlsx
+// entre configuraciones con el MISMO material y vidrio, distinta apertura:
+//   - PVC 1 hoja (US$42/m²) vs 2 hojas corredizas (US$55/m²)        -> +31.0%
+//   - Mampara 2 hojas corredizas (US$75) vs 4 hojas (US$85)         -> +13.3% sobre 2 hojas
+//   - Mampara 2 hojas vs fijo+1 corredizo (US$80)                   -> +6.7%
+//   - Mampara 2 hojas vs abatible/batiente (US$88)                  -> +17.3%
+//   - Ventana corrediza (US$52) vs proyectante/basculante (US$62)   -> +19.2%
+//   - PVC europeo 1 abatible (US$175) vs oscilobatiente (US$205)    -> +17.1%
+//   - PVC europeo 1 abatible vs corrediza alta estanqueidad (US$195)-> +11.4%
+//   - Mampara ducha 1 abatible (US$185) vs 2 corredizas (US$240)    -> +29.7%
+// Con esa evidencia, "fijo" queda como base 0%, "corredizo 2 hojas"
+// se fija en +28% (promedio de las comparaciones de 2 hojas vs 1),
+// y cada hoja adicional de corredera suma ~+13% (lo medido entre
+// 2 y 4 hojas de mampara, repartido por hoja). Oscilobatiente y
+// pivotante quedan como los de mecanismo más caro, coherente con
+// que el oscilobatiente combina dos sistemas de apertura en un
+// solo herraje. Estos factores deben revisarse con el equipo
+// comercial antes de cotizar en firme — son la mejor estimación
+// disponible con datos reales, no un ajuste fino validado en obra.
 export const TIPOS_APERTURA = {
-  fijo:              { nombre: 'Fijo',               hojas: 0 },
-  corredizo2:        { nombre: 'Corredizo 2 hojas',  hojas: 2 },
-  corredizo3:        { nombre: 'Corredizo 3 hojas',  hojas: 3 },
-  corredizo4:        { nombre: 'Corredizo 4 hojas',  hojas: 4 },
-  batiente:          { nombre: 'Batiente',           hojas: 1 },
-  oscilobatiente:    { nombre: 'Oscilobatiente',     hojas: 1 },
-  pivotante:         { nombre: 'Pivotante',          hojas: 1 },
-  puerta:            { nombre: 'Puerta',             hojas: 1 },
-  plegable:          { nombre: 'Plegable',           hojas: 1 },
-  guillotina:        { nombre: 'Guillotina',         hojas: 1 },
-  especial:          { nombre: 'Especial / a definir', hojas: 0 },
+  fijo:           { nombre: 'Fijo',                hojas: 0, factor: 0,    fuente: 'Línea base — sin mecanismo de apertura' },
+  corredizo2:     { nombre: 'Corredizo 2 hojas',    hojas: 2, factor: 0.28, fuente: 'Tarifario 2026: PVC/mampara 1→2 hojas (+31%, +contexto mampara fijo+corredizo +6.7%)' },
+  corredizo3:     { nombre: 'Corredizo 3 hojas',    hojas: 3, factor: 0.41, fuente: 'Estimado: corredizo2 + ~13% por hoja adicional (medido 2→4 hojas mampara)' },
+  corredizo4:     { nombre: 'Corredizo 4 hojas',    hojas: 4, factor: 0.54, fuente: 'Tarifario 2026: mampara 2→4 hojas corredizas, +13.3% sobre 2 hojas' },
+  batiente:       { nombre: 'Batiente',             hojas: 1, factor: 0.18, fuente: 'Tarifario 2026: mampara abatible vs 2 corredizas, +17.3%' },
+  oscilobatiente: { nombre: 'Oscilobatiente',       hojas: 1, factor: 0.30, fuente: 'Tarifario 2026: PVC europeo abatible vs oscilobatiente, +17.1% sobre abatible (~+30% sobre fijo)' },
+  pivotante:      { nombre: 'Pivotante',            hojas: 1, factor: 0.25, fuente: 'Estimado por similitud mecánica con batiente reforzado; VALIDAR' },
+  puerta:         { nombre: 'Puerta',               hojas: 1, factor: 0.20, fuente: 'Tarifario 2026: PVC puerta corrediza vs ventana corrediza equivalente, +~20%' },
+  plegable:       { nombre: 'Plegable',             hojas: 0, factor: 0.45, fuente: 'Tarifario 2026: mampara plegable (acordeón) vs 2 hojas corredizas, escalado por vidrio distinto; estimado conservador' },
+  guillotina:     { nombre: 'Guillotina',           hojas: 1, factor: 0.22, fuente: 'Estimado por similitud mecánica con corredizo vertical; VALIDAR — sin referencia directa en tarifario' },
+  especial:       { nombre: 'Especial / a definir', hojas: 0, factor: 0.20, fuente: 'A definir en visita técnica' },
 };
 
 export const COSTO_MINIMO_PROYECTO = 450;
@@ -59,6 +82,11 @@ export function listarTiposSolucion() {
 
 export function listarTiposApertura() {
   return Object.entries(TIPOS_APERTURA).map(([key, v]) => ({ key, nombre: v.nombre }));
+}
+
+export function obtenerFactorApertura(tipoAperturaKey) {
+  const t = TIPOS_APERTURA[tipoAperturaKey];
+  return t ? t.factor : 0;
 }
 
 export function obtenerCostoBaseM2Promedio(tipoSolucionKey) {

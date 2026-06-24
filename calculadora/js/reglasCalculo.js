@@ -13,7 +13,7 @@
    ítems en un mismo proyecto" pedido en el brief.
    ============================================================ */
 
-import { TIPOS_SOLUCION, AREA_MINIMA_POR_UNIDAD, COSTO_MINIMO_PROYECTO, FACTOR_INSTALACION, FACTOR_URGENCIA } from './catalogos.js';
+import { TIPOS_SOLUCION, AREA_MINIMA_POR_UNIDAD, COSTO_MINIMO_PROYECTO, FACTOR_INSTALACION, FACTOR_URGENCIA, obtenerFactorApertura, TIPOS_APERTURA } from './catalogos.js';
 import { obtenerFactorVidrio } from './vidrios.js';
 import { obtenerFactorPerfil } from './perfiles.js';
 import { calcularSubtotalAccesorios, calcularFactorAccesoriosLegacy } from './accesorios.js';
@@ -23,6 +23,7 @@ import { calcularSubtotalAccesorios, calcularFactorAccesoriosLegacy } from './ac
  *
  * @param {Object} item - Datos del ítem:
  *   tipoSolucion, ancho, alto, cantidad,
+ *   tipoApertura ('fijo' | 'corredizo2' | 'batiente' | ... ver catalogos.js),
  *   vidrioCategoria, vidrioVariante,
  *   perfilSerie, perfilColor,
  *   accesorios: [{clave, cantidad}]  (nuevo modelo)
@@ -35,6 +36,7 @@ export function calcularItem(item) {
     ancho = 0,
     alto = 0,
     cantidad = 1,
+    tipoApertura = 'fijo',
     vidrioCategoria,
     vidrioVariante,
     perfilSerie = 'noAplica',
@@ -56,11 +58,13 @@ export function calcularItem(item) {
   let costoBase = precioBaseM2Promedio * areaTotal;
   costoBase = Math.max(costoBase, COSTO_MINIMO_PROYECTO);
 
-  // Adicionales porcentuales sobre costo base (vidrio + perfil + accesorios legacy).
+  // Adicionales porcentuales sobre costo base (apertura + vidrio + perfil + accesorios legacy).
+  const factorApertura = obtenerFactorApertura(tipoApertura);
   const factorVidrio = obtenerFactorVidrio(vidrioCategoria, vidrioVariante);
   const factorPerfil = obtenerFactorPerfil(perfilSerie);
   const factorAccesoriosLegacy = calcularFactorAccesoriosLegacy(accesoriosLegacy);
 
+  const adicionalApertura = costoBase * factorApertura;
   const adicionalVidrio = costoBase * factorVidrio;
   const adicionalPerfil = costoBase * factorPerfil;
   const adicionalAccesoriosLegacy = costoBase * factorAccesoriosLegacy;
@@ -68,7 +72,7 @@ export function calcularItem(item) {
   // Accesorios del nuevo modelo (cantidad × precio unitario, en soles directos).
   const subtotalAccesoriosNuevos = calcularSubtotalAccesorios(accesorios);
 
-  const subtotalTecnico = costoBase + adicionalVidrio + adicionalPerfil
+  const subtotalTecnico = costoBase + adicionalApertura + adicionalVidrio + adicionalPerfil
     + adicionalAccesoriosLegacy + subtotalAccesoriosNuevos;
 
   const costoInstalacion = subtotalTecnico * FACTOR_INSTALACION;
@@ -76,13 +80,15 @@ export function calcularItem(item) {
   return {
     tipoSolucion,
     nombreSolucion: refBase.nombre,
+    tipoApertura,
+    nombreApertura: TIPOS_APERTURA[tipoApertura] ? TIPOS_APERTURA[tipoApertura].nombre : '—',
     ancho: Number(ancho), alto: Number(alto), cantidad: Number(cantidad),
     areaPorUnidad, areaTotal,
     vidrioCategoria, vidrioVariante,
     perfilSerie,
     accesorios, accesoriosLegacy,
     costoBase,
-    adicionalVidrio, adicionalPerfil, adicionalAccesoriosLegacy, subtotalAccesoriosNuevos,
+    adicionalApertura, adicionalVidrio, adicionalPerfil, adicionalAccesoriosLegacy, subtotalAccesoriosNuevos,
     subtotalTecnico,
     costoInstalacion,
     costoItemAntesUrgencia: subtotalTecnico + costoInstalacion,

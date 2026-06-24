@@ -58,6 +58,7 @@ function formatearSoles(numero) {
 function leerDatosFormulario() {
   const get = (id) => document.getElementById(id);
   const tipoSolucion = get('tipoSolucion').value;
+  const tipoApertura = get('tipoApertura').value || 'fijo';
   const ancho = get('ancho').value;
   const alto = get('alto').value;
   const cantidad = get('cantidad').value;
@@ -73,6 +74,7 @@ function leerDatosFormulario() {
 
   return {
     tipoSolucion,
+    tipoApertura,
     ancho, alto, cantidad,
     vidrioCategoria: mapeoVidrio.categoria,
     vidrioVariante: mapeoVidrio.variante,
@@ -117,7 +119,7 @@ function renderItems() {
 
   itemsList.innerHTML = items.map(it => {
     const c = it.calculo;
-    const desc = `${c.nombreSolucion} · ${describirVidrio(c.vidrioCategoria, c.vidrioVariante)}${c.perfilSerie !== 'noAplica' ? ' · ' + describirPerfil(c.perfilSerie) : ''}`;
+    const desc = `${c.nombreSolucion} ${c.nombreApertura !== 'Fijo' ? '· ' + c.nombreApertura + ' ' : ''}· ${describirVidrio(c.vidrioCategoria, c.vidrioVariante)}${c.perfilSerie !== 'noAplica' ? ' · ' + describirPerfil(c.perfilSerie) : ''}`;
     return `
       <div class="item-row" data-id="${it.id}">
         <div class="item-row-main">
@@ -236,6 +238,7 @@ function manejarAgregarItem() {
     const el = document.getElementById(id);
     if (el) el.value = '';
   });
+  document.getElementById('tipoApertura').value = 'fijo';
   document.querySelectorAll('input[name="accesorios"]:checked').forEach(cb => cb.checked = false);
 }
 
