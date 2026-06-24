@@ -336,6 +336,7 @@ img{ max-width:100%; display:block; }
   cursor: pointer;
   padding: 7px 0;
 }
+.check-item[hidden]{ display: none; }
 .check-item input[type="checkbox"]{
   width: 17px;
   height: 17px;

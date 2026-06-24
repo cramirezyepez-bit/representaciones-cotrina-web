@@ -226,10 +226,10 @@
       <label class="check-item"><input type="checkbox" name="accesorios" value="ninguno" id="accNinguno"> Sin accesorios especiales</label>
       <label class="check-item"><input type="checkbox" name="accesorios" value="herrajeEstandar"> Herrajes estándar</label>
       <label class="check-item"><input type="checkbox" name="accesorios" value="herrajePremium"> Herrajes premium</label>
-      <label class="check-item"><input type="checkbox" name="accesorios" value="sistemaCorredizo"> Sistema corredizo</label>
-      <label class="check-item"><input type="checkbox" name="accesorios" value="sistemaBatiente"> Sistema batiente</label>
-      <label class="check-item"><input type="checkbox" name="accesorios" value="sistemaPivotante"> Sistema pivotante</label>
-      <label class="check-item"><input type="checkbox" name="accesorios" value="sistemaPlegable"> Sistema plegable</label>
+      <label class="check-item check-item-sistema-apertura"><input type="checkbox" name="accesorios" value="sistemaCorredizo"> Sistema corredizo</label>
+      <label class="check-item check-item-sistema-apertura"><input type="checkbox" name="accesorios" value="sistemaBatiente"> Sistema batiente</label>
+      <label class="check-item check-item-sistema-apertura"><input type="checkbox" name="accesorios" value="sistemaPivotante"> Sistema pivotante</label>
+      <label class="check-item check-item-sistema-apertura"><input type="checkbox" name="accesorios" value="sistemaPlegable"> Sistema plegable</label>
       <label class="check-item"><input type="checkbox" name="accesorios" value="cierreHermetico"> Cierre hermético</label>
       <label class="check-item"><input type="checkbox" name="accesorios" value="controlSolar"> Control solar</label>
       <label class="check-item"><input type="checkbox" name="accesorios" value="proteccionUV"> Protección UV</label>
@@ -243,6 +243,9 @@
       <label class="check-item"><input type="checkbox" name="accesorios" value="desmontaje"> Desmontaje de estructura existente</label>
       <label class="check-item"><input type="checkbox" name="accesorios" value="transporteEspecial"> Transporte especial</label>
     </div>
+    <p class="field-hint field-hint-tight" id="hintSistemaApertura" hidden>
+      Las opciones de sistema de apertura se ocultan porque ya definiste la apertura de cada paño arriba — no es necesario repetirlo aquí.
+    </p>
 
     <div class="calc-card-head calc-card-head-spaced">
       <span class="calc-step">04</span>

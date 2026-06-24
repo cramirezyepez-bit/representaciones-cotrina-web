@@ -22,7 +22,7 @@
    ============================================================ */
 
 import { TIPOS_SOLUCION, AREA_MINIMA_POR_UNIDAD, COSTO_MINIMO_PROYECTO, FACTOR_INSTALACION, FACTOR_URGENCIA, obtenerFactorApertura, TIPOS_APERTURA } from './catalogos.js';
-import { obtenerFactorVidrio, describirVidrio } from './vidrios.js';
+import { obtenerFactorVidrio, obtenerPrecioVidrioM2, describirVidrio } from './vidrios.js';
 import { obtenerFactorPerfil } from './perfiles.js';
 import { calcularSubtotalAccesorios, calcularFactorAccesoriosLegacy } from './accesorios.js';
 import { calcularAccesoriosAutomaticos } from './despieceTecnico.js';
@@ -55,6 +55,12 @@ function calcularPano(pano, { refBase, perfilSerie, accesoriosLegacy, cantidad, 
   const adicionalPerfil = costoBasePano * factorPerfil;
   const adicionalAccesoriosLegacy = costoBasePano * factorAccesoriosLegacy;
 
+  // Precio REAL de vidrio (desacoplado del tipo de sistema, ver vidrios.js)
+  // — SOLO informativo para la tabla de materiales (rules.js). No participa
+  // del cálculo de costoBasePano/subtotalTecnicoPano hasta que se recalibre
+  // con datos completos de perfilería (ver Excel de carga masiva).
+  const vidrioRealEstimado = obtenerPrecioVidrioM2(pano.vidrioCategoria, pano.vidrioVariante) * areaPanoTotal;
+
   // Despiece técnico (perfiles ml + accesorios reales) por paño: el
   // ancho/alto de la geometría es el del paño, no el del vano completo,
   // así un paño fijo angosto no hereda los rodajes de su vecino corredizo.
@@ -75,6 +81,7 @@ function calcularPano(pano, { refBase, perfilSerie, accesoriosLegacy, cantidad, 
     vidrioCategoria: pano.vidrioCategoria, vidrioVariante: pano.vidrioVariante,
     nombreVidrio: describirVidrio(pano.vidrioCategoria, pano.vidrioVariante),
     costoBasePano, adicionalApertura, adicionalVidrio, adicionalPerfil, adicionalAccesoriosLegacy,
+    vidrioRealEstimado,
     despiecePerfiles: despieceAuto.despiece,
     accesoriosAuto: despieceAuto.lineas,
     subtotalAccesoriosAuto,

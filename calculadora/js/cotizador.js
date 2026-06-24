@@ -227,6 +227,7 @@ function aplicarVarianteDucha(valorClaveDucha) {
     document.getElementById('composicionMixta').hidden = true;
     document.getElementById('tipoApertura').disabled = false;
     document.getElementById('composicionModulos').innerHTML = '';
+    actualizarVisibilidadAccesoriosApertura();
     const select = document.getElementById('tipoApertura');
     select.value = variante.tipoApertura;
     select.dispatchEvent(new Event('change', { bubbles: true }));
@@ -257,6 +258,7 @@ function aplicarVarianteDucha(valorClaveDucha) {
   });
   validarSumaComposicion();
   actualizarNotacionPanos();
+  actualizarVisibilidadAccesoriosApertura();
 }
 
 function actualizarVisibilidadVariantesDucha(tipoSolucionValor) {
@@ -484,6 +486,7 @@ function inicializarComposicionMixta() {
       validarSumaComposicion();
       actualizarNotacionPanos();
     }
+    actualizarVisibilidadAccesoriosApertura();
   });
 
   btnAgregar.addEventListener('click', () => {
@@ -494,6 +497,33 @@ function inicializarComposicionMixta() {
   });
 
   document.getElementById('ancho').addEventListener('input', validarSumaComposicion);
+  actualizarVisibilidadAccesoriosApertura();
+}
+
+/**
+ * Las 4 opciones "Sistema corredizo/batiente/pivotante/plegable"
+ * en Accesorios y prestaciones técnicas duplican lo que ya se
+ * define en el grid de apertura principal o, con más razón, en
+ * el constructor de paños — cuando la composición mixta está
+ * activa, la apertura de cada paño ya quedó 100% especificada
+ * ahí, y dejar estos checkboxes visibles solo invita a marcar
+ * algo redundante o contradictorio con lo ya configurado (riesgo
+ * real de doble-cobro o de una descripción comercial inconsistente).
+ * Por eso se ocultan únicamente mientras hay composición de paños
+ * activa; en un ítem simple (sin paños) siguen disponibles como
+ * atajo rápido, igual que siempre.
+ */
+function actualizarVisibilidadAccesoriosApertura() {
+  const compuestoActivo = chkComposicionActivo();
+  const hint = document.getElementById('hintSistemaApertura');
+  document.querySelectorAll('.check-item-sistema-apertura').forEach(label => {
+    label.hidden = compuestoActivo;
+    if (compuestoActivo) {
+      const input = label.querySelector('input[type="checkbox"]');
+      if (input) input.checked = false; // no dejar marcada una opción oculta
+    }
+  });
+  if (hint) hint.hidden = !compuestoActivo;
 }
 
 function resetearComposicionMixta() {
@@ -504,6 +534,7 @@ function resetearComposicionMixta() {
   document.getElementById('composicionSuma').textContent = '';
   const elNotacion = document.getElementById('composicionNotacion');
   if (elNotacion) elNotacion.textContent = '';
+  actualizarVisibilidadAccesoriosApertura();
 }
 
 function validarDatosMinimos(datos) {
@@ -898,9 +929,12 @@ function cargarItemEnFormulario(id) {
     set('tipoApertura', d.tipoApertura || 'fijo');
     renderGridTipoApertura(d.tipoApertura || 'fijo');
   }
+  actualizarVisibilidadAccesoriosApertura();
 
   document.querySelectorAll('input[name="accesorios"]:checked').forEach(cb => cb.checked = false);
+  const clavesSistemaApertura = ['sistemaCorredizo', 'sistemaBatiente', 'sistemaPivotante', 'sistemaPlegable'];
   (d.accesoriosLegacy || []).forEach(clave => {
+    if (chkComposicionActivo() && clavesSistemaApertura.includes(clave)) return; // oculto: no restaurar
     const cb = document.querySelector(`input[name="accesorios"][value="${clave}"]`);
     if (cb) cb.checked = true;
   });

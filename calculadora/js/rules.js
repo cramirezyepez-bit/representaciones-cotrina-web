@@ -54,27 +54,71 @@ function lineaServicio({ descripcion, unidad, cantidad, precioUnitario, origen }
 /**
  * Genera las líneas de material de VIDRIO de un ítem, una por
  * paño (un [F][M][F] con 3 vidrios distintos da 3 líneas, no 1).
- * El precio unitario por m² incluye el costo base de la solución
- * MÁS el adicional propio de ese vidrio — así el precio mostrado
- * es realista (un vidrio templado se ve más caro por m² que uno
- * crudo, en vez de mostrar "S/0" de adicional aparte).
+ *
+ * IMPORTANTE — separación de costo real de vidrio vs. costo base
+ * de la solución: antes esta función sumaba costoBasePano (el
+ * costo base de TODA la ventana/mampara — perfilería, margen
+ * estructural del precio histórico, etc., prorrateado a ese
+ * paño) + adicionalVidrio (el % diferencial propio de ese tipo
+ * de vidrio) en una sola línea llamada "Vidrio templado 8mm".
+ * Eso hacía que el precio unitario mostrado (ej. S/1,097/m²)
+ * pareciera el precio de compra del vidrio, cuando en realidad
+ * ~93% de ese número era el costo de la ventana completa, no del
+ * vidrio — confirmado contra el dato real de Jorge (USD26/m² ≈
+ * S/91/m² de costo de compra).
+ *
+ * Ahora se generan DOS líneas por paño:
+ * - "Vidrio [categoría]" = el precio REAL de mercado de ese
+ *   vidrio (vidrioRealEstimado en reglasCalculo.js — desacoplado
+ *   del tipo de sistema, ver vidrios.js), comparable a un costo
+ *   de compra real.
+ * - "Estructura / base [solución]" = el resto del costo del paño
+ *   (costoBasePano + adicionalVidrio_legacy − vidrioRealEstimado),
+ *   para que la suma de ambas líneas siga calzando EXACTO con el
+ *   costo real ya calculado en reglasCalculo.js (que por ahora
+ *   sigue usando el factor % legacy, ver nota en vidrios.js sobre
+ *   el enfoque de transición — el total de la cotización no debe
+ *   cambiar todavía, solo cómo se explica en la tabla).
  */
 function materialesVidrioDeItem(itemCalculado) {
-  const { codigo, panosCalculados } = itemCalculado;
-  return panosCalculados.map((p, i) => {
+  const { codigo, nombreSolucion, panosCalculados } = itemCalculado;
+  const lineas = [];
+  panosCalculados.forEach((p, i) => {
     const letra = String.fromCharCode(65 + i);
     const area = p.areaPanoTotal;
-    const costoVidrioTotal = p.costoBasePano + p.adicionalVidrio;
-    const precioUnitario = area > 0 ? costoVidrioTotal / area : 0;
-    return lineaMaterial({
+    const descripcionPano = panosCalculados.length > 1 ? `${codigo ? codigo + '-' : ''}Paño ${letra}` : (codigo || 'Paño único');
+
+    const costoVidrioReal = p.vidrioRealEstimado ?? p.adicionalVidrio; // fallback por compatibilidad
+    const precioUnitarioVidrio = area > 0 ? costoVidrioReal / area : 0;
+    lineas.push(lineaMaterial({
       material: p.nombreVidrio,
-      descripcion: panosCalculados.length > 1 ? `${codigo ? codigo + '-' : ''}Paño ${letra}` : (codigo || 'Paño único'),
+      descripcion: descripcionPano,
       unidad: 'm²',
       cantidad: Number(area.toFixed(2)),
-      precioUnitario: Number(precioUnitario.toFixed(2)),
+      precioUnitario: Number(precioUnitarioVidrio.toFixed(2)),
       origen: 'vidrio',
-    });
+    }));
+
+    // El resto del costo del paño (estructura/base + el adicional legacy de
+    // vidrio que todavía alimenta el costo real) menos el vidrio real ya
+    // mostrado arriba — así las dos líneas suman EXACTO lo mismo que antes.
+    // Piso en 0: si el vidrio real (con merma) superara el costo legacy
+    // total del paño (posible en categorías de costo base bajo con vidrio
+    // caro), la estructura no debe mostrarse negativa — se deja en 0 y la
+    // diferencia queda absorbida (caso raro, a resolver con la recalibración
+    // completa cuando lleguen los datos de perfilería del Excel).
+    const costoEstructuraResto = Math.max((p.costoBasePano + p.adicionalVidrio) - costoVidrioReal, 0);
+    const precioUnitarioBase = area > 0 ? costoEstructuraResto / area : 0;
+    lineas.push(lineaMaterial({
+      material: `Estructura / base — ${nombreSolucion}`,
+      descripcion: descripcionPano,
+      unidad: 'm²',
+      cantidad: Number(area.toFixed(2)),
+      precioUnitario: Number(precioUnitarioBase.toFixed(2)),
+      origen: 'estructuraBase',
+    }));
   });
+  return lineas;
 }
 
 /**
@@ -84,6 +128,16 @@ function materialesVidrioDeItem(itemCalculado) {
  * puede variar por paño). El precio por ml se deriva del
  * adicional de perfil + apertura ya calculado, repartido sobre
  * el total de metros lineales del despiece técnico.
+ *
+ * RELACIÓN CON "Estructura / base" (materialesVidrioDeItem): no
+ * son el mismo costo contado dos veces. "Estructura / base" es
+ * el costoBasePano histórico (precio promedio S//m² de la
+ * categoría completa, menos el vidrio real ya mostrado aparte).
+ * Esta línea de "Perfil" es el adicionalPerfil + adicionalApertura
+ * — un % aparte que YA estaba separado del costoBasePano desde
+ * antes de esta migración (ver calcularPano en reglasCalculo.js).
+ * Ambas líneas son componentes reales y distintos del costo total,
+ * no una duplicación.
  */
 function materialPerfilDeItem(itemCalculado) {
   const { codigo, perfilSerie, despiecePerfiles, adicionalPerfil, adicionalApertura, costoBase } = itemCalculado;
