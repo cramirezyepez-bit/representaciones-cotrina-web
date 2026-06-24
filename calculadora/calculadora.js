@@ -1029,6 +1029,11 @@ Solicito validación técnica para confirmar cotización.`;
   // independientes compitan sobre el mismo botón con lógicas de
   // "limpiar resultado" distintas.
 
-  btnGenerarPdf.addEventListener('click', generarPdfCliente);
+  // El manejo de btnGenerarPdf ahora vive en js/cotizador.js, que usa
+  // el nuevo pdfGenerator.js multi-ítem en vez de construirHtmlPdf()
+  // (pensado para un solo ítem). generarPdfCliente() y construirHtmlPdf()
+  // quedan en este archivo sin uso activo, conservadas como referencia
+  // del patrón de captura con html2canvas hasta que se confirme que
+  // ningún flujo legacy las necesita.
 
 });

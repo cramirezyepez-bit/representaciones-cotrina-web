@@ -25,6 +25,7 @@ import { describirVidrio } from './vidrios.js';
 import { describirPerfil } from './perfiles.js';
 import { CATALOGO_ACCESORIOS, listarAccesoriosPorAlcance } from './accesorios.js';
 import { TIPOS_SOLUCION } from './catalogos.js';
+import { construirHtmlPdfProyecto } from './pdfGenerator.js';
 
 // --- Mapeo del <select id="tipoVidrio"> legacy a categoría+variante nuevos ---
 const MAPEO_VIDRIO_LEGACY = {
@@ -262,10 +263,117 @@ function manejarLimpiarTodo() {
   actualizarResultado();
 }
 
+/**
+ * Espera a que todas las <img> dentro de un contenedor terminen de
+ * cargar/decodificar. Mismo patrón ya verificado en calculadora.js
+ * (corrige el bug histórico de "render en blanco" por capturar antes
+ * de que la imagen tuviera contenido pintado). Aquí las imágenes son
+ * SVG data-URI generados localmente (carga prácticamente instantánea),
+ * pero se mantiene la misma robustez por si en el futuro se agregan
+ * fotos reales al PDF.
+ */
+function esperarImagenesListas(contenedor) {
+  const imgs = Array.from(contenedor.querySelectorAll('img'));
+  if (!imgs.length) return Promise.resolve();
+  const esperarUna = (img) => new Promise((resolve) => {
+    const finalizar = () => resolve();
+    const timeoutId = setTimeout(finalizar, 4000);
+    const listo = () => { clearTimeout(timeoutId); finalizar(); };
+    if (img.complete && img.naturalWidth > 0) {
+      if (typeof img.decode === 'function') img.decode().then(listo).catch(listo);
+      else listo();
+      return;
+    }
+    img.addEventListener('load', () => {
+      if (typeof img.decode === 'function') img.decode().then(listo).catch(listo);
+      else listo();
+    }, { once: true });
+    img.addEventListener('error', listo, { once: true });
+  });
+  return Promise.all(imgs.map(esperarUna));
+}
+
+async function manejarGenerarPdf() {
+  const items = obtenerItems();
+  if (items.length === 0) {
+    const formAlert = document.getElementById('formAlert');
+    formAlert.textContent = 'Agrega al menos un ítem a la lista antes de generar el PDF.';
+    formAlert.hidden = false;
+    return;
+  }
+  if (typeof window.jspdf === 'undefined' || typeof window.html2canvas === 'undefined') {
+    alert('No se pudo cargar el generador de PDF. Verifica tu conexión e intenta de nuevo.');
+    return;
+  }
+
+  const btnGenerarPdf = document.getElementById('btnGenerarPdf');
+  const htmlOriginalBoton = btnGenerarPdf.innerHTML;
+  btnGenerarPdf.disabled = true;
+  btnGenerarPdf.innerHTML = 'Generando PDF…';
+
+  let contenedorTemporal = null;
+  try {
+    const urgencia = document.getElementById('urgencia').value || 'normal';
+    const utilidadPct = Number(document.getElementById('utilidad').value) || 0;
+    const resumenProyecto = obtenerResumenProyecto(urgencia, utilidadPct);
+
+    const cliente = document.getElementById('nombreCliente').value.trim() || '—';
+    const ruc = document.getElementById('rucCliente').value.trim() || 'No registrado';
+    const distrito = document.getElementById('distrito').value.trim() || '—';
+    const urgenciaTexto = { normal: 'Normal', urgente: 'Urgente', evaluacion: 'Proyecto en evaluación' }[urgencia] || '—';
+    const tienePlanosTexto = document.getElementById('tienePlanos').value === 'si' ? 'Sí' : 'No';
+
+    const fechaHoy = new Date();
+    const numeroPropuesta = 'COT-' + fechaHoy.getFullYear() +
+      String(fechaHoy.getMonth() + 1).padStart(2, '0') +
+      String(fechaHoy.getDate()).padStart(2, '0') + '-' +
+      String(fechaHoy.getHours()).padStart(2, '0') +
+      String(fechaHoy.getMinutes()).padStart(2, '0');
+    const fechaTexto = fechaHoy.toLocaleDateString('es-PE');
+
+    const htmlPropuesta = construirHtmlPdfProyecto({
+      resumenProyecto, cliente, ruc, distrito, urgenciaTexto, tienePlanosTexto, numeroPropuesta, fechaTexto,
+    });
+
+    contenedorTemporal = document.createElement('div');
+    contenedorTemporal.style.position = 'fixed';
+    contenedorTemporal.style.top = '0';
+    contenedorTemporal.style.left = '-9999px';
+    contenedorTemporal.style.zIndex = '-1';
+    contenedorTemporal.innerHTML = htmlPropuesta;
+    document.body.appendChild(contenedorTemporal);
+
+    await esperarImagenesListas(contenedorTemporal);
+    await new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+
+    const nodoPdf = contenedorTemporal.querySelector('#pdfRoot');
+    const canvas = await window.html2canvas(nodoPdf, {
+      scale: 2, useCORS: true, backgroundColor: '#ffffff', logging: false,
+    });
+    const imagenCanvas = canvas.toDataURL('image/jpeg', 0.92);
+
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF({ unit: 'mm', format: 'a4' });
+    const anchoA4 = 210;
+    const altoA4 = (canvas.height * anchoA4) / canvas.width;
+    doc.addImage(imagenCanvas, 'JPEG', 0, 0, anchoA4, altoA4);
+
+    const nombreArchivo = `Cotizacion_${numeroPropuesta}_${cliente.replace(/[^a-zA-Z0-9]/g, '_')}.pdf`;
+    doc.save(nombreArchivo);
+  } finally {
+    if (contenedorTemporal && contenedorTemporal.parentNode) {
+      contenedorTemporal.parentNode.removeChild(contenedorTemporal);
+    }
+    btnGenerarPdf.disabled = false;
+    btnGenerarPdf.innerHTML = htmlOriginalBoton;
+  }
+}
+
 document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('btnAgregarItem').addEventListener('click', manejarAgregarItem);
   document.getElementById('itemsList').addEventListener('click', manejarListaClick);
   document.getElementById('btnLimpiar').addEventListener('click', manejarLimpiarTodo);
+  document.getElementById('btnGenerarPdf').addEventListener('click', manejarGenerarPdf);
 
   // Recalcular el proyecto si cambian variables comerciales globales
   // (urgencia, utilidad, distrito) sin necesidad de re-agregar ítems.
