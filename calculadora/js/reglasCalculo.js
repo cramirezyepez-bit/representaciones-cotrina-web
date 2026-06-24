@@ -19,11 +19,58 @@ import { obtenerFactorPerfil } from './perfiles.js';
 import { calcularSubtotalAccesorios, calcularFactorAccesoriosLegacy } from './accesorios.js';
 
 /**
+ * Calcula el factor de apertura efectivo de un ítem.
+ *
+ * Caso simple (sin composición): el factor es directamente el
+ * de TIPOS_APERTURA[tipoApertura].
+ *
+ * Caso mixto (con composición, ej. fijo+corredizo): el factor es
+ * el PROMEDIO PONDERADO POR ANCHO de cada módulo. Esto refleja
+ * que un vano de 3m con 1m fijo (factor 0) + 2m corredizo
+ * (factor 0.28) cuesta proporcionalmente más que todo fijo y
+ * menos que todo corredizo, según cuánto mecanismo real tiene
+ * cada parte del vano:
+ *   factor = (1m × 0 + 2m × 0.28) / 3m = 0.187
+ *
+ * Si la suma de anchos de los módulos no coincide con el ancho
+ * total del ítem (más allá de una tolerancia de redondeo de
+ * 1 cm por módulo), se lanza un error explícito en vez de
+ * calcular silenciosamente con datos inconsistentes — un error
+ * de composición mal capturada en un sistema de cotización no
+ * debe pasar desapercibido.
+ */
+function calcularFactorAperturaEfectivo(tipoApertura, composicion, anchoTotal) {
+  if (!composicion || composicion.length <= 1) {
+    return { factor: obtenerFactorApertura(tipoApertura), esMixto: false };
+  }
+
+  const sumaAnchos = composicion.reduce((acc, m) => acc + Number(m.anchoModulo || 0), 0);
+  const toleranciaCm = 0.01 * composicion.length;
+  if (Math.abs(sumaAnchos - Number(anchoTotal)) > toleranciaCm) {
+    throw new Error(
+      `La suma de anchos de los módulos (${sumaAnchos.toFixed(2)} m) no coincide con el ` +
+      `ancho total del ítem (${Number(anchoTotal).toFixed(2)} m). Revisa la composición.`
+    );
+  }
+
+  const factorPonderado = composicion.reduce((acc, m) => {
+    const f = obtenerFactorApertura(m.tipoApertura);
+    return acc + f * (Number(m.anchoModulo) / Number(anchoTotal));
+  }, 0);
+
+  return { factor: factorPonderado, esMixto: true };
+}
+
+/**
  * Calcula el costo de UN ítem del proyecto.
  *
  * @param {Object} item - Datos del ítem:
  *   tipoSolucion, ancho, alto, cantidad,
- *   tipoApertura ('fijo' | 'corredizo2' | 'batiente' | ... ver catalogos.js),
+ *   tipoApertura ('fijo' | 'corredizo2' | 'batiente' | ... ver catalogos.js)
+ *     — se ignora si `composicion` tiene más de 1 módulo,
+ *   composicion (opcional): [{ tipoApertura, anchoModulo }, ...]
+ *     para combinaciones mixtas (fijo+corredizo, puerta+fijo
+ *     lateral, etc). La suma de anchoModulo debe igualar `ancho`.
  *   vidrioCategoria, vidrioVariante,
  *   perfilSerie, perfilColor,
  *   accesorios: [{clave, cantidad}]  (nuevo modelo)
@@ -37,6 +84,7 @@ export function calcularItem(item) {
     alto = 0,
     cantidad = 1,
     tipoApertura = 'fijo',
+    composicion = null,
     vidrioCategoria,
     vidrioVariante,
     perfilSerie = 'noAplica',
@@ -59,7 +107,7 @@ export function calcularItem(item) {
   costoBase = Math.max(costoBase, COSTO_MINIMO_PROYECTO);
 
   // Adicionales porcentuales sobre costo base (apertura + vidrio + perfil + accesorios legacy).
-  const factorApertura = obtenerFactorApertura(tipoApertura);
+  const { factor: factorApertura, esMixto } = calcularFactorAperturaEfectivo(tipoApertura, composicion, ancho);
   const factorVidrio = obtenerFactorVidrio(vidrioCategoria, vidrioVariante);
   const factorPerfil = obtenerFactorPerfil(perfilSerie);
   const factorAccesoriosLegacy = calcularFactorAccesoriosLegacy(accesoriosLegacy);
@@ -77,11 +125,17 @@ export function calcularItem(item) {
 
   const costoInstalacion = subtotalTecnico * FACTOR_INSTALACION;
 
+  const nombreAperturaCompuesto = esMixto
+    ? composicion.map(m => TIPOS_APERTURA[m.tipoApertura] ? TIPOS_APERTURA[m.tipoApertura].nombre : m.tipoApertura).join(' + ')
+    : (TIPOS_APERTURA[tipoApertura] ? TIPOS_APERTURA[tipoApertura].nombre : '—');
+
   return {
     tipoSolucion,
     nombreSolucion: refBase.nombre,
     tipoApertura,
-    nombreApertura: TIPOS_APERTURA[tipoApertura] ? TIPOS_APERTURA[tipoApertura].nombre : '—',
+    composicion: esMixto ? composicion : null,
+    esMixto,
+    nombreApertura: nombreAperturaCompuesto,
     ancho: Number(ancho), alto: Number(alto), cantidad: Number(cantidad),
     areaPorUnidad, areaTotal,
     vidrioCategoria, vidrioVariante,

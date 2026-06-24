@@ -180,28 +180,75 @@ function dibujarGuillotina(w, h) {
  * tipo de solución no tiene dibujo soportado (según el alcance
  * acordado: solo ventana, puerta, mampara).
  */
+function dibujarModuloSegunApertura(tipoApertura, w, h) {
+  switch (tipoApertura) {
+    case 'corredizo2': return dibujarCorredizo(w, h, 2);
+    case 'corredizo3': return dibujarCorredizo(w, h, 3);
+    case 'corredizo4': return dibujarCorredizo(w, h, 4);
+    case 'batiente':
+    case 'pivotante':  return dibujarBatiente(w, h);
+    case 'oscilobatiente': return dibujarOscilobatiente(w, h);
+    case 'puerta':     return dibujarPuerta(w, h);
+    case 'plegable':   return dibujarPlegable(w, h);
+    case 'guillotina': return dibujarGuillotina(w, h);
+    case 'fijo':
+    case 'especial':
+    default:           return dibujarFijo(w, h);
+  }
+}
+
+/**
+ * Dibuja una composición mixta (ej. fijo + corredizo2) como una
+ * fila de franjas verticales, cada una con el ancho proporcional
+ * a su anchoModulo dentro del vano total. Cada función de dibujo
+ * individual ya está verificada visualmente para un módulo de
+ * w=100 — en vez de reescribirlas para aceptar coordenadas
+ * arbitrarias (riesgo de introducir bugs en dibujos ya probados),
+ * se reutilizan tal cual dentro de un <g transform="translate+scale">
+ * por módulo, lo que las "encoge/traslada" sin tocar su lógica
+ * interna de coordenadas.
+ */
+function dibujarComposicion(w, h, composicion, anchoTotal) {
+  let x = 0;
+  const grupos = composicion.map(modulo => {
+    const anchoFraccion = Number(modulo.anchoModulo) / Number(anchoTotal);
+    const anchoSvg = w * anchoFraccion;
+    const contenidoModulo = dibujarModuloSegunApertura(modulo.tipoApertura, 100, h); // se dibuja en un lienzo virtual de 100, luego se escala
+    const escalaX = anchoSvg / 100;
+    const grupo = `<g transform="translate(${x},0) scale(${escalaX},1)">${contenidoModulo}</g>`;
+    x += anchoSvg;
+    return grupo;
+  });
+  // Marco exterior único envolviendo todo el vano, para que la
+  // composición se vea como un solo vano dividido, no como
+  // módulos sueltos sin relación visual entre sí.
+  const marcoExterior = `<rect x="1" y="1" width="${w - 2}" height="${h - 2}" fill="none" stroke="${COLOR_MARCO}" stroke-width="${GROSOR_MARCO}"/>`;
+  // Líneas divisorias verticales entre módulos (parante central del vano).
+  let divisores = '';
+  let xDiv = 0;
+  for (let i = 0; i < composicion.length - 1; i++) {
+    xDiv += w * (Number(composicion[i].anchoModulo) / Number(anchoTotal));
+    divisores += `<line x1="${xDiv}" y1="2" x2="${xDiv}" y2="${h - 2}" stroke="${COLOR_MARCO}" stroke-width="${GROSOR_MARCO * 0.8}"/>`;
+  }
+  return `${grupos.join('')}${divisores}${marcoExterior}`;
+}
+
+/**
+ * Genera el SVG técnico de un ítem ya calculado (objeto devuelto
+ * por calcularItem en reglasCalculo.js). Devuelve null si el
+ * tipo de solución no tiene dibujo soportado (según el alcance
+ * acordado: solo ventana, puerta, mampara).
+ */
 export function generarDibujoItem(itemCalculado) {
-  const { tipoSolucion, tipoApertura, ancho, alto, cantidad } = itemCalculado;
+  const { tipoSolucion, tipoApertura, composicion, esMixto, ancho, alto, cantidad } = itemCalculado;
   if (!tieneDibujo(tipoSolucion)) return null;
 
   const w = 100;
   const h = escalaAlto(ancho || 1, alto || 1, w);
 
-  let contenido = '';
-  switch (tipoApertura) {
-    case 'corredizo2': contenido = dibujarCorredizo(w, h, 2); break;
-    case 'corredizo3': contenido = dibujarCorredizo(w, h, 3); break;
-    case 'corredizo4': contenido = dibujarCorredizo(w, h, 4); break;
-    case 'batiente':
-    case 'pivotante':  contenido = dibujarBatiente(w, h); break;
-    case 'oscilobatiente': contenido = dibujarOscilobatiente(w, h); break;
-    case 'puerta':     contenido = dibujarPuerta(w, h); break;
-    case 'plegable':   contenido = dibujarPlegable(w, h); break;
-    case 'guillotina': contenido = dibujarGuillotina(w, h); break;
-    case 'fijo':
-    case 'especial':
-    default:           contenido = dibujarFijo(w, h);
-  }
+  const contenido = (esMixto && composicion && composicion.length > 1)
+    ? dibujarComposicion(w, h, composicion, ancho)
+    : dibujarModuloSegunApertura(tipoApertura, w, h);
 
   const etiquetaMedidas = `${Number(ancho).toFixed(2)} × ${Number(alto).toFixed(2)} m`;
   const etiquetaCantidad = cantidad > 1 ? ` (×${cantidad})` : '';

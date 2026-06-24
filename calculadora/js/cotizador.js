@@ -24,7 +24,7 @@ import { agregarItem, duplicarItem, eliminarItem, obtenerItems, obtenerResumenPr
 import { describirVidrio } from './vidrios.js';
 import { describirPerfil } from './perfiles.js';
 import { CATALOGO_ACCESORIOS, listarAccesoriosPorAlcance } from './accesorios.js';
-import { TIPOS_SOLUCION } from './catalogos.js';
+import { TIPOS_SOLUCION, listarTiposApertura } from './catalogos.js';
 import { construirHtmlPdfProyecto } from './pdfGenerator.js';
 
 // --- Mapeo del <select id="tipoVidrio"> legacy a categoría+variante nuevos ---
@@ -73,9 +73,12 @@ function leerDatosFormulario() {
     .map(cb => cb.value)
     .filter(v => v !== 'ninguno');
 
+  const composicion = leerComposicionMixta();
+
   return {
     tipoSolucion,
     tipoApertura,
+    composicion,
     ancho, alto, cantidad,
     vidrioCategoria: mapeoVidrio.categoria,
     vidrioVariante: mapeoVidrio.variante,
@@ -88,6 +91,115 @@ function leerDatosFormulario() {
   };
 }
 
+/* ------------------------------------------------------------
+   COMPOSICIÓN MIXTA: agregar/quitar módulos, leer del DOM,
+   validar que la suma de anchos coincida con el ancho del ítem.
+   ------------------------------------------------------------ */
+function chkComposicionActivo() {
+  return document.getElementById('chkComposicionMixta').checked;
+}
+
+function leerComposicionMixta() {
+  if (!chkComposicionActivo()) return null;
+  const filas = document.querySelectorAll('.composicion-modulo-row');
+  const modulos = Array.from(filas).map(fila => ({
+    tipoApertura: fila.querySelector('.mod-tipo-apertura').value,
+    anchoModulo: Number(fila.querySelector('.mod-ancho').value) || 0,
+  }));
+  return modulos.length > 1 ? modulos : null;
+}
+
+function opcionesTipoApertura(seleccionado) {
+  return listarTiposApertura().map(t =>
+    `<option value="${t.key}" ${t.key === seleccionado ? 'selected' : ''}>${t.nombre}</option>`
+  ).join('');
+}
+
+function crearFilaModulo(numero, tipoAperturaDefault = 'fijo', anchoDefault = '') {
+  const fila = document.createElement('div');
+  fila.className = 'composicion-modulo-row';
+  fila.innerHTML = `
+    <span class="mod-label">Módulo ${numero}</span>
+    <select class="mod-tipo-apertura">${opcionesTipoApertura(tipoAperturaDefault)}</select>
+    <input type="number" class="mod-ancho" min="0" step="0.01" placeholder="Ancho (m)" value="${anchoDefault}">
+    <button type="button" class="btn-quitar-modulo" title="Quitar módulo">✕</button>
+  `;
+  fila.querySelector('.btn-quitar-modulo').addEventListener('click', () => {
+    fila.remove();
+    renumerarModulos();
+    validarSumaComposicion();
+  });
+  fila.querySelector('.mod-ancho').addEventListener('input', validarSumaComposicion);
+  return fila;
+}
+
+function renumerarModulos() {
+  document.querySelectorAll('.composicion-modulo-row .mod-label').forEach((lbl, i) => {
+    lbl.textContent = `Módulo ${i + 1}`;
+  });
+}
+
+function validarSumaComposicion() {
+  const elSuma = document.getElementById('composicionSuma');
+  const anchoItem = Number(document.getElementById('ancho').value) || 0;
+  const filas = document.querySelectorAll('.composicion-modulo-row .mod-ancho');
+  const suma = Array.from(filas).reduce((acc, inp) => acc + (Number(inp.value) || 0), 0);
+
+  if (filas.length < 2) {
+    elSuma.textContent = 'Agrega al menos 2 módulos para una composición mixta.';
+    elSuma.className = 'field-hint field-hint-tight composicion-suma';
+    return false;
+  }
+  if (!anchoItem) {
+    elSuma.textContent = `Suma de módulos: ${suma.toFixed(2)} m. Ingresa el ancho total del ítem para validar.`;
+    elSuma.className = 'field-hint field-hint-tight composicion-suma';
+    return false;
+  }
+  const diferencia = Math.abs(suma - anchoItem);
+  if (diferencia > 0.02) {
+    elSuma.textContent = `⚠ La suma de módulos (${suma.toFixed(2)} m) no coincide con el ancho total del ítem (${anchoItem.toFixed(2)} m).`;
+    elSuma.className = 'field-hint field-hint-tight composicion-suma suma-error';
+    return false;
+  }
+  elSuma.textContent = `✓ Suma de módulos: ${suma.toFixed(2)} m — coincide con el ancho total.`;
+  elSuma.className = 'field-hint field-hint-tight composicion-suma suma-ok';
+  return true;
+}
+
+function inicializarComposicionMixta() {
+  const chk = document.getElementById('chkComposicionMixta');
+  const contenedor = document.getElementById('composicionMixta');
+  const selectAperturaSimple = document.getElementById('tipoApertura');
+  const modulosWrap = document.getElementById('composicionModulos');
+  const btnAgregar = document.getElementById('btnAgregarModulo');
+
+  chk.addEventListener('change', () => {
+    contenedor.hidden = !chk.checked;
+    selectAperturaSimple.disabled = chk.checked;
+    if (chk.checked && modulosWrap.children.length === 0) {
+      modulosWrap.appendChild(crearFilaModulo(1, 'fijo'));
+      modulosWrap.appendChild(crearFilaModulo(2, 'corredizo2'));
+      validarSumaComposicion();
+    }
+  });
+
+  btnAgregar.addEventListener('click', () => {
+    const numero = modulosWrap.children.length + 1;
+    modulosWrap.appendChild(crearFilaModulo(numero));
+    validarSumaComposicion();
+  });
+
+  document.getElementById('ancho').addEventListener('input', validarSumaComposicion);
+}
+
+function resetearComposicionMixta() {
+  document.getElementById('chkComposicionMixta').checked = false;
+  document.getElementById('composicionMixta').hidden = true;
+  document.getElementById('tipoApertura').disabled = false;
+  document.getElementById('composicionModulos').innerHTML = '';
+  document.getElementById('composicionSuma').textContent = '';
+}
+
 function validarDatosMinimos(datos) {
   const errores = [];
   if (!datos.tipoSolucion) errores.push('Selecciona el tipo de solución.');
@@ -95,6 +207,13 @@ function validarDatosMinimos(datos) {
   if (!datos.alto || Number(datos.alto) <= 0) errores.push('Ingresa un alto válido.');
   if (!datos.cantidad || Number(datos.cantidad) < 1) errores.push('Ingresa una cantidad válida.');
   if (!document.getElementById('tipoVidrio').value) errores.push('Selecciona el tipo de vidrio.');
+  if (chkComposicionActivo()) {
+    if (!datos.composicion || datos.composicion.length < 2) {
+      errores.push('Agrega al menos 2 módulos para una composición mixta, o desmarca la casilla.');
+    } else if (!validarSumaComposicion()) {
+      errores.push('La suma de anchos de los módulos no coincide con el ancho total del ítem.');
+    }
+  }
   return errores;
 }
 
@@ -241,6 +360,7 @@ function manejarAgregarItem() {
   });
   document.getElementById('tipoApertura').value = 'fijo';
   document.querySelectorAll('input[name="accesorios"]:checked').forEach(cb => cb.checked = false);
+  resetearComposicionMixta();
 }
 
 function manejarListaClick(e) {
@@ -257,6 +377,7 @@ function manejarLimpiarTodo() {
   const form = document.getElementById('calcForm');
   form.reset();
   vaciarProyecto();
+  resetearComposicionMixta();
   document.getElementById('formAlert').hidden = true;
   renderItems();
   renderAccesoriosProyecto();
@@ -374,6 +495,7 @@ document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('itemsList').addEventListener('click', manejarListaClick);
   document.getElementById('btnLimpiar').addEventListener('click', manejarLimpiarTodo);
   document.getElementById('btnGenerarPdf').addEventListener('click', manejarGenerarPdf);
+  inicializarComposicionMixta();
 
   // Recalcular el proyecto si cambian variables comerciales globales
   // (urgencia, utilidad, distrito) sin necesidad de re-agregar ítems.
