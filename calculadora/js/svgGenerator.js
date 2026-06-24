@@ -32,8 +32,16 @@ export function tieneDibujo(tipoSolucion) {
 }
 
 function escalaAlto(ancho, alto, anchoSvg = 100) {
+  // Proporción real, sin clamp: el viewBox debe reflejar fielmente la
+  // relación ancho:alto del vano (ej. 4.4×1.6 m = relación 2.75:1, una
+  // puerta 0.9×2.1 m = relación 1:2.33). Antes esta función forzaba el
+  // resultado entre 40 y 160, lo que distorsionaba vanos muy anchos o
+  // muy verticales. El ajuste a cualquier caja disponible (pantalla o
+  // PDF) sin recortar ni distorsionar lo resuelve fitDrawingToPage() en
+  // pdfGenerator.js, que escala manteniendo esta proporción real — así
+  // que aquí ya no hace falta limitar el rango.
   const relacion = alto / ancho;
-  return Math.max(40, Math.min(160, anchoSvg * relacion));
+  return Math.max(8, anchoSvg * relacion); // solo evita un alto absurdamente cercano a cero
 }
 
 function flechaDoble(x1, y1, x2, y2) {
@@ -236,14 +244,31 @@ function colorVidrioDe(categoria) {
  * interna de coordenadas. Si el paño trae vidrioCategoria propia,
  * se sobreescribe el color de vidrio de ese módulo específico para
  * que un [F] en templado se distinga de un [M] en laminado.
+ *
+ * ALTO INDEPENDIENTE POR PAÑO: si un paño define su propio
+ * `altoModulo` (distinto del alto general del vano — ej. un panel
+ * fijo más bajo junto a una puerta más alta), se dibuja a su
+ * propia escala vertical y se alinea contra el borde INFERIOR del
+ * vano (h_max), que es como se construyen realmente estos sistemas:
+ * los marcos asientan sobre el mismo nivel de piso, y es el marco
+ * superior el que varía en altura entre paños.
  */
-function dibujarComposicion(w, h, panos, anchoTotal, conLetras = true) {
+function dibujarComposicion(w, hMax, panos, anchoTotal, altoVanoReal, conLetras = true) {
   let x = 0;
   const grupos = panos.map((pano, i) => {
     const anchoFraccion = Number(pano.anchoModulo) / Number(anchoTotal);
     const anchoSvg = w * anchoFraccion;
-    const contenidoModulo = dibujarModuloSegunApertura(pano.tipoApertura, 100, h);
     const escalaX = anchoSvg / 100;
+
+    // Alto propio del paño (si lo define) relativo al alto del vano —
+    // un paño con altoModulo menor se dibuja más bajo y se alinea contra
+    // el piso (offsetY lo desplaza desde arriba, dejando el hueco arriba).
+    const tieneAltoPropio = pano.altoModulo != null && Number(pano.altoModulo) > 0;
+    const hPano = tieneAltoPropio ? hMax * (Number(pano.altoModulo) / Number(altoVanoReal)) : hMax;
+    const hPanoClamp = Math.min(Math.max(hPano, 4), hMax);
+    const offsetY = hMax - hPanoClamp;
+
+    const contenidoModulo = dibujarModuloSegunApertura(pano.tipoApertura, 100, hPanoClamp);
     const colorPano = pano.vidrioCategoria ? colorVidrioDe(pano.vidrioCategoria) : null;
     // Si el paño tiene un color de vidrio distinto al genérico, se
     // inyecta como variable CSS local que sobreescribe COLOR_VIDRIO
@@ -253,18 +278,18 @@ function dibujarComposicion(w, h, panos, anchoTotal, conLetras = true) {
       ? contenidoModulo.replaceAll(COLOR_VIDRIO, colorPano)
       : contenidoModulo;
     const letra = conLetras
-      ? `<circle cx="14" cy="11" r="7" fill="#fff" stroke="${COLOR_MARCO}" stroke-width="1" opacity="0.92"/><text x="14" y="13.8" font-size="8.5" font-weight="800" text-anchor="middle" fill="${COLOR_MARCO}">${letraPano(i)}</text>`
+      ? `<circle cx="14" cy="${offsetY + 11}" r="7" fill="#fff" stroke="${COLOR_MARCO}" stroke-width="1" opacity="0.92"/><text x="14" y="${offsetY + 13.8}" font-size="8.5" font-weight="800" text-anchor="middle" fill="${COLOR_MARCO}">${letraPano(i)}</text>`
       : '';
-    const grupo = `<g transform="translate(${x},0) scale(${escalaX},1)">${contenidoConColor}<g transform="scale(${1 / escalaX},1)">${letra}</g></g>`;
+    const grupo = `<g transform="translate(${x},${offsetY}) scale(${escalaX},1)">${contenidoConColor}<g transform="scale(${1 / escalaX},1)">${letra}</g></g>`;
     x += anchoSvg;
     return grupo;
   });
-  const marcoExterior = `<rect x="1" y="1" width="${w - 2}" height="${h - 2}" fill="none" stroke="${COLOR_MARCO}" stroke-width="${GROSOR_MARCO}"/>`;
+  const marcoExterior = `<rect x="1" y="1" width="${w - 2}" height="${hMax - 2}" fill="none" stroke="${COLOR_MARCO}" stroke-width="${GROSOR_MARCO}"/>`;
   let divisores = '';
   let xDiv = 0;
   for (let i = 0; i < panos.length - 1; i++) {
     xDiv += w * (Number(panos[i].anchoModulo) / Number(anchoTotal));
-    divisores += `<line x1="${xDiv}" y1="2" x2="${xDiv}" y2="${h - 2}" stroke="${COLOR_MARCO}" stroke-width="${GROSOR_MARCO * 0.8}"/>`;
+    divisores += `<line x1="${xDiv}" y1="2" x2="${xDiv}" y2="${hMax - 2}" stroke="${COLOR_MARCO}" stroke-width="${GROSOR_MARCO * 0.8}"/>`;
   }
   return `${grupos.join('')}${divisores}${marcoExterior}`;
 }
@@ -273,6 +298,27 @@ function letraPano(indice) {
   const LETRAS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
   if (indice < 26) return LETRAS[indice];
   return LETRAS[Math.floor(indice / 26) - 1] + LETRAS[indice % 26];
+}
+
+/**
+ * Devuelve las dimensiones reales (ancho × alto, en las mismas
+ * unidades del viewBox) del dibujo técnico de un ítem, sin
+ * generar el SVG completo — usado por fitDrawingToPage() en
+ * pdfGenerator.js para calcular la escala y el centrado
+ * correctos ANTES de insertar la imagen en la página, en vez de
+ * depender de que el navegador calcule "height:auto" a partir
+ * de un SVG sin tamaño intrínseco (la causa real del recorte:
+ * un <svg> sin width/height propios tiene un tamaño por defecto
+ * de 300×150px en CSS, que no guarda relación con el viewBox
+ * real — por eso un vano muy ancho y bajo, como 4.4×1.6 m,
+ * terminaba mostrando solo una esquina ampliada).
+ */
+export function obtenerDimensionesDibujo(itemCalculado) {
+  const { tipoSolucion, ancho, alto } = itemCalculado;
+  if (!tieneDibujo(tipoSolucion)) return null;
+  const w = 100;
+  const h = escalaAlto(ancho || 1, alto || 1, w);
+  return { width: w, height: h + 14 };
 }
 
 /**
@@ -294,13 +340,13 @@ export function generarDibujoItem(itemCalculado) {
   const h = escalaAlto(ancho || 1, alto || 1, w);
   const listaPanos = panos && panos.length ? panos : [{ tipoApertura: itemCalculado.tipoApertura, anchoModulo: ancho }];
 
-  const contenido = dibujarComposicion(w, h, listaPanos, ancho, listaPanos.length > 1);
+  const contenido = dibujarComposicion(w, h, listaPanos, ancho, alto, listaPanos.length > 1);
 
   const etiquetaMedidas = `${Number(ancho).toFixed(2)} × ${Number(alto).toFixed(2)} m`;
   const etiquetaCantidad = cantidad > 1 ? ` (×${cantidad})` : '';
 
   return `
-    <svg viewBox="0 0 ${w} ${h + 14}" xmlns="http://www.w3.org/2000/svg" font-family="sans-serif">
+    <svg viewBox="0 0 ${w} ${h + 14}" width="${w}" height="${h + 14}" xmlns="http://www.w3.org/2000/svg" font-family="sans-serif">
       <g>${contenido}</g>
       <text x="${w / 2}" y="${h + 10}" font-size="5.5" text-anchor="middle" fill="${COLOR_LINEA}">${etiquetaMedidas}${etiquetaCantidad}</text>
     </svg>

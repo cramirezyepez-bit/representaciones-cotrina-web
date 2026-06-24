@@ -879,6 +879,7 @@ img{ max-width:100%; display:block; }
 .composicion-modulos-head span:nth-child(2){ flex: 1.3 1 130px; }
 .composicion-modulos-head span:nth-child(3){ flex: 1.1 1 110px; }
 .composicion-modulos-head span:nth-child(4){ flex: 0.7 1 80px; }
+.composicion-modulos-head span:nth-child(5){ flex: 0.7 1 80px; }
 .composicion-modulos-head span:last-child{ width: 30px; flex-shrink: 0; }
 @media (max-width: 640px){
   .composicion-modulos-head{ display: none; }
@@ -918,13 +919,18 @@ img{ max-width:100%; display:block; }
   font-size: 12.5px;
   background: #fbf8f2;
 }
-.composicion-modulo-row .mod-ancho{
+.composicion-modulo-row .mod-ancho,
+.composicion-modulo-row .mod-alto{
   flex: 0.7 1 80px;
   padding: 8px 10px;
   border: 1px solid var(--linea-oscura);
   border-radius: 7px;
   font-size: 13px;
 }
+.composicion-modulo-row .mod-alto{
+  background: #fbf8f2;
+}
+.composicion-modulo-row .mod-alto::placeholder{ font-size: 10.5px; }
 .btn-quitar-modulo{
   width: 30px;
   height: 30px;

@@ -153,7 +153,42 @@ function renderGridTipoSolucion(valorActual = '') {
     select.value = valor;
     select.dispatchEvent(new Event('change', { bubbles: true }));
     actualizarVisibilidadVariantesDucha(valor);
+    resincronizarModoPanos();
   });
+}
+
+/**
+ * Si ya hay paños configurados en el constructor y el usuario
+ * cambia el tipo de sistema (ej. de Ventana a Puerta de ducha),
+ * las filas existentes deben pasar del modo simple (F/M) al modo
+ * avanzado o viceversa — preservando ancho, alto y vidrio ya
+ * ingresados, solo reconstruyendo el selector de apertura con el
+ * conjunto de opciones correcto para el nuevo tipo de sistema.
+ */
+function resincronizarModoPanos() {
+  const modulosWrap = document.getElementById('composicionModulos');
+  const filas = Array.from(modulosWrap.children);
+  if (filas.length === 0) return;
+
+  const modoNuevoEsSimple = usaClasificacionSimplePano(document.getElementById('tipoSolucion').value);
+
+  filas.forEach(fila => {
+    const modoActualEsSimple = fila.dataset.modoApertura === 'simple';
+    if (modoActualEsSimple === modoNuevoEsSimple) return; // ya está en el modo correcto
+
+    const selectApertura = fila.querySelector('.mod-tipo-apertura');
+    const valorActual = selectApertura.value;
+    // Traducir el valor actual al nuevo conjunto de opciones: de simple a
+    // avanzado, F/M se traduce a su tipoApertura real concreto; de avanzado
+    // a simple, cualquier apertura con mecanismo se simplifica a "M".
+    const nuevoValor = modoNuevoEsSimple
+      ? letraSimpleDeApertura(valorActual)
+      : (CLASIFICACION_SIMPLE_PANO[valorActual]?.tipoAperturaReal || valorActual);
+
+    fila.dataset.modoApertura = modoNuevoEsSimple ? 'simple' : 'avanzado';
+    selectApertura.innerHTML = opcionesTipoApertura(nuevoValor, modoNuevoEsSimple);
+  });
+  actualizarNotacionPanos();
 }
 
 function renderGridTipoApertura(valorActual = 'fijo') {
@@ -263,10 +298,19 @@ function leerPanosCompuestos() {
   const panos = Array.from(filas).map(fila => {
     const vidrioLegacy = fila.querySelector('.mod-vidrio').value;
     const mapeo = MAPEO_VIDRIO_LEGACY[vidrioLegacy] || { categoria: 'crudo', variante: 'unico' };
+    const valorAperturaUI = fila.querySelector('.mod-tipo-apertura').value;
+    // Si la fila está en modo simple (F/M), traducir a un tipoApertura
+    // real concreto antes de exponerlo — el motor de cálculo siempre
+    // recibe un tipoApertura válido de catalogos.js, nunca la letra UI.
+    const esSimple = fila.dataset.modoApertura === 'simple';
+    const tipoApertura = esSimple
+      ? (CLASIFICACION_SIMPLE_PANO[valorAperturaUI]?.tipoAperturaReal || 'fijo')
+      : valorAperturaUI;
+    const altoInput = fila.querySelector('.mod-alto').value;
     return {
-      tipoApertura: fila.querySelector('.mod-tipo-apertura').value,
+      tipoApertura,
       anchoModulo: Number(fila.querySelector('.mod-ancho').value) || 0,
-      altoModulo: null,
+      altoModulo: altoInput !== '' ? Number(altoInput) : null,
       vidrioCategoria: mapeo.categoria,
       vidrioVariante: mapeo.variante,
     };
@@ -274,7 +318,47 @@ function leerPanosCompuestos() {
   return panos.length > 1 ? panos : null;
 }
 
-function opcionesTipoApertura(seleccionado) {
+/**
+ * Clasificación SIMPLE de paño (F = Fijo, M = Móvil) para sistemas
+ * estándar (ventana, mampara, PVC, aluminio) — el usuario no
+ * necesita saber si "M" significa corredizo, batiente u otro
+ * mecanismo: esa decisión técnica se resuelve con un valor por
+ * defecto razonable y la descripción comercial completa se sigue
+ * generando a nivel del sistema completo (describirItemAutomatico
+ * en pdfGenerator.js), no por paño. El motor de cálculo no cambia:
+ * "M" simplemente se traduce a un tipoApertura real concreto antes
+ * de llegar a calcularItem(), igual que cualquier otro paño.
+ */
+const CLASIFICACION_SIMPLE_PANO = {
+  F: { label: 'Fijo', tipoAperturaReal: 'fijo' },
+  M: { label: 'Móvil', tipoAperturaReal: 'corredizo2' },
+};
+
+/** Tipos de sistema donde el usuario solo ve la clasificación simple F/M. */
+const SISTEMAS_CLASIFICACION_SIMPLE = ['ventana', 'mampara', 'muroCortina', 'divisionInterior'];
+
+/** ¿Este tipo de solución debe mostrar solo F/M en el constructor de paños? */
+function usaClasificacionSimplePano(tipoSolucion) {
+  return SISTEMAS_CLASIFICACION_SIMPLE.includes(tipoSolucion);
+}
+
+/**
+ * Dado un tipoApertura real (el que ya entiende el motor de
+ * cálculo), devuelve la letra simple F/M que le corresponde para
+ * mostrarla preseleccionada si el usuario edita un ítem ya
+ * guardado. Cualquier apertura con mecanismo (corredizo, batiente,
+ * etc.) se interpreta como "M"; solo "fijo" es "F".
+ */
+function letraSimpleDeApertura(tipoApertura) {
+  return tipoApertura === 'fijo' ? 'F' : 'M';
+}
+
+function opcionesTipoApertura(seleccionado, modoSimple) {
+  if (modoSimple) {
+    return Object.entries(CLASIFICACION_SIMPLE_PANO).map(([letra, def]) =>
+      `<option value="${letra}" ${letra === seleccionado ? 'selected' : ''}>${letra} — ${def.label}</option>`
+    ).join('');
+  }
   return listarTiposApertura().map(t =>
     `<option value="${t.key}" ${t.key === seleccionado ? 'selected' : ''}>${t.nombre}</option>`
   ).join('');
@@ -298,22 +382,24 @@ function opcionesVidrioPano(seleccionado) {
 
 /**
  * Crea una fila de paño dentro del constructor de composición
- * mixta: tipo de apertura, ancho, y AHORA TAMBIÉN vidrio propio
- * del paño (modelo FRAME+PANELS+OPENINGS) — antes todos los
- * módulos de una composición heredaban el único vidrio del ítem;
- * ahora cada paño puede llevar un vidrio distinto, lo que se
- * refleja en el costo (reglasCalculo.js calcula por paño) y en
- * el dibujo técnico (svgGenerator.js colorea cada paño según su
- * categoría de vidrio).
+ * mixta: tipo de apertura (simple F/M o avanzada según el tipo de
+ * sistema), vidrio propio, ancho y alto independientes (modelo
+ * FRAME+PANELS+OPENINGS) — cada paño puede tener su propia
+ * medida completa, no solo su ancho dentro del vano.
  */
-function crearFilaModulo(numero, tipoAperturaDefault = 'fijo', anchoDefault = '', vidrioLegacyDefault = '') {
+function crearFilaModulo(numero, tipoAperturaDefault = 'fijo', anchoDefault = '', vidrioLegacyDefault = '', altoDefault = '') {
+  const modoSimple = usaClasificacionSimplePano(document.getElementById('tipoSolucion').value);
+  const valorAperturaInicial = modoSimple ? letraSimpleDeApertura(tipoAperturaDefault) : tipoAperturaDefault;
+
   const fila = document.createElement('div');
   fila.className = 'composicion-modulo-row';
+  fila.dataset.modoApertura = modoSimple ? 'simple' : 'avanzado';
   fila.innerHTML = `
     <span class="mod-label">Paño ${letraPanoUI(numero - 1)}</span>
-    <select class="mod-tipo-apertura">${opcionesTipoApertura(tipoAperturaDefault)}</select>
+    <select class="mod-tipo-apertura">${opcionesTipoApertura(valorAperturaInicial, modoSimple)}</select>
     <select class="mod-vidrio">${opcionesVidrioPano(vidrioLegacyDefault)}</select>
     <input type="number" class="mod-ancho" min="0" step="0.01" placeholder="Ancho (m)" value="${anchoDefault}">
+    <input type="number" class="mod-alto" min="0" step="0.01" placeholder="Alto (m, opcional)" value="${altoDefault}">
     <button type="button" class="btn-quitar-modulo" title="Quitar paño">✕</button>
   `;
   fila.querySelector('.btn-quitar-modulo').addEventListener('click', () => {
@@ -345,7 +431,13 @@ function actualizarNotacionPanos() {
   if (!el) return;
   const filas = document.querySelectorAll('.composicion-modulo-row .mod-tipo-apertura');
   if (filas.length === 0) { el.textContent = ''; return; }
-  const notacion = Array.from(filas).map(sel => `[${CODIGO_CORTO_APERTURA[sel.value] || '?'}]`).join('');
+  const notacion = Array.from(filas).map(sel => {
+    // El valor puede ser la letra simple "F"/"M" (modo estándar) o un
+    // tipoApertura real avanzado (corredizo2, batiente, etc.) — ambos
+    // casos deben resolver a un código corto de una letra para [F][M][F].
+    const codigo = (sel.value === 'F' || sel.value === 'M') ? sel.value : (CODIGO_CORTO_APERTURA[sel.value] || '?');
+    return `[${codigo}]`;
+  }).join('');
   el.textContent = notacion;
 }
 
@@ -797,7 +889,7 @@ function cargarItemEnFormulario(id) {
     const modulosWrap = document.getElementById('composicionModulos');
     composicionParaEditar.forEach((m, i) => {
       const vidrioLegacy = m.vidrioCategoria ? claveLegacyDeVidrio(m.vidrioCategoria) : '';
-      modulosWrap.appendChild(crearFilaModulo(i + 1, m.tipoApertura, m.anchoModulo, vidrioLegacy));
+      modulosWrap.appendChild(crearFilaModulo(i + 1, m.tipoApertura, m.anchoModulo, vidrioLegacy, m.altoModulo ?? ''));
     });
     validarSumaComposicion();
     actualizarNotacionPanos();

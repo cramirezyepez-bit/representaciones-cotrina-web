@@ -13,11 +13,64 @@
    visual entre ambos PDFs durante la transición.
    ============================================================ */
 
-import { generarDibujoItemDataUri, tieneDibujo } from './svgGenerator.js';
+import { generarDibujoItemDataUri, obtenerDimensionesDibujo, tieneDibujo } from './svgGenerator.js';
 import { describirVidrio } from './vidrios.js';
 import { describirPerfil } from './perfiles.js';
 import { describirLineaAccesorioAuto } from './despieceTecnico.js';
 import { construirTablasProyecto, calcularResumenConIgv } from './rules.js';
+
+/**
+ * fitDrawingToPage() — calcula cómo encajar el dibujo técnico de
+ * un ítem dentro de su celda del PDF SIN recortes ni distorsión.
+ *
+ * DIAGNÓSTICO DEL RECORTE ORIGINAL: el SVG generado en
+ * svgGenerator.js no declaraba `width`/`height` propios (solo
+ * `viewBox`). Un <svg> usado como `src` de un <img> sin esos
+ * atributos tiene, por especificación CSS, un tamaño intrínseco
+ * por defecto de 300×150px — totalmente ajeno a la proporción
+ * real del viewBox (ej. 100×54 para una ventana de 4.4×1.6 m).
+ * Al fijar `width:104px; height:auto` en el <img>, el navegador
+ * calculaba el alto a partir de ESE 300×150 ficticio, no del
+ * viewBox real. html2canvas rasteriza el DOM ya resuelto por el
+ * navegador, así que heredaba ese error: el lienzo capturado no
+ * coincidía con el dibujo real, y solo se veía una esquina
+ * ampliada — exactamente el síntoma reportado.
+ *
+ * CORRECCIÓN ROBUSTA (dos capas, no una sola):
+ * 1) svgGenerator.js ahora declara width/height = viewBox en el
+ *    <svg> raíz, así el navegador tiene un tamaño intrínseco
+ *    correcto de partida (fix de la causa raíz).
+ * 2) Esta función además calcula el encaje de forma EXPLÍCITA
+ *    (sin depender de que el navegador lo infiera bien), dando
+ *    al <img> un width/height en píxeles ya resueltos — más
+ *    robusto ante cualquier motor de renderizado, incluido
+ *    html2canvas, que es sensible a depender de cálculos
+ *    automáticos de CSS para contenido SVG.
+ *
+ * @param {number} dibujoWidth  - ancho real del dibujo (unidades del viewBox)
+ * @param {number} dibujoHeight - alto real del dibujo (unidades del viewBox)
+ * @param {number} cajaWidth   - ancho disponible en la página/celda (px)
+ * @param {number} cajaHeight  - alto disponible en la página/celda (px)
+ * @returns {{ width: number, height: number, offsetX: number, offsetY: number }}
+ *   width/height ya escalados manteniendo proporción (nunca exceden la caja),
+ *   offsetX/offsetY para centrar el dibujo dentro de la caja disponible.
+ */
+function fitDrawingToPage(dibujoWidth, dibujoHeight, cajaWidth, cajaHeight) {
+  if (!dibujoWidth || !dibujoHeight || !cajaWidth || !cajaHeight) {
+    return { width: cajaWidth || 0, height: cajaHeight || 0, offsetX: 0, offsetY: 0 };
+  }
+  // Escala máxima permitida: la menor entre encajar por ancho o por alto,
+  // para que el dibujo COMPLETO entre siempre dentro de la caja disponible
+  // (nunca se recorta, manteniendo siempre su relación de aspecto real).
+  const escala = Math.min(cajaWidth / dibujoWidth, cajaHeight / dibujoHeight);
+  const width = dibujoWidth * escala;
+  const height = dibujoHeight * escala;
+  // Centrado: el espacio sobrante (si lo hay, porque la caja no es
+  // exactamente proporcional al dibujo) se reparte por igual a los lados.
+  const offsetX = (cajaWidth - width) / 2;
+  const offsetY = (cajaHeight - height) / 2;
+  return { width, height, offsetX, offsetY };
+}
 
 const PDF_COLOR = {
   azulMarino: '#07131C',
@@ -91,10 +144,19 @@ function describirItemAutomatico(itemCalculado) {
 export function construirHtmlPdfProyecto({ resumenProyecto, cliente, ruc, distrito, urgenciaTexto, tienePlanosTexto, numeroPropuesta, fechaTexto, igvActivo = false, observaciones = {} }) {
   const resumenIgv = calcularResumenConIgv(resumenProyecto.precioFinal, { igvActivo });
   const { materiales, servicios, totalMateriales, totalServicios } = construirTablasProyecto(resumenProyecto);
+  // Caja disponible para el dibujo dentro de la celda gráfica de la tabla
+  // (en px, ya con margen interno restado) — fitDrawingToPage() calcula la
+  // escala y el centrado dentro de estos límites, así el dibujo COMPLETO
+  // siempre entra sin recortarse, sin importar cuán ancho o alto sea el vano.
+  const CAJA_DIBUJO_W = 104;
+  const CAJA_DIBUJO_H = 110;
+
   const filasItems = resumenProyecto.itemsConCodigo.map(it => {
     const c = it.calculo;
     const desc = describirItemAutomatico(c);
     const dibujoUri = tieneDibujo(c.tipoSolucion) ? generarDibujoItemDataUri(c) : null;
+    const dimDibujo = tieneDibujo(c.tipoSolucion) ? obtenerDimensionesDibujo(c) : null;
+    const encaje = dimDibujo ? fitDrawingToPage(dimDibujo.width, dimDibujo.height, CAJA_DIBUJO_W, CAJA_DIBUJO_H) : null;
     const precioUnitario = c.costoItemAntesUrgencia / c.cantidad;
 
     const d = c.despiecePerfiles || {};
@@ -110,8 +172,12 @@ export function construirHtmlPdfProyecto({ resumenProyecto, cliente, ruc, distri
       <tr class="item-row">
         <td class="cell-codigo">${it.codigo}</td>
         <td class="cell-grafico">
-          ${dibujoUri
-            ? `<img src="${dibujoUri}" class="item-svg" alt="Dibujo técnico ${it.codigo}"/>`
+          ${dibujoUri && encaje
+            ? `<div class="item-svg-caja" style="width:${CAJA_DIBUJO_W}px;height:${CAJA_DIBUJO_H}px;">
+                 <img src="${dibujoUri}" class="item-svg" alt="Dibujo técnico ${it.codigo}"
+                      width="${Math.round(encaje.width)}" height="${Math.round(encaje.height)}"
+                      style="width:${encaje.width.toFixed(1)}px;height:${encaje.height.toFixed(1)}px;margin-left:${encaje.offsetX.toFixed(1)}px;margin-top:${encaje.offsetY.toFixed(1)}px;"/>
+               </div>`
             : `<span class="sin-dibujo">—</span>`}
         </td>
         <td class="cell-desc">
@@ -157,7 +223,8 @@ export function construirHtmlPdfProyecto({ resumenProyecto, cliente, ruc, distri
         #pdfRoot .item-row td{ padding:10px; vertical-align:top; font-size:9.5px; }
         #pdfRoot .cell-codigo{ font-weight:800; color:${PDF_COLOR.naranjaCobre}; white-space:nowrap; }
         #pdfRoot .cell-grafico{ width:118px; }
-        #pdfRoot .item-svg{ width:104px; height:auto; display:block; }
+        #pdfRoot .item-svg-caja{ position:relative; display:block; overflow:hidden; }
+        #pdfRoot .item-svg{ display:block; }
         #pdfRoot .sin-dibujo{ color:${PDF_COLOR.grisClaro}; font-size:14px; }
         #pdfRoot .cell-desc{ max-width:280px; }
         #pdfRoot .desc-frase{ line-height:1.4; margin-bottom:4px; }
