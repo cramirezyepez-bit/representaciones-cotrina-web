@@ -20,9 +20,9 @@ export const TIPOS_SOLUCION = {
   ventana:     { nombre: 'Ventana de aluminio/PVC',  costoM2Min: 629, costoM2Max: 1278, fuente: 'Excel: 1153 registros históricos' },
   baranda:     { nombre: 'Baranda de vidrio',        costoM2Min: 409, costoM2Max: 445,  fuente: 'Excel: 45 registros históricos' },
   puerta:      { nombre: 'Puerta de vidrio',         costoM2Min: 588, costoM2Max: 1174, fuente: 'Excel: 175 registros históricos' },
-  muroCortina: { nombre: 'Muro cortina',             costoM2Min: 284, costoM2Max: 1259, fuente: 'Agrupado con fachada; VALIDAR' },
+  muroCortina: { nombre: 'Muro cortina',             costoM2Min: 350, costoM2Max: 950,  fuente: 'Estimado — antes copiaba el rango idéntico de fachada (284-1259); separado para reflejar que un muro cortina interior/de mediana escala no tiene la misma variabilidad que una fachada completa de edificio. VALIDAR con Jorge.' },
   cerramiento: { nombre: 'Cerramiento de terraza',   costoM2Min: 441, costoM2Max: 750,  fuente: 'Sin categoría propia; usa mampara como referencia; VALIDAR' },
-  divisionInterior: { nombre: 'División interior',   costoM2Min: 350, costoM2Max: 700,  fuente: 'Estimado — sin registro histórico propio; VALIDAR' },
+  divisionInterior: { nombre: 'División de oficina / cristal con escuadras', costoM2Min: 350, costoM2Max: 700,  fuente: 'Estimado — sin registro histórico propio; VALIDAR con Jorge (paneles de cristal fijo con escuadras, sin marco perimetral completo de aluminio, para divisiones de oficina/interiores)' },
   escaleraVidrio:   { nombre: 'Escalera con vidrio',  costoM2Min: 600, costoM2Max: 1400, fuente: 'Estimado — sin registro histórico propio; VALIDAR' },
   cerramientoPersonalizado: { nombre: 'Cerramiento personalizado', costoM2Min: 400, costoM2Max: 1300, fuente: 'A definir en visita técnica' },
 };

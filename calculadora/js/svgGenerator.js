@@ -18,7 +18,10 @@
    alto se ajusta a la relación real ancho:alto del ítem.
    ============================================================ */
 
-const TIPOS_CON_DIBUJO = ['ventana', 'puerta', 'mampara', 'puertaDucha', 'divisionInterior'];
+const TIPOS_CON_DIBUJO = [
+  'ventana', 'puerta', 'mampara', 'puertaDucha', 'divisionInterior',
+  'fachada', 'muroCortina', 'baranda', 'cerramiento', 'cerramientoPersonalizado',
+]; // escaleraVidrio queda fuera: no es un vano rectangular plano, necesitaría un dibujo propio distinto
 
 const COLOR_LINEA = '#1A1A1A';
 const COLOR_VIDRIO = '#CFE3EC';

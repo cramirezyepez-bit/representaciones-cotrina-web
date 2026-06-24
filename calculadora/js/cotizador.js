@@ -118,7 +118,7 @@ function leerDatosFormulario() {
 const ETIQUETAS_TIPO_SOLUCION = {
   fachada: 'Fachada', mampara: 'Mampara', puertaDucha: 'Puerta de ducha',
   ventana: 'Ventana', baranda: 'Baranda', puerta: 'Puerta', muroCortina: 'Muro de vidrio',
-  cerramiento: 'Cerramiento', divisionInterior: 'División', cerramientoPersonalizado: 'Personalizado',
+  cerramiento: 'Cerramiento', divisionInterior: 'División de oficina', cerramientoPersonalizado: 'Personalizado',
 };
 const ORDEN_TIPO_SOLUCION = ['ventana', 'mampara', 'muroCortina', 'divisionInterior', 'puerta', 'puertaDucha', 'baranda', 'cerramientoPersonalizado'];
 
