@@ -201,8 +201,31 @@ function dibujarModuloSegunApertura(tipoApertura, w, h) {
   }
 }
 
+/* ------------------------------------------------------------
+   Color de vidrio aproximado por categoría — solo para que el
+   dibujo distinga visualmente paños con vidrio distinto (ej. un
+   paño en templado vs uno en laminado), no es una réplica exacta
+   del aspecto real del vidrio.
+   ------------------------------------------------------------ */
+const COLOR_VIDRIO_POR_CATEGORIA = {
+  crudo: '#D9EAF0',
+  simple: '#D9EAF0',
+  templado: '#B8D9E8',
+  laminado: '#9BC3D8',
+  templadoLaminado: '#7FAFC9',
+  insulado: '#6BA0BC',
+  controlSolar: '#5C8FA3',
+  acustico: '#A8C8D2',
+  seguridad: '#8FBFD9',
+  otro: '#D9EAF0',
+};
+
+function colorVidrioDe(categoria) {
+  return COLOR_VIDRIO_POR_CATEGORIA[categoria] || COLOR_VIDRIO;
+}
+
 /**
- * Dibuja una composición mixta (ej. fijo + corredizo2) como una
+ * Dibuja una composición de paños (ej. fijo + corredizo2) como una
  * fila de franjas verticales, cada una con el ancho proporcional
  * a su anchoModulo dentro del vano total. Cada función de dibujo
  * individual ya está verificada visualmente para un módulo de
@@ -210,49 +233,68 @@ function dibujarModuloSegunApertura(tipoApertura, w, h) {
  * arbitrarias (riesgo de introducir bugs en dibujos ya probados),
  * se reutilizan tal cual dentro de un <g transform="translate+scale">
  * por módulo, lo que las "encoge/traslada" sin tocar su lógica
- * interna de coordenadas.
+ * interna de coordenadas. Si el paño trae vidrioCategoria propia,
+ * se sobreescribe el color de vidrio de ese módulo específico para
+ * que un [F] en templado se distinga de un [M] en laminado.
  */
-function dibujarComposicion(w, h, composicion, anchoTotal) {
+function dibujarComposicion(w, h, panos, anchoTotal, conLetras = true) {
   let x = 0;
-  const grupos = composicion.map(modulo => {
-    const anchoFraccion = Number(modulo.anchoModulo) / Number(anchoTotal);
+  const grupos = panos.map((pano, i) => {
+    const anchoFraccion = Number(pano.anchoModulo) / Number(anchoTotal);
     const anchoSvg = w * anchoFraccion;
-    const contenidoModulo = dibujarModuloSegunApertura(modulo.tipoApertura, 100, h); // se dibuja en un lienzo virtual de 100, luego se escala
+    const contenidoModulo = dibujarModuloSegunApertura(pano.tipoApertura, 100, h);
     const escalaX = anchoSvg / 100;
-    const grupo = `<g transform="translate(${x},0) scale(${escalaX},1)">${contenidoModulo}</g>`;
+    const colorPano = pano.vidrioCategoria ? colorVidrioDe(pano.vidrioCategoria) : null;
+    // Si el paño tiene un color de vidrio distinto al genérico, se
+    // inyecta como variable CSS local que sobreescribe COLOR_VIDRIO
+    // únicamente dentro de este <g> (los rects de vidrio usan
+    // fill="${COLOR_VIDRIO}" literal, así que se sustituye en el string).
+    const contenidoConColor = colorPano
+      ? contenidoModulo.replaceAll(COLOR_VIDRIO, colorPano)
+      : contenidoModulo;
+    const letra = conLetras
+      ? `<circle cx="14" cy="11" r="7" fill="#fff" stroke="${COLOR_MARCO}" stroke-width="1" opacity="0.92"/><text x="14" y="13.8" font-size="8.5" font-weight="800" text-anchor="middle" fill="${COLOR_MARCO}">${letraPano(i)}</text>`
+      : '';
+    const grupo = `<g transform="translate(${x},0) scale(${escalaX},1)">${contenidoConColor}<g transform="scale(${1 / escalaX},1)">${letra}</g></g>`;
     x += anchoSvg;
     return grupo;
   });
-  // Marco exterior único envolviendo todo el vano, para que la
-  // composición se vea como un solo vano dividido, no como
-  // módulos sueltos sin relación visual entre sí.
   const marcoExterior = `<rect x="1" y="1" width="${w - 2}" height="${h - 2}" fill="none" stroke="${COLOR_MARCO}" stroke-width="${GROSOR_MARCO}"/>`;
-  // Líneas divisorias verticales entre módulos (parante central del vano).
   let divisores = '';
   let xDiv = 0;
-  for (let i = 0; i < composicion.length - 1; i++) {
-    xDiv += w * (Number(composicion[i].anchoModulo) / Number(anchoTotal));
+  for (let i = 0; i < panos.length - 1; i++) {
+    xDiv += w * (Number(panos[i].anchoModulo) / Number(anchoTotal));
     divisores += `<line x1="${xDiv}" y1="2" x2="${xDiv}" y2="${h - 2}" stroke="${COLOR_MARCO}" stroke-width="${GROSOR_MARCO * 0.8}"/>`;
   }
   return `${grupos.join('')}${divisores}${marcoExterior}`;
+}
+
+function letraPano(indice) {
+  const LETRAS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+  if (indice < 26) return LETRAS[indice];
+  return LETRAS[Math.floor(indice / 26) - 1] + LETRAS[indice % 26];
 }
 
 /**
  * Genera el SVG técnico de un ítem ya calculado (objeto devuelto
  * por calcularItem en reglasCalculo.js). Devuelve null si el
  * tipo de solución no tiene dibujo soportado (según el alcance
- * acordado: solo ventana, puerta, mampara).
+ * acordado: ventana, puerta, mampara, puerta de ducha, división).
+ * Usa `panos` (siempre presente desde la migración a FRAME+PANELS+
+ * OPENINGS) en vez de `composicion` — un ítem simple resuelve a
+ * un único paño, así que esta función ya no necesita una rama
+ * "esMixto vs no mixto": dibuja la composición de N paños, donde
+ * N=1 es exactamente el caso de siempre.
  */
 export function generarDibujoItem(itemCalculado) {
-  const { tipoSolucion, tipoApertura, composicion, esMixto, ancho, alto, cantidad } = itemCalculado;
+  const { tipoSolucion, panos, ancho, alto, cantidad } = itemCalculado;
   if (!tieneDibujo(tipoSolucion)) return null;
 
   const w = 100;
   const h = escalaAlto(ancho || 1, alto || 1, w);
+  const listaPanos = panos && panos.length ? panos : [{ tipoApertura: itemCalculado.tipoApertura, anchoModulo: ancho }];
 
-  const contenido = (esMixto && composicion && composicion.length > 1)
-    ? dibujarComposicion(w, h, composicion, ancho)
-    : dibujarModuloSegunApertura(tipoApertura, w, h);
+  const contenido = dibujarComposicion(w, h, listaPanos, ancho, listaPanos.length > 1);
 
   const etiquetaMedidas = `${Number(ancho).toFixed(2)} × ${Number(alto).toFixed(2)} m`;
   const etiquetaCantidad = cantidad > 1 ? ` (×${cantidad})` : '';

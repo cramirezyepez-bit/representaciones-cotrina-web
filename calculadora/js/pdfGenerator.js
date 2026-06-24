@@ -48,21 +48,37 @@ function formatearSoles(n) {
  * Descripción técnica automática de un ítem, en el espíritu
  * "tipo Thermia" pedido en el brief original: una frase que
  * resume tipo de solución, apertura, vidrio y perfil.
+ *
+ * Si el ítem tiene un único paño (caso simple, la inmensa mayoría
+ * de las cotizaciones existentes), la frase es idéntica a la de
+ * siempre. Si tiene varios paños con vidrios distintos, se agrega
+ * la notación [F][M][F] y el detalle de vidrio por paño, porque
+ * "con vidrio templado" deja de ser una frase verdadera cuando
+ * cada paño lleva algo diferente.
  */
 function describirItemAutomatico(itemCalculado) {
-  const { nombreSolucion, nombreApertura, vidrioCategoria, vidrioVariante, perfilSerie, ancho, alto, areaTotal } = itemCalculado;
-  const vidrioTexto = describirVidrio(vidrioCategoria, vidrioVariante);
+  const { nombreSolucion, nombreApertura, vidrioCategoria, vidrioVariante, perfilSerie, ancho, alto, areaTotal, panosCalculados, notacionPanos } = itemCalculado;
   const perfilTexto = perfilSerie !== 'noAplica' ? describirPerfil(perfilSerie) : null;
   const aperturaTexto = nombreApertura && nombreApertura !== 'Fijo' ? ` de apertura ${nombreApertura.toLowerCase()}` : ' fija';
 
-  let frase = `${nombreSolucion}${aperturaTexto}, con ${vidrioTexto.toLowerCase()}`;
+  const esMultiPano = panosCalculados && panosCalculados.length > 1;
+  const vidrioTexto = esMultiPano
+    ? 'vidrios según paño (ver detalle)'
+    : describirVidrio(vidrioCategoria, vidrioVariante).toLowerCase();
+
+  let frase = `${nombreSolucion}${aperturaTexto}${esMultiPano ? ` configuración ${notacionPanos}` : ''}, con ${vidrioTexto}`;
   if (perfilTexto) frase += ` y sistema ${perfilTexto.toLowerCase()}`;
   frase += `, compuesta por marco perimetral, ${nombreApertura !== 'Fijo' ? 'hojas móviles, ' : ''}accesorios y sellado perimetral.`;
+
+  const detalleVidrioPorPano = esMultiPano
+    ? panosCalculados.map((p, i) => `${String.fromCharCode(65 + i)}: ${p.nombreVidrio}`).join(' · ')
+    : null;
 
   return {
     frase,
     medidas: `${Number(ancho).toFixed(2)} × ${Number(alto).toFixed(2)} m`,
     superficie: `${Number(areaTotal).toFixed(2)} m²`,
+    detalleVidrioPorPano,
   };
 }
 
@@ -98,6 +114,7 @@ export function construirHtmlPdfProyecto({ resumenProyecto, cliente, ruc, distri
         <td class="cell-desc">
           <p class="desc-frase">${desc.frase}</p>
           <p class="desc-medidas">Medidas: <b>${desc.medidas}</b> &nbsp;·&nbsp; Superficie: <b>${desc.superficie}</b></p>
+          ${desc.detalleVidrioPorPano ? `<p class="desc-tecnico"><b>Vidrio por paño:</b> ${desc.detalleVidrioPorPano}</p>` : ''}
           ${perfilesTexto ? `<p class="desc-tecnico">${perfilesTexto}</p>` : ''}
           ${accesoriosTexto ? `<p class="desc-tecnico">${accesoriosTexto}</p>` : ''}
         </td>

@@ -29,6 +29,7 @@ import { construirHtmlPdfProyecto } from './pdfGenerator.js';
 import { generarDibujoItem, tieneDibujo } from './svgGenerator.js';
 import { describirLineaAccesorioAuto } from './despieceTecnico.js';
 import { ICONOS_TIPO_SOLUCION, ICONOS_TIPO_APERTURA, ICONOS_DUCHA, VARIANTES_DUCHA } from './iconosConfigurador.js';
+import { CODIGO_CORTO_APERTURA } from './panos.js';
 
 // --- Mapeo del <select id="tipoVidrio"> legacy a categoría+variante nuevos ---
 const MAPEO_VIDRIO_LEGACY = {
@@ -55,6 +56,12 @@ const MAPEO_PERFIL_LEGACY = {
   otroMaterial:     'otro',
 };
 
+/** Inverso de MAPEO_VIDRIO_LEGACY: dada una categoría de vidrio (panos.js/vidrios.js), devuelve la clave legacy más cercana para preseleccionar el <select> de vidrio por paño. */
+function claveLegacyDeVidrio(categoria) {
+  const entrada = Object.entries(MAPEO_VIDRIO_LEGACY).find(([, v]) => v.categoria === categoria);
+  return entrada ? entrada[0] : 'crudo';
+}
+
 function formatearSoles(numero) {
   return 'S/ ' + (Math.round(numero) || 0).toLocaleString('es-PE');
 }
@@ -80,11 +87,13 @@ function leerDatosFormulario() {
     .filter(v => v !== 'ninguno');
 
   const composicion = leerComposicionMixta();
+  const panos = leerPanosCompuestos();
 
   return {
     tipoSolucion,
     tipoApertura,
     composicion,
+    panos,
     ancho, alto, cantidad,
     vidrioCategoria: mapeoVidrio.categoria,
     vidrioVariante: mapeoVidrio.variante,
@@ -211,6 +220,7 @@ function aplicarVarianteDucha(valorClaveDucha) {
     modulosWrap.appendChild(crearFilaModulo(i + 1, m.tipoApertura, anchoSugerido));
   });
   validarSumaComposicion();
+  actualizarNotacionPanos();
 }
 
 function actualizarVisibilidadVariantesDucha(tipoSolucionValor) {
@@ -238,20 +248,72 @@ function leerComposicionMixta() {
   return modulos.length > 1 ? modulos : null;
 }
 
+/**
+ * Lee los paños configurados en el constructor de composición
+ * mixta, incluyendo el vidrio propio de cada uno (modelo
+ * FRAME+PANELS+OPENINGS). Devuelve null si la composición mixta
+ * no está activa o tiene menos de 2 paños — en ese caso el ítem
+ * se resuelve como "simple" (un solo paño) en panos.js, usando
+ * el vidrio único del formulario principal.
+ */
+function leerPanosCompuestos() {
+  if (!chkComposicionActivo()) return null;
+  const filas = document.querySelectorAll('.composicion-modulo-row');
+  const panos = Array.from(filas).map(fila => {
+    const vidrioLegacy = fila.querySelector('.mod-vidrio').value;
+    const mapeo = MAPEO_VIDRIO_LEGACY[vidrioLegacy] || { categoria: 'crudo', variante: 'unico' };
+    return {
+      tipoApertura: fila.querySelector('.mod-tipo-apertura').value,
+      anchoModulo: Number(fila.querySelector('.mod-ancho').value) || 0,
+      altoModulo: null,
+      vidrioCategoria: mapeo.categoria,
+      vidrioVariante: mapeo.variante,
+    };
+  });
+  return panos.length > 1 ? panos : null;
+}
+
 function opcionesTipoApertura(seleccionado) {
   return listarTiposApertura().map(t =>
     `<option value="${t.key}" ${t.key === seleccionado ? 'selected' : ''}>${t.nombre}</option>`
   ).join('');
 }
 
-function crearFilaModulo(numero, tipoAperturaDefault = 'fijo', anchoDefault = '') {
+const OPCIONES_VIDRIO_PANO = [
+  { value: 'crudo', label: 'Crudo' },
+  { value: 'templado', label: 'Templado' },
+  { value: 'laminado', label: 'Laminado' },
+  { value: 'insulado', label: 'Insulado (DVH)' },
+  { value: 'templadoLaminado', label: 'Templado laminado' },
+  { value: 'acustico', label: 'Acústico' },
+  { value: 'seguridad', label: 'Seguridad' },
+];
+
+function opcionesVidrioPano(seleccionado) {
+  return OPCIONES_VIDRIO_PANO.map(v =>
+    `<option value="${v.value}" ${v.value === seleccionado ? 'selected' : ''}>${v.label}</option>`
+  ).join('');
+}
+
+/**
+ * Crea una fila de paño dentro del constructor de composición
+ * mixta: tipo de apertura, ancho, y AHORA TAMBIÉN vidrio propio
+ * del paño (modelo FRAME+PANELS+OPENINGS) — antes todos los
+ * módulos de una composición heredaban el único vidrio del ítem;
+ * ahora cada paño puede llevar un vidrio distinto, lo que se
+ * refleja en el costo (reglasCalculo.js calcula por paño) y en
+ * el dibujo técnico (svgGenerator.js colorea cada paño según su
+ * categoría de vidrio).
+ */
+function crearFilaModulo(numero, tipoAperturaDefault = 'fijo', anchoDefault = '', vidrioLegacyDefault = '') {
   const fila = document.createElement('div');
   fila.className = 'composicion-modulo-row';
   fila.innerHTML = `
-    <span class="mod-label">Módulo ${numero}</span>
+    <span class="mod-label">Paño ${letraPanoUI(numero - 1)}</span>
     <select class="mod-tipo-apertura">${opcionesTipoApertura(tipoAperturaDefault)}</select>
+    <select class="mod-vidrio">${opcionesVidrioPano(vidrioLegacyDefault)}</select>
     <input type="number" class="mod-ancho" min="0" step="0.01" placeholder="Ancho (m)" value="${anchoDefault}">
-    <button type="button" class="btn-quitar-modulo" title="Quitar módulo">✕</button>
+    <button type="button" class="btn-quitar-modulo" title="Quitar paño">✕</button>
   `;
   fila.querySelector('.btn-quitar-modulo').addEventListener('click', () => {
     fila.remove();
@@ -259,13 +321,31 @@ function crearFilaModulo(numero, tipoAperturaDefault = 'fijo', anchoDefault = ''
     validarSumaComposicion();
   });
   fila.querySelector('.mod-ancho').addEventListener('input', validarSumaComposicion);
+  fila.querySelector('.mod-tipo-apertura').addEventListener('change', actualizarNotacionPanos);
   return fila;
+}
+
+function letraPanoUI(indice) {
+  const LETRAS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+  if (indice < 26) return LETRAS[indice];
+  return LETRAS[Math.floor(indice / 26) - 1] + LETRAS[indice % 26];
 }
 
 function renumerarModulos() {
   document.querySelectorAll('.composicion-modulo-row .mod-label').forEach((lbl, i) => {
-    lbl.textContent = `Módulo ${i + 1}`;
+    lbl.textContent = `Paño ${letraPanoUI(i)}`;
   });
+  actualizarNotacionPanos();
+}
+
+/** Pinta la notación tipo "[F][M][M][F]" en vivo según los paños actuales del constructor. */
+function actualizarNotacionPanos() {
+  const el = document.getElementById('composicionNotacion');
+  if (!el) return;
+  const filas = document.querySelectorAll('.composicion-modulo-row .mod-tipo-apertura');
+  if (filas.length === 0) { el.textContent = ''; return; }
+  const notacion = Array.from(filas).map(sel => `[${CODIGO_CORTO_APERTURA[sel.value] || '?'}]`).join('');
+  el.textContent = notacion;
 }
 
 function validarSumaComposicion() {
@@ -275,22 +355,22 @@ function validarSumaComposicion() {
   const suma = Array.from(filas).reduce((acc, inp) => acc + (Number(inp.value) || 0), 0);
 
   if (filas.length < 2) {
-    elSuma.textContent = 'Agrega al menos 2 módulos para una composición mixta.';
+    elSuma.textContent = 'Agrega al menos 2 paños para una composición mixta.';
     elSuma.className = 'field-hint field-hint-tight composicion-suma';
     return false;
   }
   if (!anchoItem) {
-    elSuma.textContent = `Suma de módulos: ${suma.toFixed(2)} m. Ingresa el ancho total del ítem para validar.`;
+    elSuma.textContent = `Suma de paños: ${suma.toFixed(2)} m. Ingresa el ancho total del ítem para validar.`;
     elSuma.className = 'field-hint field-hint-tight composicion-suma';
     return false;
   }
   const diferencia = Math.abs(suma - anchoItem);
   if (diferencia > 0.02) {
-    elSuma.textContent = `⚠ La suma de módulos (${suma.toFixed(2)} m) no coincide con el ancho total del ítem (${anchoItem.toFixed(2)} m).`;
+    elSuma.textContent = `⚠ La suma de paños (${suma.toFixed(2)} m) no coincide con el ancho total del ítem (${anchoItem.toFixed(2)} m).`;
     elSuma.className = 'field-hint field-hint-tight composicion-suma suma-error';
     return false;
   }
-  elSuma.textContent = `✓ Suma de módulos: ${suma.toFixed(2)} m — coincide con el ancho total.`;
+  elSuma.textContent = `✓ Suma de paños: ${suma.toFixed(2)} m — coincide con el ancho total.`;
   elSuma.className = 'field-hint field-hint-tight composicion-suma suma-ok';
   return true;
 }
@@ -309,6 +389,7 @@ function inicializarComposicionMixta() {
       modulosWrap.appendChild(crearFilaModulo(1, 'fijo'));
       modulosWrap.appendChild(crearFilaModulo(2, 'corredizo2'));
       validarSumaComposicion();
+      actualizarNotacionPanos();
     }
   });
 
@@ -316,6 +397,7 @@ function inicializarComposicionMixta() {
     const numero = modulosWrap.children.length + 1;
     modulosWrap.appendChild(crearFilaModulo(numero));
     validarSumaComposicion();
+    actualizarNotacionPanos();
   });
 
   document.getElementById('ancho').addEventListener('input', validarSumaComposicion);
@@ -327,6 +409,8 @@ function resetearComposicionMixta() {
   document.getElementById('tipoApertura').disabled = false;
   document.getElementById('composicionModulos').innerHTML = '';
   document.getElementById('composicionSuma').textContent = '';
+  const elNotacion = document.getElementById('composicionNotacion');
+  if (elNotacion) elNotacion.textContent = '';
 }
 
 function validarDatosMinimos(datos) {
@@ -335,12 +419,14 @@ function validarDatosMinimos(datos) {
   if (!datos.ancho || Number(datos.ancho) <= 0) errores.push('Ingresa un ancho válido.');
   if (!datos.alto || Number(datos.alto) <= 0) errores.push('Ingresa un alto válido.');
   if (!datos.cantidad || Number(datos.cantidad) < 1) errores.push('Ingresa una cantidad válida.');
-  if (!document.getElementById('tipoVidrio').value) errores.push('Selecciona el tipo de vidrio.');
+  if (!chkComposicionActivo() && !document.getElementById('tipoVidrio').value) {
+    errores.push('Selecciona el tipo de vidrio.');
+  }
   if (chkComposicionActivo()) {
     if (!datos.composicion || datos.composicion.length < 2) {
-      errores.push('Agrega al menos 2 módulos para una composición mixta, o desmarca la casilla.');
+      errores.push('Agrega al menos 2 paños para una composición mixta, o desmarca la casilla.');
     } else if (!validarSumaComposicion()) {
-      errores.push('La suma de anchos de los módulos no coincide con el ancho total del ítem.');
+      errores.push('La suma de anchos de los paños no coincide con el ancho total del ítem.');
     }
   }
   return errores;
@@ -374,16 +460,25 @@ function construirDetalleTecnico(it) {
       </ul>
     </div>`;
 
-  const vidrioHtml = `
-    <div class="detalle-bloque">
-      <h5>Vidrio</h5>
-      <ul>
-        <li><span>Tipo</span><span>${describirVidrio(c.vidrioCategoria, c.vidrioVariante)}</span></li>
-        <li><span>Área unitaria</span><span>${c.areaPorUnidad.toFixed(2)} m²</span></li>
-        <li><span>Área total</span><span>${c.areaTotal.toFixed(2)} m²</span></li>
-        ${c.perfilSerie !== 'noAplica' ? `<li><span>Sistema / serie</span><span>${describirPerfil(c.perfilSerie)}</span></li>` : ''}
-      </ul>
-    </div>`;
+  const esMultiPano = c.panosCalculados && c.panosCalculados.length > 1;
+  const vidrioHtml = esMultiPano
+    ? `<div class="detalle-bloque">
+        <h5>Vidrio por paño</h5>
+        <ul>
+          ${c.panosCalculados.map((p, i) => `<li><span>Paño ${String.fromCharCode(65 + i)} (${Number(p.anchoModulo).toFixed(2)} m)</span><span>${p.nombreVidrio}</span></li>`).join('')}
+          <li><span><b>Área total</b></span><span><b>${c.areaTotal.toFixed(2)} m²</b></span></li>
+          ${c.perfilSerie !== 'noAplica' ? `<li><span>Sistema / serie</span><span>${describirPerfil(c.perfilSerie)}</span></li>` : ''}
+        </ul>
+      </div>`
+    : `<div class="detalle-bloque">
+        <h5>Vidrio</h5>
+        <ul>
+          <li><span>Tipo</span><span>${describirVidrio(c.vidrioCategoria, c.vidrioVariante)}</span></li>
+          <li><span>Área unitaria</span><span>${c.areaPorUnidad.toFixed(2)} m²</span></li>
+          <li><span>Área total</span><span>${c.areaTotal.toFixed(2)} m²</span></li>
+          ${c.perfilSerie !== 'noAplica' ? `<li><span>Sistema / serie</span><span>${describirPerfil(c.perfilSerie)}</span></li>` : ''}
+        </ul>
+      </div>`;
 
   const accesoriosHtml = accAuto.length
     ? `<div class="detalle-bloque">
@@ -429,6 +524,11 @@ function renderItems() {
   itemsList.innerHTML = items.map(it => {
     const c = it.calculo;
     const serieTexto = c.perfilSerie !== 'noAplica' ? describirPerfil(c.perfilSerie) : '—';
+    const esMultiPanoSpec = c.panosCalculados && c.panosCalculados.length > 1;
+    const aperturaTexto = esMultiPanoSpec ? `${c.notacionPanos} ${c.nombreApertura}` : c.nombreApertura;
+    const vidrioTexto = esMultiPanoSpec
+      ? c.panosCalculados.map((p, i) => `${String.fromCharCode(65 + i)}: ${p.nombreVidrio}`).join(' · ')
+      : describirVidrio(c.vidrioCategoria, c.vidrioVariante);
     return `
       <div class="item-card" data-id="${it.id}">
         <div class="item-card-top">
@@ -436,8 +536,8 @@ function renderItems() {
           <div class="item-specs">
             <div class="item-spec"><span class="item-spec-label">Solución</span><span class="item-spec-value">${c.nombreSolucion}</span></div>
             <div class="item-spec"><span class="item-spec-label">Serie</span><span class="item-spec-value">${serieTexto}</span></div>
-            <div class="item-spec"><span class="item-spec-label">Apertura</span><span class="item-spec-value">${c.nombreApertura}</span></div>
-            <div class="item-spec"><span class="item-spec-label">Vidrio</span><span class="item-spec-value">${describirVidrio(c.vidrioCategoria, c.vidrioVariante)}</span></div>
+            <div class="item-spec"><span class="item-spec-label">Apertura</span><span class="item-spec-value">${aperturaTexto}</span></div>
+            <div class="item-spec"><span class="item-spec-label">Vidrio</span><span class="item-spec-value">${vidrioTexto}</span></div>
             <div class="item-spec"><span class="item-spec-label">Medidas</span><span class="item-spec-value">${c.ancho.toFixed(2)} × ${c.alto.toFixed(2)} m</span></div>
             <div class="item-spec"><span class="item-spec-label">Cantidad</span><span class="item-spec-value">${c.cantidad}</span></div>
             <div class="item-spec"><span class="item-spec-label">Área total</span><span class="item-spec-value">${c.areaTotal.toFixed(2)} m²</span></div>
@@ -632,15 +732,19 @@ function cargarItemEnFormulario(id) {
   });
 
   resetearComposicionMixta();
-  if (d.composicion && d.composicion.length > 1) {
+  const panosParaEditar = (d.panos && d.panos.length > 1) ? d.panos : null;
+  const composicionParaEditar = panosParaEditar || (d.composicion && d.composicion.length > 1 ? d.composicion : null);
+  if (composicionParaEditar) {
     document.getElementById('chkComposicionMixta').checked = true;
     document.getElementById('composicionMixta').hidden = false;
     document.getElementById('tipoApertura').disabled = true;
     const modulosWrap = document.getElementById('composicionModulos');
-    d.composicion.forEach((m, i) => {
-      modulosWrap.appendChild(crearFilaModulo(i + 1, m.tipoApertura, m.anchoModulo));
+    composicionParaEditar.forEach((m, i) => {
+      const vidrioLegacy = m.vidrioCategoria ? claveLegacyDeVidrio(m.vidrioCategoria) : '';
+      modulosWrap.appendChild(crearFilaModulo(i + 1, m.tipoApertura, m.anchoModulo, vidrioLegacy));
     });
     validarSumaComposicion();
+    actualizarNotacionPanos();
     renderGridTipoApertura('');
   } else {
     set('tipoApertura', d.tipoApertura || 'fijo');

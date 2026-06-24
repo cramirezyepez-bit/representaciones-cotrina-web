@@ -120,12 +120,20 @@
 
       <label class="check-item check-item-toggle">
         <input type="checkbox" id="chkComposicionMixta">
-        Este vano combina más de un tipo de apertura (ej. fijo + corredizo, puerta + fijo lateral)
+        Este vano se compone de varios paños independientes (ej. [F][M][M][F]), cada uno con su propia apertura y vidrio
       </label>
 
       <div class="composicion-mixta" id="composicionMixta" hidden>
+        <div class="composicion-notacion" id="composicionNotacion"></div>
+        <div class="composicion-modulos-head">
+          <span class="mod-label"></span>
+          <span>Apertura</span>
+          <span>Vidrio</span>
+          <span>Ancho (m)</span>
+          <span></span>
+        </div>
         <div class="composicion-modulos" id="composicionModulos"></div>
-        <button type="button" class="btn-add-modulo" id="btnAgregarModulo">+ Agregar módulo</button>
+        <button type="button" class="btn-add-modulo" id="btnAgregarModulo">+ Agregar paño</button>
         <p class="field-hint field-hint-tight composicion-suma" id="composicionSuma"></p>
       </div>
     </div>

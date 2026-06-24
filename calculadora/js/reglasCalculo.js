@@ -1,82 +1,102 @@
 /* ============================================================
    REGLASCALCULO.JS — Motor de cálculo paramétrico
    ============================================================
-   Migrado y modularizado desde calcularPresupuesto() en
-   calculadora.js. La fórmula NO cambió: se preservan todos los
-   factores y el orden de operaciones original (costo base ->
-   adicionales técnicos -> instalación -> urgencia -> utilidad).
+   MIGRACIÓN A MODELO DE PAÑOS (FRAME + PANELS + OPENINGS):
+   El motor ya no calcula "un factor de apertura/vidrio ponderado
+   sobre el costo base total del ítem" — eso era una aproximación
+   correcta mientras todo el vano compartía un único vidrio, pero
+   deja de tener sentido en cuanto cada paño puede llevar un
+   vidrio distinto (ej. [F][M][M][F] con el F en vidrio templado
+   y el M en laminado). Ahora el costo se calcula PASO POR PAÑO:
+   cada paño tiene su propia área, su propio costo base proporcional
+   a esa área, y sus propios factores de apertura/vidrio/perfil
+   aplicados solo sobre ESE costo base — y luego se suman.
 
-   Diferencia clave respecto al original: estas funciones operan
-   sobre UN ítem a la vez (calcularItem) y sobre una LISTA de
-   ítems de un proyecto (calcularProyecto), en vez de asumir un
-   único formulario global. Esto es lo que habilita "múltiples
-   ítems en un mismo proyecto" pedido en el brief.
+   COMPATIBILIDAD: un ítem "simple" (sin configurar paños a mano)
+   se resuelve, vía resolverPanos() en panos.js, como una lista de
+   UN solo paño que ocupa todo el ancho del vano con el vidrio del
+   ítem. Para ese caso, costoBasePaño = costoBase del ítem completo
+   y el resultado es exactamente el mismo número que el motor
+   anterior — no hay regresión para los miles de cotizaciones que
+   ya se hicieron con el modelo de un solo vidrio por ítem.
    ============================================================ */
 
 import { TIPOS_SOLUCION, AREA_MINIMA_POR_UNIDAD, COSTO_MINIMO_PROYECTO, FACTOR_INSTALACION, FACTOR_URGENCIA, obtenerFactorApertura, TIPOS_APERTURA } from './catalogos.js';
-import { obtenerFactorVidrio } from './vidrios.js';
+import { obtenerFactorVidrio, describirVidrio } from './vidrios.js';
 import { obtenerFactorPerfil } from './perfiles.js';
 import { calcularSubtotalAccesorios, calcularFactorAccesoriosLegacy } from './accesorios.js';
 import { calcularAccesoriosAutomaticos } from './despieceTecnico.js';
+import { resolverPanos, sumaAnchosPanos, notacionPanos } from './panos.js';
 
 /**
- * Calcula el factor de apertura efectivo de un ítem.
- *
- * Caso simple (sin composición): el factor es directamente el
- * de TIPOS_APERTURA[tipoApertura].
- *
- * Caso mixto (con composición, ej. fijo+corredizo): el factor es
- * el PROMEDIO PONDERADO POR ANCHO de cada módulo. Esto refleja
- * que un vano de 3m con 1m fijo (factor 0) + 2m corredizo
- * (factor 0.28) cuesta proporcionalmente más que todo fijo y
- * menos que todo corredizo, según cuánto mecanismo real tiene
- * cada parte del vano:
- *   factor = (1m × 0 + 2m × 0.28) / 3m = 0.187
- *
- * Si la suma de anchos de los módulos no coincide con el ancho
- * total del ítem (más allá de una tolerancia de redondeo de
- * 1 cm por módulo), se lanza un error explícito en vez de
- * calcular silenciosamente con datos inconsistentes — un error
- * de composición mal capturada en un sistema de cotización no
- * debe pasar desapercibido.
+ * Calcula el costo y despiece técnico de UN paño dentro de un
+ * ítem. `areaPano` ya viene resuelta (ancho del paño × alto del
+ * vano o alto propio del paño), multiplicada por la cantidad de
+ * unidades del ítem completo (un ítem con cantidad=3 repite la
+ * misma configuración de paños 3 veces).
  */
-function calcularFactorAperturaEfectivo(tipoApertura, composicion, anchoTotal) {
-  if (!composicion || composicion.length <= 1) {
-    return { factor: obtenerFactorApertura(tipoApertura), esMixto: false };
-  }
+function calcularPano(pano, { refBase, perfilSerie, accesoriosLegacy, cantidad, altoVano }) {
+  const anchoPano = Number(pano.anchoModulo) || 0;
+  const altoPano = pano.altoModulo != null ? Number(pano.altoModulo) : Number(altoVano) || 0;
 
-  const sumaAnchos = composicion.reduce((acc, m) => acc + Number(m.anchoModulo || 0), 0);
-  const toleranciaCm = 0.01 * composicion.length;
-  if (Math.abs(sumaAnchos - Number(anchoTotal)) > toleranciaCm) {
-    throw new Error(
-      `La suma de anchos de los módulos (${sumaAnchos.toFixed(2)} m) no coincide con el ` +
-      `ancho total del ítem (${Number(anchoTotal).toFixed(2)} m). Revisa la composición.`
-    );
-  }
+  const areaPanoPorUnidad = Math.max(anchoPano * altoPano, 0); // el mínimo de 1m² se aplica al ítem completo, no por paño
+  const areaPanoTotal = areaPanoPorUnidad * Number(cantidad);
 
-  const factorPonderado = composicion.reduce((acc, m) => {
-    const f = obtenerFactorApertura(m.tipoApertura);
-    return acc + f * (Number(m.anchoModulo) / Number(anchoTotal));
-  }, 0);
+  const precioBaseM2Promedio = (refBase.costoM2Min + refBase.costoM2Max) / 2;
+  const costoBasePano = precioBaseM2Promedio * areaPanoTotal;
 
-  return { factor: factorPonderado, esMixto: true };
+  const factorApertura = obtenerFactorApertura(pano.tipoApertura);
+  const factorVidrio = obtenerFactorVidrio(pano.vidrioCategoria, pano.vidrioVariante);
+  const factorPerfil = obtenerFactorPerfil(perfilSerie);
+  const factorAccesoriosLegacy = calcularFactorAccesoriosLegacy(accesoriosLegacy);
+
+  const adicionalApertura = costoBasePano * factorApertura;
+  const adicionalVidrio = costoBasePano * factorVidrio;
+  const adicionalPerfil = costoBasePano * factorPerfil;
+  const adicionalAccesoriosLegacy = costoBasePano * factorAccesoriosLegacy;
+
+  // Despiece técnico (perfiles ml + accesorios reales) por paño: el
+  // ancho/alto de la geometría es el del paño, no el del vano completo,
+  // así un paño fijo angosto no hereda los rodajes de su vecino corredizo.
+  const despieceAuto = calcularAccesoriosAutomaticos({
+    tipoApertura: pano.tipoApertura, composicion: null, esMixto: false,
+    ancho: anchoPano, alto: altoPano, cantidad,
+  });
+  const subtotalAccesoriosAuto = calcularSubtotalAccesorios(despieceAuto.lineas);
+
+  const subtotalTecnicoPano = costoBasePano + adicionalApertura + adicionalVidrio + adicionalPerfil
+    + adicionalAccesoriosLegacy + subtotalAccesoriosAuto;
+
+  return {
+    tipoApertura: pano.tipoApertura,
+    nombreApertura: TIPOS_APERTURA[pano.tipoApertura] ? TIPOS_APERTURA[pano.tipoApertura].nombre : pano.tipoApertura,
+    anchoModulo: anchoPano, altoModulo: altoPano,
+    areaPanoPorUnidad, areaPanoTotal,
+    vidrioCategoria: pano.vidrioCategoria, vidrioVariante: pano.vidrioVariante,
+    nombreVidrio: describirVidrio(pano.vidrioCategoria, pano.vidrioVariante),
+    costoBasePano, adicionalApertura, adicionalVidrio, adicionalPerfil, adicionalAccesoriosLegacy,
+    despiecePerfiles: despieceAuto.despiece,
+    accesoriosAuto: despieceAuto.lineas,
+    subtotalAccesoriosAuto,
+    subtotalTecnicoPano,
+  };
 }
 
 /**
- * Calcula el costo de UN ítem del proyecto.
+ * Calcula el costo de UN ítem del proyecto, como la suma de sus
+ * paños (ver resolverPanos en panos.js para cómo se resuelve un
+ * ítem simple, una composición legacy, o paños explícitos).
  *
  * @param {Object} item - Datos del ítem:
  *   tipoSolucion, ancho, alto, cantidad,
- *   tipoApertura ('fijo' | 'corredizo2' | 'batiente' | ... ver catalogos.js)
- *     — se ignora si `composicion` tiene más de 1 módulo,
- *   composicion (opcional): [{ tipoApertura, anchoModulo }, ...]
- *     para combinaciones mixtas (fijo+corredizo, puerta+fijo
- *     lateral, etc). La suma de anchoModulo debe igualar `ancho`.
- *   vidrioCategoria, vidrioVariante,
+ *   tipoApertura / composicion / panos — ver panos.js,
+ *   vidrioCategoria, vidrioVariante (usados solo si el ítem no
+ *     define paños propios, como vidrio único de respaldo),
  *   perfilSerie, perfilColor,
- *   accesorios: [{clave, cantidad}]  (nuevo modelo)
+ *   accesorios: [{clave, cantidad}]  (nuevo modelo, alcance ítem completo)
  *   accesoriosLegacy: ['herrajePremium', ...] (checkboxes antiguos, opcional)
- * @returns {Object} desglose completo del costo del ítem
+ * @returns {Object} desglose completo del costo del ítem, con `panosCalculados`
+ *   detallando cada paño individual para la UI y el PDF.
  */
 export function calcularItem(item) {
   const {
@@ -98,37 +118,46 @@ export function calcularItem(item) {
     throw new Error(`Tipo de solución desconocido: "${tipoSolucion}"`);
   }
 
-  // Área con mínimo facturable por unidad (regla original preservada).
-  const areaPorUnidad = Math.max(Number(ancho) * Number(alto), AREA_MINIMA_POR_UNIDAD);
+  const panos = resolverPanos(item);
+  const esMixto = panos.length > 1;
+
+  if (esMixto) {
+    const sumaAnchos = sumaAnchosPanos(panos);
+    const toleranciaCm = 0.01 * panos.length;
+    if (Math.abs(sumaAnchos - Number(ancho)) > toleranciaCm) {
+      throw new Error(
+        `La suma de anchos de los paños (${sumaAnchos.toFixed(2)} m) no coincide con el ` +
+        `ancho total del ítem (${Number(ancho).toFixed(2)} m). Revisa la configuración.`
+      );
+    }
+  }
+
+  const panosCalculados = panos.map(p => calcularPano(p, { refBase, perfilSerie, accesoriosLegacy, cantidad, altoVano: alto }));
+
+  // Área con mínimo facturable por unidad aplicado al VANO completo
+  // (regla original preservada: un vano pequeño sigue facturando
+  // como mínimo 1 m² por unidad, sin importar cuántos paños tenga).
+  const areaPorUnidadSinMinimo = panosCalculados.reduce((acc, p) => acc + p.areaPanoPorUnidad, 0);
+  const areaPorUnidad = Math.max(areaPorUnidadSinMinimo, AREA_MINIMA_POR_UNIDAD);
   const areaTotal = areaPorUnidad * Number(cantidad);
 
-  // Costo base = precio histórico promedio por m² × área total, con piso mínimo.
-  const precioBaseM2Promedio = (refBase.costoM2Min + refBase.costoM2Max) / 2;
-  let costoBase = precioBaseM2Promedio * areaTotal;
-  costoBase = Math.max(costoBase, COSTO_MINIMO_PROYECTO);
+  // Si el área real cae por debajo del mínimo facturable, se escala el
+  // costoBase agregado proporcionalmente para no perder el piso mínimo
+  // que antes garantizaba COSTO_MINIMO_PROYECTO a nivel de ítem completo.
+  const costoBaseSinPiso = panosCalculados.reduce((acc, p) => acc + p.costoBasePano, 0);
+  const factorEscalaPorMinimo = areaPorUnidadSinMinimo > 0 ? areaPorUnidad / areaPorUnidadSinMinimo : 1;
+  const costoBase = Math.max(costoBaseSinPiso * factorEscalaPorMinimo, COSTO_MINIMO_PROYECTO);
 
-  // Adicionales porcentuales sobre costo base (apertura + vidrio + perfil + accesorios legacy).
-  const { factor: factorApertura, esMixto } = calcularFactorAperturaEfectivo(tipoApertura, composicion, ancho);
-  const factorVidrio = obtenerFactorVidrio(vidrioCategoria, vidrioVariante);
-  const factorPerfil = obtenerFactorPerfil(perfilSerie);
-  const factorAccesoriosLegacy = calcularFactorAccesoriosLegacy(accesoriosLegacy);
+  const adicionalApertura = panosCalculados.reduce((acc, p) => acc + p.adicionalApertura, 0);
+  const adicionalVidrio = panosCalculados.reduce((acc, p) => acc + p.adicionalVidrio, 0);
+  const adicionalPerfil = panosCalculados.reduce((acc, p) => acc + p.adicionalPerfil, 0);
+  const adicionalAccesoriosLegacy = panosCalculados.reduce((acc, p) => acc + p.adicionalAccesoriosLegacy, 0);
+  const subtotalAccesoriosAuto = panosCalculados.reduce((acc, p) => acc + p.subtotalAccesoriosAuto, 0);
 
-  const adicionalApertura = costoBase * factorApertura;
-  const adicionalVidrio = costoBase * factorVidrio;
-  const adicionalPerfil = costoBase * factorPerfil;
-  const adicionalAccesoriosLegacy = costoBase * factorAccesoriosLegacy;
-
-  // Accesorios del nuevo modelo (cantidad × precio unitario, en soles directos).
+  // Accesorios del nuevo modelo (cantidad × precio unitario, en soles directos),
+  // a nivel de ítem completo (no por paño — ej. "sellado estructural" aplica
+  // a todo el vano, no a cada paño individualmente).
   const subtotalAccesoriosNuevos = calcularSubtotalAccesorios(accesorios);
-
-  // Despiece técnico automático: metros lineales de perfil + cantidades
-  // reales de accesorios (rodajes, bisagras, felpas, etc.) derivadas de
-  // la geometría y el tipo de apertura. Estas líneas se suman al costo
-  // del ítem en soles directos, igual que los accesorios manuales —
-  // así el "precio sugerido" ya refleja el consumo real de herrajes,
-  // no solo un % estimado sobre el costo base.
-  const despieceAuto = calcularAccesoriosAutomaticos({ tipoApertura, composicion, esMixto, ancho, alto, cantidad });
-  const subtotalAccesoriosAuto = calcularSubtotalAccesorios(despieceAuto.lineas);
 
   const subtotalTecnico = costoBase + adicionalApertura + adicionalVidrio + adicionalPerfil
     + adicionalAccesoriosLegacy + subtotalAccesoriosNuevos + subtotalAccesoriosAuto;
@@ -136,14 +165,44 @@ export function calcularItem(item) {
   const costoInstalacion = subtotalTecnico * FACTOR_INSTALACION;
 
   const nombreAperturaCompuesto = esMixto
-    ? composicion.map(m => TIPOS_APERTURA[m.tipoApertura] ? TIPOS_APERTURA[m.tipoApertura].nombre : m.tipoApertura).join(' + ')
+    ? panos.map(p => TIPOS_APERTURA[p.tipoApertura] ? TIPOS_APERTURA[p.tipoApertura].nombre : p.tipoApertura).join(' + ')
     : (TIPOS_APERTURA[tipoApertura] ? TIPOS_APERTURA[tipoApertura].nombre : '—');
+
+  // despiecePerfiles agregado del ítem completo (suma de todos los paños),
+  // para no romper el código existente (cotizador.js, pdfGenerator.js) que
+  // ya lee `c.despiecePerfiles.totalMl` a nivel de ítem.
+  const despiecePerfiles = panosCalculados.reduce((acc, p) => ({
+    marcoSuperior: acc.marcoSuperior + p.despiecePerfiles.marcoSuperior,
+    marcoInferior: acc.marcoInferior + p.despiecePerfiles.marcoInferior,
+    jambaIzquierda: acc.jambaIzquierda + p.despiecePerfiles.jambaIzquierda,
+    jambaDerecha: acc.jambaDerecha + p.despiecePerfiles.jambaDerecha,
+    marcoPerimetral: acc.marcoPerimetral + p.despiecePerfiles.marcoPerimetral,
+    parantes: acc.parantes + p.despiecePerfiles.parantes,
+    hojasMl: acc.hojasMl + p.despiecePerfiles.hojasMl,
+    totalMl: acc.totalMl + p.despiecePerfiles.totalMl,
+    totalHojas: acc.totalHojas + p.despiecePerfiles.totalHojas,
+    fuente: p.despiecePerfiles.fuente,
+  }), { marcoSuperior: 0, marcoInferior: 0, jambaIzquierda: 0, jambaDerecha: 0, marcoPerimetral: 0, parantes: 0, hojasMl: 0, totalMl: 0, totalHojas: 0, fuente: '' });
+
+  // accesoriosAuto agregado: mismas claves sumadas entre paños (ej. 2
+  // paños corredizos cada uno con 4 rodajes -> 8 rodajes en total).
+  const accesoriosAutoMapa = {};
+  panosCalculados.forEach(p => {
+    p.accesoriosAuto.forEach(linea => {
+      if (!accesoriosAutoMapa[linea.clave]) accesoriosAutoMapa[linea.clave] = { ...linea };
+      else accesoriosAutoMapa[linea.clave].cantidad += linea.cantidad;
+    });
+  });
+  const accesoriosAuto = Object.values(accesoriosAutoMapa);
 
   return {
     tipoSolucion,
     nombreSolucion: refBase.nombre,
     tipoApertura,
     composicion: esMixto ? composicion : null,
+    panos,
+    panosCalculados,
+    notacionPanos: notacionPanos(panos),
     esMixto,
     nombreApertura: nombreAperturaCompuesto,
     ancho: Number(ancho), alto: Number(alto), cantidad: Number(cantidad),
@@ -153,8 +212,8 @@ export function calcularItem(item) {
     accesorios, accesoriosLegacy,
     costoBase,
     adicionalApertura, adicionalVidrio, adicionalPerfil, adicionalAccesoriosLegacy, subtotalAccesoriosNuevos,
-    despiecePerfiles: despieceAuto.despiece,
-    accesoriosAuto: despieceAuto.lineas,
+    despiecePerfiles,
+    accesoriosAuto,
     subtotalAccesoriosAuto,
     subtotalTecnico,
     costoInstalacion,
