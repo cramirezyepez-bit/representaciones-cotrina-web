@@ -1024,16 +1024,10 @@ Solicito validación técnica para confirmar cotización.`;
     campo.addEventListener('change', () => campo.classList.remove('is-invalid'));
   });
 
-  btnLimpiar.addEventListener('click', () => {
-    form.reset();
-    ocultarAlerta();
-    ocultarAviso();
-    Object.values(campos).forEach(c => c && c.classList.remove('is-invalid'));
-    actualizarObligatoriedadMaterial();
-    resultContent.hidden = true;
-    resultEmpty.hidden = false;
-    ultimoCalculo = null;
-  });
+  // El manejo de btnLimpiar ahora vive en js/cotizador.js (el nuevo
+  // orquestador de múltiples ítems), para evitar que dos listeners
+  // independientes compitan sobre el mismo botón con lógicas de
+  // "limpiar resultado" distintas.
 
   btnGenerarPdf.addEventListener('click', generarPdfCliente);
 

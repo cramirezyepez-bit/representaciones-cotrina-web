@@ -492,3 +492,129 @@ img{ max-width:100%; display:block; }
   color: var(--acero);
   font-size: 12.5px;
 }
+
+/* ============================================================
+   ÍTEMS DEL PROYECTO (motor paramétrico — fase 1)
+   ============================================================ */
+.items-card{
+  background: var(--hueso);
+  border: 1px solid var(--linea-oscura);
+  border-radius: var(--radius);
+  padding: 36px 34px 34px;
+  box-shadow: 0 18px 50px -20px rgba(16,17,19,0.25);
+  margin-top: 28px;
+}
+.items-empty{
+  padding: 28px 0;
+  text-align: center;
+  color: var(--acero-claro);
+  font-size: 14px;
+}
+.items-list{
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 8px;
+}
+.item-row{
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 14px 16px;
+  border: 1px solid var(--linea-oscura);
+  border-radius: 10px;
+  background: #fff;
+}
+.item-row-main{
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex: 1;
+  min-width: 0;
+}
+.item-codigo{
+  font-family: var(--font-condensed);
+  font-weight: 600;
+  font-size: 13px;
+  color: var(--naranja);
+  background: rgba(255,106,26,0.1);
+  padding: 4px 10px;
+  border-radius: 999px;
+  flex-shrink: 0;
+}
+.item-info{
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+.item-info strong{
+  font-size: 14px;
+  color: var(--negro);
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.item-medidas{
+  font-size: 12.5px;
+  color: var(--acero-claro);
+}
+.item-row-precio{
+  font-family: var(--font-condensed);
+  font-weight: 600;
+  font-size: 15px;
+  color: var(--negro);
+  flex-shrink: 0;
+  white-space: nowrap;
+}
+.item-row-actions{
+  display: flex;
+  gap: 6px;
+  flex-shrink: 0;
+}
+.item-btn-dup, .item-btn-del{
+  width: 30px;
+  height: 30px;
+  border-radius: 8px;
+  border: 1px solid var(--linea-oscura);
+  background: #fff;
+  cursor: pointer;
+  font-size: 14px;
+  color: var(--acero-claro);
+  transition: var(--ease, .2s ease);
+}
+.item-btn-dup:hover{ border-color: var(--naranja); color: var(--naranja); }
+.item-btn-del:hover{ border-color: #d23; color: #d23; }
+
+.items-proyecto-acc{
+  margin-top: 24px;
+  padding-top: 20px;
+  border-top: 1px solid var(--linea-oscura);
+}
+.items-proyecto-acc h4{
+  font-family: var(--font-condensed);
+  font-size: 15px;
+  font-weight: 600;
+  margin: 0 0 4px;
+}
+.check-item-cantidad{
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+.check-item-cantidad span{ font-size: 13.5px; }
+.input-cantidad-accesorio{
+  width: 60px;
+  padding: 6px 8px;
+  border: 1px solid var(--linea-oscura);
+  border-radius: 6px;
+  font-size: 13px;
+  text-align: center;
+}
+
+@media (max-width: 640px){
+  .item-row{ flex-wrap: wrap; }
+  .item-row-precio{ margin-left: auto; }
+}

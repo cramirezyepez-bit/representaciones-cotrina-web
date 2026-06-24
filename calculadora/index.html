@@ -226,10 +226,33 @@
     <p class="form-warning" id="formWarning" role="status" aria-live="polite"></p>
 
     <div class="calc-actions">
-      <button type="submit" class="btn btn-primary" id="btnCalcular">Calcular presupuesto</button>
+      <button type="button" class="btn btn-primary" id="btnAgregarItem">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:17px;height:17px"><path d="M12 5v14M5 12h14"/></svg>
+        Agregar ítem a la lista
+      </button>
       <button type="button" class="btn btn-ghost" id="btnLimpiar">Limpiar formulario</button>
     </div>
   </form>
+
+  <!-- ===== ÍTEMS DEL PROYECTO ===== -->
+  <section class="items-card" id="itemsCard">
+    <div class="calc-card-head">
+      <span class="calc-step">05</span>
+      <h2>Ítems del proyecto</h2>
+    </div>
+
+    <div class="items-empty" id="itemsEmpty">
+      <p>Todavía no agregaste ningún ítem. Completa el formulario de arriba y presiona «Agregar ítem a la lista».</p>
+    </div>
+
+    <div class="items-list" id="itemsList" hidden></div>
+
+    <div class="items-proyecto-acc" id="itemsProyectoAcc" hidden>
+      <h4>Servicios para todo el proyecto</h4>
+      <p class="field-hint field-hint-tight">Se cobran una sola vez, no por ítem.</p>
+      <div class="check-grid" id="accesoriosProyectoGrid"></div>
+    </div>
+  </section>
 
   <!-- ===== RESULTADO ===== -->
   <section class="result-card" id="resultCard" aria-live="polite">
@@ -241,12 +264,16 @@
     </div>
 
     <div class="result-content" id="resultContent" hidden>
-      <p class="result-eyebrow">Presupuesto preliminar interno</p>
-      <h3 class="result-tipo" id="resultTipo">—</h3>
+      <p class="result-eyebrow">Presupuesto preliminar interno · proyecto completo</p>
+      <h3 class="result-tipo" id="resultTipo">Resumen del proyecto</h3>
 
       <div class="result-grid">
         <div class="result-item">
-          <span class="result-item-label">Área estimada</span>
+          <span class="result-item-label">Ítems en el proyecto</span>
+          <span class="result-item-value" id="resultCantidadItems">0</span>
+        </div>
+        <div class="result-item">
+          <span class="result-item-label">Área total</span>
           <span class="result-item-value" id="resultArea">—</span>
         </div>
         <div class="result-item">
@@ -258,23 +285,15 @@
       <!-- Desglose de costos -->
       <div class="breakdown" id="resultBreakdown">
         <div class="breakdown-row">
-          <span>Costo base estimado</span>
+          <span>Subtotal de todos los ítems</span>
           <span id="bdCostoBase">S/ 0</span>
         </div>
         <div class="breakdown-row">
-          <span>Adicional por material/marco</span>
-          <span id="bdMaterial">S/ 0</span>
-        </div>
-        <div class="breakdown-row">
-          <span>Adicional por tipo de vidrio</span>
-          <span id="bdVidrio">S/ 0</span>
-        </div>
-        <div class="breakdown-row">
-          <span>Adicional por accesorios</span>
+          <span>Servicios de proyecto (transporte, instalación, etc.)</span>
           <span id="bdAccesorios">S/ 0</span>
         </div>
         <div class="breakdown-row">
-          <span>Costo de instalación</span>
+          <span>Ajuste por urgencia</span>
           <span id="bdInstalacion">S/ 0</span>
         </div>
         <div class="breakdown-row breakdown-row-total">
@@ -324,6 +343,7 @@
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script type="module" src="js/cotizador.js"></script>
 <script src="calculadora.js"></script>
 </body>
 </html>
