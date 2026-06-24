@@ -108,6 +108,7 @@ const REGLAS_POR_TIPO_APERTURA = {
   fijo: {
     rodajes: 0, bisagras: 0, cerraduras: 0, jaladores: 0, topes: 0, carros: 0, escuadras: 0,
   },
+  corredizoSimple: { rodajesPorHoja: 2, jaladoresPorHoja: 1, cerradurasPorModulo: 1, topesPorModulo: 1, carrosPorHoja: 0, escuadrasPorHoja: 4 },
   corredizo2: { rodajesPorHoja: 2, jaladoresPorHoja: 1, cerradurasPorModulo: 1, topesPorModulo: 2, carrosPorHoja: 0, escuadrasPorHoja: 4 },
   corredizo3: { rodajesPorHoja: 2, jaladoresPorHoja: 1, cerradurasPorModulo: 1, topesPorModulo: 2, carrosPorHoja: 0, escuadrasPorHoja: 4 },
   corredizo4: { rodajesPorHoja: 2, jaladoresPorHoja: 1, cerradurasPorModulo: 1, topesPorModulo: 2, carrosPorHoja: 0, escuadrasPorHoja: 4 },

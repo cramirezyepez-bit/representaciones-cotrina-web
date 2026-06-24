@@ -331,7 +331,7 @@ function leerPanosCompuestos() {
  */
 const CLASIFICACION_SIMPLE_PANO = {
   F: { label: 'Fijo', tipoAperturaReal: 'fijo' },
-  M: { label: 'Móvil', tipoAperturaReal: 'corredizo2' },
+  M: { label: 'Móvil', tipoAperturaReal: 'corredizoSimple' },
 };
 
 /** Tipos de sistema donde el usuario solo ve la clasificación simple F/M. */

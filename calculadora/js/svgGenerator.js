@@ -193,6 +193,7 @@ function dibujarGuillotina(w, h) {
  */
 function dibujarModuloSegunApertura(tipoApertura, w, h) {
   switch (tipoApertura) {
+    case 'corredizoSimple': return dibujarCorredizo(w, h, 1);
     case 'corredizo2': return dibujarCorredizo(w, h, 2);
     case 'corredizo3': return dibujarCorredizo(w, h, 3);
     case 'corredizo4':

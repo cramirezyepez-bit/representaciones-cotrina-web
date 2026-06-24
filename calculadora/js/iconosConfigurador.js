@@ -182,7 +182,7 @@ export const ICONOS_DUCHA = {
 
 /** Metadatos de cada variante de ducha: etiqueta + mapeo a apertura/composición. */
 export const VARIANTES_DUCHA = {
-  fijaCorredizaUna:   { label: 'Corrediza 1 hoja fija + 1 corrediza', tipoApertura: null, composicion: [{ tipoApertura: 'fijo', proporcion: 0.45 }, { tipoApertura: 'corredizo2', proporcion: 0.55 }] },
+  fijaCorredizaUna:   { label: 'Corrediza 1 hoja fija + 1 corrediza', tipoApertura: null, composicion: [{ tipoApertura: 'fijo', proporcion: 0.45 }, { tipoApertura: 'corredizoSimple', proporcion: 0.55 }] },
   corredizaDosHojas:  { label: 'Corrediza 2 hojas', tipoApertura: 'corredizo2', composicion: null },
   batiente:           { label: 'Batiente', tipoApertura: 'batiente', composicion: null },
   abatibleFijo:       { label: 'Abatible + fijo', tipoApertura: null, composicion: [{ tipoApertura: 'fijo', proporcion: 0.5 }, { tipoApertura: 'batiente', proporcion: 0.5 }] },

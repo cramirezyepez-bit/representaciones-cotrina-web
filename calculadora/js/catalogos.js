@@ -53,6 +53,7 @@ export const TIPOS_SOLUCION = {
 // disponible con datos reales, no un ajuste fino validado en obra.
 export const TIPOS_APERTURA = {
   fijo:           { nombre: 'Fijo',                hojas: 0, factor: 0,    fuente: 'Línea base — sin mecanismo de apertura' },
+  corredizoSimple: { nombre: 'Corredizo 1 hoja',    hojas: 1, factor: 0.16, fuente: 'Estimado: mitad del adicional de corredizo2 (0.28/2 ≈ 0.14) con un ajuste leve por carril propio; pensado para un paño individual dentro de una composición [F][M][M][F], no para el vano completo. VALIDAR' },
   corredizo2:     { nombre: 'Corredizo 2 hojas',    hojas: 2, factor: 0.28, fuente: 'Tarifario 2026: PVC/mampara 1→2 hojas (+31%, +contexto mampara fijo+corredizo +6.7%)' },
   corredizo3:     { nombre: 'Corredizo 3 hojas',    hojas: 3, factor: 0.41, fuente: 'Estimado: corredizo2 + ~13% por hoja adicional (medido 2→4 hojas mampara)' },
   corredizo4:     { nombre: 'Corredizo 4 hojas',    hojas: 4, factor: 0.54, fuente: 'Tarifario 2026: mampara 2→4 hojas corredizas, +13.3% sobre 2 hojas' },

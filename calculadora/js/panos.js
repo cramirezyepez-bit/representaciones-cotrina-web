@@ -98,7 +98,7 @@ export function resolverPanos(item) {
 /** Código de apertura legible para mostrar en el dibujo 2D / UI (ej. "F", "M", "B"). */
 export const CODIGO_CORTO_APERTURA = {
   fijo: 'F',
-  corredizo2: 'M', corredizo3: 'M', corredizo4: 'M', dobleCorredizo: 'M',
+  corredizoSimple: 'M', corredizo2: 'M', corredizo3: 'M', corredizo4: 'M', dobleCorredizo: 'M',
   batiente: 'B', batienteIzquierda: 'B', batienteDerecha: 'B',
   proyectante: 'P', oscilobatiente: 'O', pivotante: 'B',
   puerta: 'D', plegable: 'M', guillotina: 'M', especial: '?',
