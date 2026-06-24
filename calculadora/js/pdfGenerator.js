@@ -16,6 +16,7 @@
 import { generarDibujoItemDataUri, tieneDibujo } from './svgGenerator.js';
 import { describirVidrio } from './vidrios.js';
 import { describirPerfil } from './perfiles.js';
+import { describirLineaAccesorioAuto } from './despieceTecnico.js';
 
 const PDF_COLOR = {
   azulMarino: '#07131C',
@@ -77,6 +78,15 @@ export function construirHtmlPdfProyecto({ resumenProyecto, cliente, ruc, distri
     const dibujoUri = tieneDibujo(c.tipoSolucion) ? generarDibujoItemDataUri(c) : null;
     const precioUnitario = c.costoItemAntesUrgencia / c.cantidad;
 
+    const d = c.despiecePerfiles || {};
+    const accAuto = c.accesoriosAuto || [];
+    const perfilesTexto = d.totalMl
+      ? `Perfiles: marco ${(d.marcoPerimetral || 0).toFixed(1)} ml · parantes/hojas ${((d.parantes || 0) + (d.hojasMl || 0)).toFixed(1)} ml · total ${d.totalMl.toFixed(1)} ml`
+      : '';
+    const accesoriosTexto = accAuto.length
+      ? `Accesorios: ${accAuto.map(l => describirLineaAccesorioAuto(l)).join(' · ')}`
+      : '';
+
     return `
       <tr class="item-row">
         <td class="cell-codigo">${it.codigo}</td>
@@ -88,6 +98,8 @@ export function construirHtmlPdfProyecto({ resumenProyecto, cliente, ruc, distri
         <td class="cell-desc">
           <p class="desc-frase">${desc.frase}</p>
           <p class="desc-medidas">Medidas: <b>${desc.medidas}</b> &nbsp;·&nbsp; Superficie: <b>${desc.superficie}</b></p>
+          ${perfilesTexto ? `<p class="desc-tecnico">${perfilesTexto}</p>` : ''}
+          ${accesoriosTexto ? `<p class="desc-tecnico">${accesoriosTexto}</p>` : ''}
         </td>
         <td class="cell-num">${c.cantidad}</td>
         <td class="cell-num">${formatearSoles(precioUnitario)}</td>
@@ -124,18 +136,19 @@ export function construirHtmlPdfProyecto({ resumenProyecto, cliente, ruc, distri
         #pdfRoot .item-row{ border-bottom:1px solid ${PDF_COLOR.grisClaro}; }
         #pdfRoot .item-row td{ padding:10px; vertical-align:top; font-size:9.5px; }
         #pdfRoot .cell-codigo{ font-weight:800; color:${PDF_COLOR.naranjaCobre}; white-space:nowrap; }
-        #pdfRoot .cell-grafico{ width:90px; }
-        #pdfRoot .item-svg{ width:78px; height:auto; display:block; }
+        #pdfRoot .cell-grafico{ width:118px; }
+        #pdfRoot .item-svg{ width:104px; height:auto; display:block; }
         #pdfRoot .sin-dibujo{ color:${PDF_COLOR.grisClaro}; font-size:14px; }
         #pdfRoot .cell-desc{ max-width:280px; }
         #pdfRoot .desc-frase{ line-height:1.4; margin-bottom:4px; }
         #pdfRoot .desc-medidas{ font-size:8.3px; color:${PDF_COLOR.grisMedio}; }
+        #pdfRoot .desc-tecnico{ font-size:8px; color:${PDF_COLOR.grisMedio}; line-height:1.5; margin-top:3px; }
         #pdfRoot .cell-num{ text-align:right; white-space:nowrap; font-weight:600; }
         #pdfRoot .cell-total{ color:${PDF_COLOR.negroCarbon}; font-weight:800; }
         #pdfRoot .acc-row td{ padding:8px 10px; font-size:8.8px; color:${PDF_COLOR.grisOscuro}; background:${PDF_COLOR.fondoSuave}; }
 
         #pdfRoot .totales{ margin:0 36px 18px; display:flex; justify-content:flex-end; }
-        #pdfRoot .totales-box{ width:280px; }
+        #pdfRoot .totales-box{ width:320px; }
         #pdfRoot .t-row{ display:flex; justify-content:space-between; font-size:9.5px; color:${PDF_COLOR.grisOscuro}; padding:5px 0; }
         #pdfRoot .t-row b{ color:${PDF_COLOR.negroCarbon}; }
         #pdfRoot .t-row-total{ border-top:1px solid ${PDF_COLOR.grisClaro}; margin-top:4px; padding-top:8px; }
@@ -190,7 +203,9 @@ export function construirHtmlPdfProyecto({ resumenProyecto, cliente, ruc, distri
 
       <div class="totales">
         <div class="totales-box">
-          <div class="t-row"><span>Subtotal ítems + servicios de proyecto</span><b>${formatearSoles(resumenProyecto.subtotalAntesUrgencia)}</b></div>
+          <div class="t-row"><span>Costos directos (perfiles, vidrio, accesorios)</span><b>${formatearSoles(resumenProyecto.resumenEconomico.costosDirectos)}</b></div>
+          <div class="t-row"><span>Mano de obra e instalación</span><b>${formatearSoles(resumenProyecto.resumenEconomico.manoDeObraInstalacion)}</b></div>
+          <div class="t-row"><span>Servicios de proyecto</span><b>${formatearSoles(resumenProyecto.resumenEconomico.serviciosProyecto)}</b></div>
           <div class="t-row"><span>Ajuste por urgencia (${(resumenProyecto.factorUrgencia * 100).toFixed(0)}%)</span><b>${formatearSoles(resumenProyecto.costoTotalAntesUtilidad - resumenProyecto.subtotalAntesUrgencia)}</b></div>
           <div class="t-row t-row-total"><span>Costo total antes de utilidad</span><b>${formatearSoles(resumenProyecto.costoTotalAntesUtilidad)}</b></div>
           <div class="t-row"><span>Utilidad aplicada (${resumenProyecto.utilidadPct}%)</span><b>${formatearSoles(resumenProyecto.montoUtilidad)}</b></div>
@@ -203,9 +218,9 @@ export function construirHtmlPdfProyecto({ resumenProyecto, cliente, ruc, distri
 
       <p class="nota-legal">
         Precio preliminar sujeto a visita técnica, validación de medidas, accesorios, herrajes y condiciones de
-        instalación. Los dibujos técnicos son representaciones esquemáticas de la configuración de apertura —
-        no incluyen detalle de accesorios individuales (bisagras, rodajes, cerraduras, etc.), que se cotizan
-        por separado según el desglose de cada ítem.
+        instalación. Los dibujos técnicos son representaciones esquemáticas de la configuración de apertura.
+        Las cantidades de perfil (ml) y accesorios de cada ítem se calculan con reglas estándar de mercado según
+        tipo de apertura, número de hojas y medidas — estimación preliminar a validar con taller antes de fabricar.
       </p>
 
       <div class="foot">

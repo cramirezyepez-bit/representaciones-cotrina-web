@@ -258,7 +258,7 @@
     <div class="calc-actions">
       <button type="button" class="btn btn-primary" id="btnAgregarItem">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:17px;height:17px"><path d="M12 5v14M5 12h14"/></svg>
-        Agregar ítem a la lista
+        <span id="btnAgregarItemTexto">Agregar ítem a la lista</span>
       </button>
       <button type="button" class="btn btn-ghost" id="btnLimpiar">Limpiar formulario</button>
     </div>
@@ -312,24 +312,38 @@
         </div>
       </div>
 
-      <!-- Desglose de costos -->
-      <div class="breakdown" id="resultBreakdown">
+      <!-- Resumen económico estructurado: costos directos / servicios / utilidad -->
+      <div class="econ-bloque">
+        <h4 class="econ-titulo">Costos directos</h4>
         <div class="breakdown-row">
-          <span>Subtotal de todos los ítems</span>
+          <span>Perfiles, vidrio y accesorios (todos los ítems)</span>
           <span id="bdCostoBase">S/ 0</span>
         </div>
         <div class="breakdown-row">
-          <span>Servicios de proyecto (transporte, instalación, etc.)</span>
+          <span>Mano de obra e instalación</span>
+          <span id="bdManoObra">S/ 0</span>
+        </div>
+      </div>
+
+      <div class="econ-bloque">
+        <h4 class="econ-titulo">Servicios</h4>
+        <div class="breakdown-row">
+          <span>Sellado, desmontaje, instalación en altura, transporte</span>
           <span id="bdAccesorios">S/ 0</span>
         </div>
         <div class="breakdown-row">
           <span>Ajuste por urgencia</span>
           <span id="bdInstalacion">S/ 0</span>
         </div>
-        <div class="breakdown-row breakdown-row-total">
-          <span>Costo total antes de utilidad</span>
-          <span id="bdCostoTotal">S/ 0</span>
-        </div>
+      </div>
+
+      <div class="breakdown-row breakdown-row-total">
+        <span>Costo total antes de utilidad</span>
+        <span id="bdCostoTotal">S/ 0</span>
+      </div>
+
+      <div class="econ-bloque econ-bloque-utilidad">
+        <h4 class="econ-titulo">Utilidad</h4>
         <div class="breakdown-row breakdown-row-utilidad">
           <span>Utilidad aplicada (<span id="bdUtilidadPct">0%</span>)</span>
           <span id="bdUtilidadMonto">S/ 0</span>

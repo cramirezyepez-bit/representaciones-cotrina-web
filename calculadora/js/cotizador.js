@@ -20,12 +20,14 @@
    las series nuevas equivalentes en perfiles.js.
    ============================================================ */
 
-import { agregarItem, duplicarItem, eliminarItem, obtenerItems, obtenerResumenProyecto, vaciarProyecto, establecerAccesoriosProyecto, obtenerAccesoriosProyecto } from './proyecto.js';
+import { agregarItem, editarItem, duplicarItem, eliminarItem, obtenerItems, obtenerItemPorId, obtenerResumenProyecto, vaciarProyecto, establecerAccesoriosProyecto, obtenerAccesoriosProyecto } from './proyecto.js';
 import { describirVidrio } from './vidrios.js';
 import { describirPerfil } from './perfiles.js';
 import { CATALOGO_ACCESORIOS, listarAccesoriosPorAlcance } from './accesorios.js';
 import { TIPOS_SOLUCION, listarTiposApertura } from './catalogos.js';
 import { construirHtmlPdfProyecto } from './pdfGenerator.js';
+import { generarDibujoItem, tieneDibujo } from './svgGenerator.js';
+import { describirLineaAccesorioAuto } from './despieceTecnico.js';
 
 // --- Mapeo del <select id="tipoVidrio"> legacy a categoría+variante nuevos ---
 const MAPEO_VIDRIO_LEGACY = {
@@ -55,6 +57,9 @@ const MAPEO_PERFIL_LEGACY = {
 function formatearSoles(numero) {
   return 'S/ ' + (Math.round(numero) || 0).toLocaleString('es-PE');
 }
+
+/** ID del ítem actualmente en edición (null si se está agregando uno nuevo). */
+let _idEnEdicion = null;
 
 function leerDatosFormulario() {
   const get = (id) => document.getElementById(id);
@@ -217,8 +222,68 @@ function validarDatosMinimos(datos) {
   return errores;
 }
 
+function formatearMl(n) {
+  return `${Number(n).toFixed(1)} ml`;
+}
+
+function construirDetalleTecnico(it) {
+  const c = it.calculo;
+  const d = c.despiecePerfiles || {};
+  const accAuto = c.accesoriosAuto || [];
+
+  const dibujoSvg = tieneDibujo(c.tipoSolucion) ? generarDibujoItem(c) : null;
+  const vista2d = dibujoSvg
+    ? `<div class="detalle-vista2d">${dibujoSvg}</div>`
+    : `<div class="detalle-vista2d"><span style="color:var(--acero-claro);font-size:11px;">Sin vista técnica disponible para este tipo de solución.</span></div>`;
+
+  const perfilesHtml = `
+    <div class="detalle-bloque">
+      <h5>Perfiles</h5>
+      <ul>
+        <li><span>Marco superior</span><span>${formatearMl(d.marcoSuperior || 0)}</span></li>
+        <li><span>Marco inferior</span><span>${formatearMl(d.marcoInferior || 0)}</span></li>
+        <li><span>Jamba izquierda</span><span>${formatearMl(d.jambaIzquierda || 0)}</span></li>
+        <li><span>Jamba derecha</span><span>${formatearMl(d.jambaDerecha || 0)}</span></li>
+        <li><span>Parantes / divisiones</span><span>${formatearMl(d.parantes || 0)}</span></li>
+        <li><span>Hojas móviles</span><span>${formatearMl(d.hojasMl || 0)}</span></li>
+        <li><span><b>Total perfil</b></span><span><b>${formatearMl(d.totalMl || 0)}</b></span></li>
+      </ul>
+    </div>`;
+
+  const vidrioHtml = `
+    <div class="detalle-bloque">
+      <h5>Vidrio</h5>
+      <ul>
+        <li><span>Tipo</span><span>${describirVidrio(c.vidrioCategoria, c.vidrioVariante)}</span></li>
+        <li><span>Área unitaria</span><span>${c.areaPorUnidad.toFixed(2)} m²</span></li>
+        <li><span>Área total</span><span>${c.areaTotal.toFixed(2)} m²</span></li>
+        ${c.perfilSerie !== 'noAplica' ? `<li><span>Sistema / serie</span><span>${describirPerfil(c.perfilSerie)}</span></li>` : ''}
+      </ul>
+    </div>`;
+
+  const accesoriosHtml = accAuto.length
+    ? `<div class="detalle-bloque">
+        <h5>Accesorios (cantidad real)</h5>
+        <ul>
+          ${accAuto.map(l => `<li><span>${describirLineaAccesorioAuto(l).split(':')[0]}</span><span>${describirLineaAccesorioAuto(l).split(':')[1].trim()}</span></li>`).join('')}
+        </ul>
+      </div>`
+    : `<div class="detalle-bloque">
+        <h5>Accesorios (cantidad real)</h5>
+        <ul><li><span>Sin mecanismo de apertura — no requiere herrajes.</span><span></span></li></ul>
+      </div>`;
+
+  return `
+    ${vista2d}
+    ${perfilesHtml}
+    ${vidrioHtml}
+    ${accesoriosHtml}
+    <p class="detalle-nota">Cantidades de perfil y accesorios calculadas con reglas estándar de mercado según tipo de apertura, número de hojas y medidas — estimación preliminar a validar con taller antes de fabricar.</p>
+  `;
+}
+
 /* ------------------------------------------------------------
-   RENDER: lista de ítems del proyecto
+   RENDER: lista de ítems del proyecto (tarjetas horizontales)
    ------------------------------------------------------------ */
 function renderItems() {
   const items = obtenerItems();
@@ -239,20 +304,32 @@ function renderItems() {
 
   itemsList.innerHTML = items.map(it => {
     const c = it.calculo;
-    const desc = `${c.nombreSolucion} ${c.nombreApertura !== 'Fijo' ? '· ' + c.nombreApertura + ' ' : ''}· ${describirVidrio(c.vidrioCategoria, c.vidrioVariante)}${c.perfilSerie !== 'noAplica' ? ' · ' + describirPerfil(c.perfilSerie) : ''}`;
+    const serieTexto = c.perfilSerie !== 'noAplica' ? describirPerfil(c.perfilSerie) : '—';
     return `
-      <div class="item-row" data-id="${it.id}">
-        <div class="item-row-main">
+      <div class="item-card" data-id="${it.id}">
+        <div class="item-card-top">
           <span class="item-codigo">${it.codigo}</span>
-          <div class="item-info">
-            <strong>${desc}</strong>
-            <span class="item-medidas">${c.ancho.toFixed(2)} x ${c.alto.toFixed(2)} m · cant. ${c.cantidad} · ${c.areaTotal.toFixed(2)} m²</span>
+          <div class="item-specs">
+            <div class="item-spec"><span class="item-spec-label">Solución</span><span class="item-spec-value">${c.nombreSolucion}</span></div>
+            <div class="item-spec"><span class="item-spec-label">Serie</span><span class="item-spec-value">${serieTexto}</span></div>
+            <div class="item-spec"><span class="item-spec-label">Apertura</span><span class="item-spec-value">${c.nombreApertura}</span></div>
+            <div class="item-spec"><span class="item-spec-label">Vidrio</span><span class="item-spec-value">${describirVidrio(c.vidrioCategoria, c.vidrioVariante)}</span></div>
+            <div class="item-spec"><span class="item-spec-label">Medidas</span><span class="item-spec-value">${c.ancho.toFixed(2)} × ${c.alto.toFixed(2)} m</span></div>
+            <div class="item-spec"><span class="item-spec-label">Cantidad</span><span class="item-spec-value">${c.cantidad}</span></div>
+            <div class="item-spec"><span class="item-spec-label">Área total</span><span class="item-spec-value">${c.areaTotal.toFixed(2)} m²</span></div>
+          </div>
+          <div class="item-row-precio">${formatearSoles(c.costoItemAntesUrgencia)}</div>
+          <div class="item-row-actions">
+            <button type="button" class="item-btn-toggle" data-action="toggle" data-id="${it.id}" title="Ver desglose técnico">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px"><path d="M6 9l6 6 6-6"/></svg>
+            </button>
+            <button type="button" class="item-btn-editar" data-action="editar" data-id="${it.id}" title="Editar ítem">✎</button>
+            <button type="button" class="item-btn-dup" data-action="duplicar" data-id="${it.id}" title="Duplicar ítem">⧉</button>
+            <button type="button" class="item-btn-del" data-action="eliminar" data-id="${it.id}" title="Eliminar ítem">✕</button>
           </div>
         </div>
-        <div class="item-row-precio">${formatearSoles(c.costoItemAntesUrgencia)}</div>
-        <div class="item-row-actions">
-          <button type="button" class="item-btn-dup" data-action="duplicar" data-id="${it.id}" title="Duplicar ítem">⧉</button>
-          <button type="button" class="item-btn-del" data-action="eliminar" data-id="${it.id}" title="Eliminar ítem">✕</button>
+        <div class="item-detalle" id="detalle-${it.id}" hidden>
+          ${construirDetalleTecnico(it)}
         </div>
       </div>
     `;
@@ -315,8 +392,9 @@ function actualizarResultado() {
   document.getElementById('resultArea').textContent = resumen.areaTotalProyecto.toFixed(2) + ' m²';
   document.getElementById('resultDistrito').textContent = distrito;
 
-  document.getElementById('bdCostoBase').textContent = formatearSoles(resumen.costoItemsSubtotal);
-  document.getElementById('bdAccesorios').textContent = formatearSoles(resumen.costoAccesoriosProyecto);
+  document.getElementById('bdCostoBase').textContent = formatearSoles(resumen.resumenEconomico.costosDirectos);
+  document.getElementById('bdManoObra').textContent = formatearSoles(resumen.resumenEconomico.manoDeObraInstalacion);
+  document.getElementById('bdAccesorios').textContent = formatearSoles(resumen.resumenEconomico.serviciosProyecto);
   const montoAjusteUrgencia = resumen.costoTotalAntesUtilidad - resumen.subtotalAntesUrgencia;
   document.getElementById('bdInstalacion').textContent = formatearSoles(montoAjusteUrgencia);
   document.getElementById('bdCostoTotal').textContent = formatearSoles(resumen.costoTotalAntesUtilidad);
@@ -347,7 +425,14 @@ function manejarAgregarItem() {
   }
   formAlert.hidden = true;
 
-  agregarItem(datos);
+  if (_idEnEdicion) {
+    editarItem(_idEnEdicion, datos);
+    _idEnEdicion = null;
+    document.getElementById('btnAgregarItemTexto').textContent = 'Agregar ítem a la lista';
+    document.getElementById('btnAgregarItem').classList.remove('btn-editando');
+  } else {
+    agregarItem(datos);
+  }
   renderItems();
   renderAccesoriosProyecto();
   actualizarResultado();
@@ -367,10 +452,81 @@ function manejarListaClick(e) {
   const btn = e.target.closest('[data-action]');
   if (!btn) return;
   const { action, id } = btn.dataset;
+
+  if (action === 'toggle') {
+    const detalle = document.getElementById(`detalle-${id}`);
+    if (detalle) {
+      detalle.hidden = !detalle.hidden;
+      btn.classList.toggle('is-open', !detalle.hidden);
+    }
+    return;
+  }
+
+  if (action === 'editar') {
+    cargarItemEnFormulario(id);
+    return;
+  }
+
   if (action === 'duplicar') duplicarItem(id);
   if (action === 'eliminar') eliminarItem(id);
   renderItems();
   actualizarResultado();
+}
+
+/**
+ * Carga los datos de un ítem existente en el formulario para
+ * edición. Al presionar "Agregar ítem a la lista" después de
+ * editar, se actualiza el ítem original en vez de crear uno nuevo
+ * (ver `_idEnEdicion` y `manejarAgregarItem`).
+ */
+function cargarItemEnFormulario(id) {
+  const item = obtenerItemPorId(id);
+  if (!item) return;
+  const d = item.datosOriginales;
+  const set = (idEl, valor) => { const el = document.getElementById(idEl); if (el) el.value = valor ?? ''; };
+
+  set('tipoSolucion', d.tipoSolucion);
+  set('ancho', d.ancho);
+  set('alto', d.alto);
+  set('cantidad', d.cantidad);
+  set('colorAluminio', d.colorAluminio);
+
+  // Vidrio/material legacy: buscar la clave legacy que mapea a la categoría/serie guardada.
+  const tipoVidrioSelect = document.getElementById('tipoVidrio');
+  Array.from(tipoVidrioSelect.options).forEach(opt => {
+    const mapeo = MAPEO_VIDRIO_LEGACY[opt.value];
+    if (mapeo && mapeo.categoria === d.vidrioCategoria) tipoVidrioSelect.value = opt.value;
+  });
+  const materialSelect = document.getElementById('materialSistema');
+  Array.from(materialSelect.options).forEach(opt => {
+    if (MAPEO_PERFIL_LEGACY[opt.value] === d.perfilSerie) materialSelect.value = opt.value;
+  });
+
+  resetearComposicionMixta();
+  if (d.composicion && d.composicion.length > 1) {
+    document.getElementById('chkComposicionMixta').checked = true;
+    document.getElementById('composicionMixta').hidden = false;
+    document.getElementById('tipoApertura').disabled = true;
+    const modulosWrap = document.getElementById('composicionModulos');
+    d.composicion.forEach((m, i) => {
+      modulosWrap.appendChild(crearFilaModulo(i + 1, m.tipoApertura, m.anchoModulo));
+    });
+    validarSumaComposicion();
+  } else {
+    set('tipoApertura', d.tipoApertura || 'fijo');
+  }
+
+  document.querySelectorAll('input[name="accesorios"]:checked').forEach(cb => cb.checked = false);
+  (d.accesoriosLegacy || []).forEach(clave => {
+    const cb = document.querySelector(`input[name="accesorios"][value="${clave}"]`);
+    if (cb) cb.checked = true;
+  });
+
+  _idEnEdicion = id;
+  document.getElementById('btnAgregarItemTexto').textContent = 'Guardar cambios del ítem';
+  document.getElementById('btnAgregarItem').classList.add('btn-editando');
+
+  document.getElementById('calcForm').scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
 
 function manejarLimpiarTodo() {
@@ -378,6 +534,9 @@ function manejarLimpiarTodo() {
   form.reset();
   vaciarProyecto();
   resetearComposicionMixta();
+  _idEnEdicion = null;
+  document.getElementById('btnAgregarItemTexto').textContent = 'Agregar ítem a la lista';
+  document.getElementById('btnAgregarItem').classList.remove('btn-editando');
   document.getElementById('formAlert').hidden = true;
   renderItems();
   renderAccesoriosProyecto();

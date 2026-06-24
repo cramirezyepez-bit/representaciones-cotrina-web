@@ -17,6 +17,7 @@ import { TIPOS_SOLUCION, AREA_MINIMA_POR_UNIDAD, COSTO_MINIMO_PROYECTO, FACTOR_I
 import { obtenerFactorVidrio } from './vidrios.js';
 import { obtenerFactorPerfil } from './perfiles.js';
 import { calcularSubtotalAccesorios, calcularFactorAccesoriosLegacy } from './accesorios.js';
+import { calcularAccesoriosAutomaticos } from './despieceTecnico.js';
 
 /**
  * Calcula el factor de apertura efectivo de un ítem.
@@ -120,8 +121,17 @@ export function calcularItem(item) {
   // Accesorios del nuevo modelo (cantidad × precio unitario, en soles directos).
   const subtotalAccesoriosNuevos = calcularSubtotalAccesorios(accesorios);
 
+  // Despiece técnico automático: metros lineales de perfil + cantidades
+  // reales de accesorios (rodajes, bisagras, felpas, etc.) derivadas de
+  // la geometría y el tipo de apertura. Estas líneas se suman al costo
+  // del ítem en soles directos, igual que los accesorios manuales —
+  // así el "precio sugerido" ya refleja el consumo real de herrajes,
+  // no solo un % estimado sobre el costo base.
+  const despieceAuto = calcularAccesoriosAutomaticos({ tipoApertura, composicion, esMixto, ancho, alto, cantidad });
+  const subtotalAccesoriosAuto = calcularSubtotalAccesorios(despieceAuto.lineas);
+
   const subtotalTecnico = costoBase + adicionalApertura + adicionalVidrio + adicionalPerfil
-    + adicionalAccesoriosLegacy + subtotalAccesoriosNuevos;
+    + adicionalAccesoriosLegacy + subtotalAccesoriosNuevos + subtotalAccesoriosAuto;
 
   const costoInstalacion = subtotalTecnico * FACTOR_INSTALACION;
 
@@ -143,6 +153,9 @@ export function calcularItem(item) {
     accesorios, accesoriosLegacy,
     costoBase,
     adicionalApertura, adicionalVidrio, adicionalPerfil, adicionalAccesoriosLegacy, subtotalAccesoriosNuevos,
+    despiecePerfiles: despieceAuto.despiece,
+    accesoriosAuto: despieceAuto.lineas,
+    subtotalAccesoriosAuto,
     subtotalTecnico,
     costoInstalacion,
     costoItemAntesUrgencia: subtotalTecnico + costoInstalacion,
@@ -172,6 +185,17 @@ export function calcularProyecto(itemsCalculados, accesoriosProyecto = [], urgen
 
   const areaTotalProyecto = itemsCalculados.reduce((acc, it) => acc + it.areaTotal, 0);
 
+  // Agregación para el resumen económico estructurado (brief punto 5):
+  // separa "costos directos" (material + vidrio + accesorios/herrajes,
+  // que viven dentro de costoBase/adicionales de cada ítem) de
+  // "servicios" (instalación de cada ítem + accesorios de alcance
+  // proyecto como transporte, desmontaje, instalación en altura).
+  const costosDirectosVidrioPerfilAccesorios = itemsCalculados.reduce((acc, it) =>
+    acc + it.costoBase + it.adicionalApertura + it.adicionalVidrio + it.adicionalPerfil
+      + it.adicionalAccesoriosLegacy + it.subtotalAccesoriosNuevos + it.subtotalAccesoriosAuto, 0);
+  const costoManoDeObraInstalacion = itemsCalculados.reduce((acc, it) => acc + it.costoInstalacion, 0);
+  const costoServiciosProyecto = costoAccesoriosProyecto;
+
   return {
     items: itemsCalculados,
     accesoriosProyecto,
@@ -185,5 +209,10 @@ export function calcularProyecto(itemsCalculados, accesoriosProyecto = [], urgen
     precioFinal,
     areaTotalProyecto,
     cantidadItems: itemsCalculados.length,
+    resumenEconomico: {
+      costosDirectos: costosDirectosVidrioPerfilAccesorios,
+      manoDeObraInstalacion: costoManoDeObraInstalacion,
+      serviciosProyecto: costoServiciosProyecto,
+    },
   };
 }
