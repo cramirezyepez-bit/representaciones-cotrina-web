@@ -30,6 +30,7 @@ import { generarDibujoItem, tieneDibujo } from './svgGenerator.js';
 import { describirLineaAccesorioAuto } from './despieceTecnico.js';
 import { ICONOS_TIPO_SOLUCION, ICONOS_TIPO_APERTURA, ICONOS_DUCHA, VARIANTES_DUCHA } from './iconosConfigurador.js';
 import { CODIGO_CORTO_APERTURA } from './panos.js';
+import { construirTablasProyecto, calcularResumenConIgv } from './rules.js';
 
 // --- Mapeo del <select id="tipoVidrio"> legacy a categoría+variante nuevos ---
 const MAPEO_VIDRIO_LEGACY = {
@@ -594,11 +595,15 @@ function actualizarAccesoriosProyectoDesdeUI() {
 function actualizarResultado() {
   const resultEmpty = document.getElementById('resultEmpty');
   const resultContent = document.getElementById('resultContent');
+  const tablasCard = document.getElementById('tablasCard');
+  const observacionesCard = document.getElementById('observacionesCard');
   const items = obtenerItems();
 
   if (items.length === 0) {
     resultEmpty.hidden = false;
     resultContent.hidden = true;
+    tablasCard.hidden = true;
+    observacionesCard.hidden = true;
     window.__ultimoResumenProyecto = null;
     return;
   }
@@ -611,6 +616,8 @@ function actualizarResultado() {
 
   resultEmpty.hidden = true;
   resultContent.hidden = false;
+  tablasCard.hidden = false;
+  observacionesCard.hidden = false;
 
   document.getElementById('resultCantidadItems').textContent = resumen.cantidadItems;
   document.getElementById('resultArea').textContent = resumen.areaTotalProyecto.toFixed(2) + ' m²';
@@ -626,12 +633,61 @@ function actualizarResultado() {
   document.getElementById('bdUtilidadMonto').textContent = formatearSoles(resumen.montoUtilidad);
   document.getElementById('resultPrecioFinal').textContent = formatearSoles(resumen.precioFinal);
 
+  // Resumen con IGV configurable (Subtotal / IGV / Total).
+  const igvActivo = document.getElementById('chkIgvActivo').checked;
+  const resumenIgv = calcularResumenConIgv(resumen.precioFinal, { igvActivo });
+  document.getElementById('bdSubtotalIgv').textContent = formatearSoles(resumenIgv.subtotal);
+  document.getElementById('filaIgv').hidden = !igvActivo;
+  document.getElementById('bdMontoIgv').textContent = formatearSoles(resumenIgv.montoIgv);
+  document.getElementById('bdTotalConIgv').textContent = formatearSoles(resumenIgv.total);
+
+  // Tablas de materiales y servicios (Prioridad 1 y 2).
+  renderTablasMaterialesServicios(resumen);
+
   // Puente de compatibilidad con el PDF/WhatsApp legacy (calculadora.js),
   // que todavía lee `ultimoCalculo` de un solo ítem. Se expone aquí el
   // resumen agregado del proyecto para que ese código no falle, aunque
   // el diseño visual del PDF para múltiples ítems es una migración
   // pendiente (fase de pdfGenerator.js, fuera del alcance de esta fase).
   window.__ultimoResumenProyecto = resumen;
+}
+
+/**
+ * Renderiza las tablas de materiales y servicios del proyecto
+ * (Material/Descripción/Unidad/Cantidad/P.Unit/Total y
+ * Descripción/Unidad/Cantidad/P.Unit/Total respectivamente),
+ * construidas por rules.js a partir del mismo cálculo que ya
+ * alimenta el resumen económico — una sola fuente de verdad.
+ */
+function renderTablasMaterialesServicios(resumenProyecto) {
+  const { materiales, servicios, totalMateriales, totalServicios } = construirTablasProyecto(resumenProyecto);
+
+  const bodyMateriales = document.getElementById('tablaMaterialesBody');
+  bodyMateriales.innerHTML = materiales.length
+    ? materiales.map(l => `
+        <tr>
+          <td class="celda-material">${l.material}</td>
+          <td class="celda-desc">${l.descripcion}</td>
+          <td>${l.unidad}</td>
+          <td class="num">${l.cantidad}</td>
+          <td class="num">${formatearSoles(l.precioUnitario)}</td>
+          <td class="num">${formatearSoles(l.total)}</td>
+        </tr>`).join('')
+    : `<tr><td colspan="6" class="tabla-vacia">Sin materiales calculados todavía.</td></tr>`;
+  document.getElementById('totalMaterialesTabla').textContent = formatearSoles(totalMateriales);
+
+  const bodyServicios = document.getElementById('tablaServiciosBody');
+  bodyServicios.innerHTML = servicios.length
+    ? servicios.map(l => `
+        <tr>
+          <td class="celda-desc">${l.descripcion}</td>
+          <td>${l.unidad}</td>
+          <td class="num">${l.cantidad}</td>
+          <td class="num">${formatearSoles(l.precioUnitario)}</td>
+          <td class="num">${formatearSoles(l.total)}</td>
+        </tr>`).join('')
+    : `<tr><td colspan="5" class="tabla-vacia">Sin servicios calculados todavía.</td></tr>`;
+  document.getElementById('totalServiciosTabla').textContent = formatearSoles(totalServicios);
 }
 
 /* ------------------------------------------------------------
@@ -849,8 +905,18 @@ async function manejarGenerarPdf() {
       String(fechaHoy.getMinutes()).padStart(2, '0');
     const fechaTexto = fechaHoy.toLocaleDateString('es-PE');
 
+    const igvActivo = document.getElementById('chkIgvActivo').checked;
+    const observaciones = {
+      formaPago: document.getElementById('obsFormaPago').value.trim(),
+      tiempoEntrega: document.getElementById('obsTiempoEntrega').value.trim(),
+      garantia: document.getElementById('obsGarantia').value.trim(),
+      validez: document.getElementById('obsValidez').value.trim(),
+      tecnicas: document.getElementById('obsTecnicas').value.trim(),
+    };
+
     const htmlPropuesta = construirHtmlPdfProyecto({
       resumenProyecto, cliente, ruc, distrito, urgenciaTexto, tienePlanosTexto, numeroPropuesta, fechaTexto,
+      igvActivo, observaciones,
     });
 
     contenedorTemporal = document.createElement('div');
@@ -905,6 +971,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (el) el.addEventListener('change', actualizarResultado);
     if (el) el.addEventListener('input', actualizarResultado);
   });
+  document.getElementById('chkIgvActivo').addEventListener('change', actualizarResultado);
 
   renderItems();
   renderAccesoriosProyecto();

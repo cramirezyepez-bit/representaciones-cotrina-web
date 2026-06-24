@@ -308,6 +308,76 @@
     </div>
   </section>
 
+  <!-- ===== TABLAS DE MATERIALES Y SERVICIOS ===== -->
+  <section class="tablas-card" id="tablasCard" hidden>
+    <div class="calc-card-head">
+      <span class="calc-step">06</span>
+      <h2>Lista de materiales</h2>
+    </div>
+    <p class="field-hint field-hint-tight">Generada automáticamente desde el cálculo de cada ítem — vidrio por paño, perfilería y accesorios con cantidad real.</p>
+    <div class="tabla-scroll">
+      <table class="tabla-detalle" id="tablaMateriales">
+        <thead>
+          <tr><th>Material</th><th>Descripción</th><th>Unidad</th><th class="num">Cantidad</th><th class="num">P. Unit.</th><th class="num">Total</th></tr>
+        </thead>
+        <tbody id="tablaMaterialesBody"></tbody>
+        <tfoot>
+          <tr><td colspan="5">Total materiales</td><td class="num" id="totalMaterialesTabla">S/ 0</td></tr>
+        </tfoot>
+      </table>
+    </div>
+
+    <div class="calc-card-head calc-card-head-spaced">
+      <span class="calc-step">07</span>
+      <h2>Lista de servicios</h2>
+    </div>
+    <p class="field-hint field-hint-tight">Mano de obra, instalación y partidas de proyecto — separadas de los materiales.</p>
+    <div class="tabla-scroll">
+      <table class="tabla-detalle" id="tablaServicios">
+        <thead>
+          <tr><th>Descripción</th><th>Unidad</th><th class="num">Cantidad</th><th class="num">P. Unit.</th><th class="num">Total</th></tr>
+        </thead>
+        <tbody id="tablaServiciosBody"></tbody>
+        <tfoot>
+          <tr><td colspan="4">Total servicios</td><td class="num" id="totalServiciosTabla">S/ 0</td></tr>
+        </tfoot>
+      </table>
+    </div>
+  </section>
+
+  <!-- ===== OBSERVACIONES Y CONDICIONES COMERCIALES ===== -->
+  <section class="observaciones-card" id="observacionesCard" hidden>
+    <div class="calc-card-head">
+      <span class="calc-step">08</span>
+      <h2>Condiciones comerciales</h2>
+    </div>
+    <p class="field-hint field-hint-tight">Editables — se incluyen automáticamente al final del PDF.</p>
+    <div class="field-row field-row-2">
+      <div class="field">
+        <label for="obsFormaPago">Forma de pago</label>
+        <input type="text" id="obsFormaPago" value="50% adelanto, 50% contra entrega">
+      </div>
+      <div class="field">
+        <label for="obsTiempoEntrega">Tiempo de entrega</label>
+        <input type="text" id="obsTiempoEntrega" value="A coordinar según programación de taller">
+      </div>
+    </div>
+    <div class="field-row field-row-2">
+      <div class="field">
+        <label for="obsGarantia">Garantía</label>
+        <input type="text" id="obsGarantia" value="12 meses por defectos de fabricación e instalación">
+      </div>
+      <div class="field">
+        <label for="obsValidez">Validez de la oferta</label>
+        <input type="text" id="obsValidez" value="30 días calendario">
+      </div>
+    </div>
+    <div class="field">
+      <label for="obsTecnicas">Observaciones técnicas adicionales</label>
+      <textarea id="obsTecnicas" rows="3" placeholder="Ej. precio no incluye flete ni instalación salvo indicación contraria; sujeto a visita técnica previa.">No incluye flete ni instalación salvo indicación contraria. Precio sujeto a visita técnica y validación final de medidas.</textarea>
+    </div>
+  </section>
+
   <!-- ===== RESULTADO ===== -->
   <section class="result-card" id="resultCard" aria-live="polite">
     <div class="result-empty" id="resultEmpty">
@@ -378,6 +448,25 @@
         <span class="result-range-label">Precio final sugerido</span>
         <span class="result-range-value" id="resultPrecioFinal">S/ 0</span>
         <span class="result-range-note">Costo + utilidad. No es el precio mostrado al cliente sin validación.</span>
+      </div>
+
+      <div class="igv-bloque">
+        <label class="check-item check-item-toggle check-item-igv">
+          <input type="checkbox" id="chkIgvActivo">
+          Incluir IGV (18%) en el precio mostrado al cliente
+        </label>
+        <div class="breakdown-row">
+          <span>Subtotal</span>
+          <span id="bdSubtotalIgv">S/ 0</span>
+        </div>
+        <div class="breakdown-row" id="filaIgv" hidden>
+          <span>IGV (18%)</span>
+          <span id="bdMontoIgv">S/ 0</span>
+        </div>
+        <div class="breakdown-row breakdown-row-total">
+          <span>Total</span>
+          <span id="bdTotalConIgv">S/ 0</span>
+        </div>
       </div>
 
       <div class="result-reco" id="resultRecoBox" hidden>

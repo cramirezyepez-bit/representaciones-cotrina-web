@@ -17,6 +17,7 @@ import { generarDibujoItemDataUri, tieneDibujo } from './svgGenerator.js';
 import { describirVidrio } from './vidrios.js';
 import { describirPerfil } from './perfiles.js';
 import { describirLineaAccesorioAuto } from './despieceTecnico.js';
+import { construirTablasProyecto, calcularResumenConIgv } from './rules.js';
 
 const PDF_COLOR = {
   azulMarino: '#07131C',
@@ -87,7 +88,9 @@ function describirItemAutomatico(itemCalculado) {
  * ítems. `resumenProyecto` es el objeto devuelto por
  * obtenerResumenProyecto() en proyecto.js (incluye itemsConCodigo).
  */
-export function construirHtmlPdfProyecto({ resumenProyecto, cliente, ruc, distrito, urgenciaTexto, tienePlanosTexto, numeroPropuesta, fechaTexto }) {
+export function construirHtmlPdfProyecto({ resumenProyecto, cliente, ruc, distrito, urgenciaTexto, tienePlanosTexto, numeroPropuesta, fechaTexto, igvActivo = false, observaciones = {} }) {
+  const resumenIgv = calcularResumenConIgv(resumenProyecto.precioFinal, { igvActivo });
+  const { materiales, servicios, totalMateriales, totalServicios } = construirTablasProyecto(resumenProyecto);
   const filasItems = resumenProyecto.itemsConCodigo.map(it => {
     const c = it.calculo;
     const desc = describirItemAutomatico(c);
@@ -174,6 +177,26 @@ export function construirHtmlPdfProyecto({ resumenProyecto, cliente, ruc, distri
         #pdfRoot .precio-final-val{ font-size:17px; font-weight:800; color:${PDF_COLOR.naranjaCobre}; }
 
         #pdfRoot .nota-legal{ margin:0 36px 16px; padding:10px 14px; background:${PDF_COLOR.fondoSuave}; border-radius:5px; font-size:8.3px; color:${PDF_COLOR.grisMedio}; line-height:1.4; }
+
+        #pdfRoot .seccion-tabla{ margin:0 36px 18px; }
+        #pdfRoot .seccion-titulo{ font-size:12px; font-weight:800; color:${PDF_COLOR.azulMarino}; text-transform:uppercase; letter-spacing:0.04em; margin-bottom:8px; padding-bottom:6px; border-bottom:2px solid ${PDF_COLOR.naranjaCobre}; }
+        #pdfRoot table.tabla-detalle-pdf{ width:100%; border-collapse:collapse; }
+        #pdfRoot .tabla-detalle-pdf thead th{ background:${PDF_COLOR.azulMarino2}; color:${PDF_COLOR.blanco}; font-size:8px; text-transform:uppercase; letter-spacing:0.03em; padding:6px 8px; text-align:left; }
+        #pdfRoot .tabla-detalle-pdf thead th.num{ text-align:right; }
+        #pdfRoot .tabla-detalle-pdf tbody td{ padding:6px 8px; font-size:8.8px; border-bottom:1px solid ${PDF_COLOR.grisClaro}; vertical-align:top; }
+        #pdfRoot .tabla-detalle-pdf tbody tr:nth-child(even){ background:${PDF_COLOR.fondoSuave}; }
+        #pdfRoot .tabla-detalle-pdf td.num{ text-align:right; white-space:nowrap; font-weight:600; }
+        #pdfRoot .tabla-detalle-pdf .celda-fuerte{ font-weight:700; }
+        #pdfRoot .tabla-detalle-pdf .celda-gris{ color:${PDF_COLOR.grisOscuro}; }
+        #pdfRoot .tabla-detalle-pdf tfoot td{ padding:7px 8px; font-weight:800; background:${PDF_COLOR.fondoSuave}; border-top:2px solid ${PDF_COLOR.azulMarino}; font-size:9px; }
+        #pdfRoot .tabla-detalle-pdf tfoot td.num{ color:${PDF_COLOR.naranjaCobre}; text-align:right; }
+
+        #pdfRoot .seccion-observaciones{ margin:0 36px 18px; padding:14px 16px; background:${PDF_COLOR.fondoSuave}; border-radius:6px; }
+        #pdfRoot .obs-grid{ display:grid; grid-template-columns:1fr 1fr; gap:8px 24px; margin-bottom:8px; }
+        #pdfRoot .obs-item{ display:flex; flex-direction:column; gap:1px; font-size:8.8px; }
+        #pdfRoot .obs-label{ font-size:7.5px; text-transform:uppercase; letter-spacing:0.04em; color:${PDF_COLOR.grisMedio}; }
+        #pdfRoot .obs-tecnicas{ font-size:8.3px; color:${PDF_COLOR.grisOscuro}; line-height:1.4; border-top:1px solid ${PDF_COLOR.grisClaro}; padding-top:8px; }
+
         #pdfRoot .foot{ background:${PDF_COLOR.azulMarino}; padding:16px 36px; display:flex; justify-content:space-between; gap:16px; min-height:54px; align-items:center; }
         #pdfRoot .foot-block{ color:${PDF_COLOR.blanco}; font-size:8.5px; line-height:1.5; }
         #pdfRoot .foot-block b{ display:block; font-size:9.5px; margin-bottom:2px; }
@@ -226,9 +249,11 @@ export function construirHtmlPdfProyecto({ resumenProyecto, cliente, ruc, distri
           <div class="t-row"><span>Ajuste por urgencia (${(resumenProyecto.factorUrgencia * 100).toFixed(0)}%)</span><b>${formatearSoles(resumenProyecto.costoTotalAntesUtilidad - resumenProyecto.subtotalAntesUrgencia)}</b></div>
           <div class="t-row t-row-total"><span>Costo total antes de utilidad</span><b>${formatearSoles(resumenProyecto.costoTotalAntesUtilidad)}</b></div>
           <div class="t-row"><span>Utilidad aplicada (${resumenProyecto.utilidadPct}%)</span><b>${formatearSoles(resumenProyecto.montoUtilidad)}</b></div>
+          <div class="t-row t-row-total"><span>Subtotal</span><b>${formatearSoles(resumenIgv.subtotal)}</b></div>
+          ${igvActivo ? `<div class="t-row"><span>IGV (${resumenIgv.porcentajeIgv}%)</span><b>${formatearSoles(resumenIgv.montoIgv)}</b></div>` : ''}
           <div class="precio-final-box">
-            <span class="precio-final-lbl">Precio final sugerido</span>
-            <span class="precio-final-val">${formatearSoles(resumenProyecto.precioFinal)}</span>
+            <span class="precio-final-lbl">${igvActivo ? 'Total (incl. IGV)' : 'Precio final sugerido'}</span>
+            <span class="precio-final-val">${formatearSoles(resumenIgv.total)}</span>
           </div>
         </div>
       </div>
@@ -239,6 +264,63 @@ export function construirHtmlPdfProyecto({ resumenProyecto, cliente, ruc, distri
         Las cantidades de perfil (ml) y accesorios de cada ítem se calculan con reglas estándar de mercado según
         tipo de apertura, número de hojas y medidas — estimación preliminar a validar con taller antes de fabricar.
       </p>
+
+      <div class="seccion-tabla">
+        <h3 class="seccion-titulo">Lista de materiales</h3>
+        <table class="tabla-detalle-pdf">
+          <thead>
+            <tr><th>Material</th><th>Descripción</th><th>Unid.</th><th class="num">Cant.</th><th class="num">P. Unit.</th><th class="num">Total</th></tr>
+          </thead>
+          <tbody>
+            ${materiales.map(l => `
+              <tr>
+                <td class="celda-fuerte">${l.material}</td>
+                <td class="celda-gris">${l.descripcion}</td>
+                <td>${l.unidad}</td>
+                <td class="num">${l.cantidad}</td>
+                <td class="num">${formatearSoles(l.precioUnitario)}</td>
+                <td class="num">${formatearSoles(l.total)}</td>
+              </tr>`).join('')}
+          </tbody>
+          <tfoot>
+            <tr><td colspan="5">Total materiales</td><td class="num">${formatearSoles(totalMateriales)}</td></tr>
+          </tfoot>
+        </table>
+      </div>
+
+      <div class="seccion-tabla">
+        <h3 class="seccion-titulo">Lista de servicios</h3>
+        <table class="tabla-detalle-pdf">
+          <thead>
+            <tr><th>Descripción</th><th>Unid.</th><th class="num">Cant.</th><th class="num">P. Unit.</th><th class="num">Total</th></tr>
+          </thead>
+          <tbody>
+            ${servicios.map(l => `
+              <tr>
+                <td class="celda-gris">${l.descripcion}</td>
+                <td>${l.unidad}</td>
+                <td class="num">${l.cantidad}</td>
+                <td class="num">${formatearSoles(l.precioUnitario)}</td>
+                <td class="num">${formatearSoles(l.total)}</td>
+              </tr>`).join('')}
+          </tbody>
+          <tfoot>
+            <tr><td colspan="4">Total servicios</td><td class="num">${formatearSoles(totalServicios)}</td></tr>
+          </tfoot>
+        </table>
+      </div>
+
+      ${observaciones && (observaciones.formaPago || observaciones.garantia || observaciones.tiempoEntrega || observaciones.validez || observaciones.tecnicas) ? `
+      <div class="seccion-observaciones">
+        <h3 class="seccion-titulo">Condiciones comerciales</h3>
+        <div class="obs-grid">
+          ${observaciones.formaPago ? `<div class="obs-item"><span class="obs-label">Forma de pago</span><span>${observaciones.formaPago}</span></div>` : ''}
+          ${observaciones.tiempoEntrega ? `<div class="obs-item"><span class="obs-label">Tiempo de entrega</span><span>${observaciones.tiempoEntrega}</span></div>` : ''}
+          ${observaciones.garantia ? `<div class="obs-item"><span class="obs-label">Garantía</span><span>${observaciones.garantia}</span></div>` : ''}
+          ${observaciones.validez ? `<div class="obs-item"><span class="obs-label">Validez de la oferta</span><span>${observaciones.validez}</span></div>` : ''}
+        </div>
+        ${observaciones.tecnicas ? `<p class="obs-tecnicas">${observaciones.tecnicas}</p>` : ''}
+      </div>` : ''}
 
       <div class="foot">
         <div class="foot-block">

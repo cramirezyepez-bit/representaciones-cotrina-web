@@ -130,8 +130,10 @@ img{ max-width:100%; display:block; }
   display: grid;
   grid-template-columns: 1.5fr 1fr;
   grid-template-areas:
-    "form   panel"
-    "items  panel";
+    "form    panel"
+    "items   panel"
+    "tablas  panel"
+    "obs     panel";
   gap: 28px;
   align-items: start;
   position: relative;
@@ -140,6 +142,8 @@ img{ max-width:100%; display:block; }
 .calc-wrap > #calcForm{ grid-area: form; }
 .calc-wrap > #itemsCard{ grid-area: items; }
 .calc-wrap > #resultCard{ grid-area: panel; }
+.calc-wrap > #tablasCard{ grid-area: tablas; }
+.calc-wrap > #observacionesCard{ grid-area: obs; }
 
 @media (max-width: 960px){
   .calc-wrap{
@@ -147,7 +151,9 @@ img{ max-width:100%; display:block; }
     grid-template-areas:
       "form"
       "panel"
-      "items";
+      "items"
+      "tablas"
+      "obs";
     margin-top: -28px;
   }
 }
@@ -206,7 +212,8 @@ img{ max-width:100%; display:block; }
 }
 .req{ color: var(--naranja-2); }
 .field input,
-.field select{
+.field select,
+.field textarea{
   font-family: var(--font-body);
   font-size: 15px;
   padding: 12px 14px;
@@ -218,7 +225,8 @@ img{ max-width:100%; display:block; }
   transition: border-color .15s, box-shadow .15s;
 }
 .field input:focus,
-.field select:focus{
+.field select:focus,
+.field textarea:focus{
   border-color: var(--vidrio);
   box-shadow: 0 0 0 3px rgba(37,55,69,0.12);
 }
@@ -946,3 +954,96 @@ img{ max-width:100%; display:block; }
 @media (max-width: 640px){
   .composicion-modulo-row .mod-label{ width: 100%; }
 }
+
+/* ============================================================
+   TABLAS DE MATERIALES Y SERVICIOS
+   ============================================================ */
+.tablas-card{
+  background: var(--hueso);
+  border: 1px solid var(--linea-oscura);
+  border-radius: var(--radius);
+  padding: 32px 34px 34px;
+  box-shadow: 0 18px 50px -20px rgba(16,17,19,0.25);
+}
+.tabla-scroll{
+  overflow-x: auto;
+  margin: 14px 0 8px;
+  border: 1px solid var(--linea-oscura);
+  border-radius: 10px;
+}
+.tabla-detalle{
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+  min-width: 560px;
+}
+.tabla-detalle thead th{
+  background: var(--negro);
+  color: var(--hueso);
+  text-align: left;
+  font-family: var(--font-condensed);
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  padding: 10px 12px;
+  white-space: nowrap;
+}
+.tabla-detalle thead th.num{ text-align: right; }
+.tabla-detalle tbody td{
+  padding: 9px 12px;
+  border-bottom: 1px solid var(--linea-oscura);
+  color: var(--negro);
+  vertical-align: top;
+}
+.tabla-detalle tbody tr:last-child td{ border-bottom: none; }
+.tabla-detalle tbody tr:nth-child(even){ background: rgba(0,0,0,0.015); }
+.tabla-detalle td.num, .tabla-detalle th.num{ text-align: right; white-space: nowrap; font-family: var(--font-condensed); }
+.tabla-detalle .celda-material{ font-weight: 600; }
+.tabla-detalle .celda-desc{ color: var(--acero); font-size: 12.5px; }
+.tabla-detalle tfoot td{
+  padding: 11px 12px;
+  font-weight: 700;
+  background: var(--hueso-2);
+  border-top: 2px solid var(--negro);
+}
+.tabla-detalle tfoot td.num{ text-align: right; color: var(--naranja); font-size: 14px; }
+.tabla-vacia{
+  padding: 24px;
+  text-align: center;
+  color: var(--acero-claro);
+  font-size: 13.5px;
+}
+
+/* ============================================================
+   OBSERVACIONES Y CONDICIONES COMERCIALES
+   ============================================================ */
+.observaciones-card{
+  background: var(--hueso);
+  border: 1px solid var(--linea-oscura);
+  border-radius: var(--radius);
+  padding: 32px 34px 34px;
+  box-shadow: 0 18px 50px -20px rgba(16,17,19,0.25);
+}
+.observaciones-card textarea{
+  resize: vertical;
+  font-family: var(--font-body);
+  line-height: 1.5;
+}
+
+/* ============================================================
+   BLOQUE IGV (panel de resultado)
+   ============================================================ */
+.igv-bloque{
+  background: rgba(255,255,255,0.04);
+  border: 1px solid var(--linea);
+  border-radius: var(--radius);
+  padding: 4px 18px 2px;
+  margin-bottom: 22px;
+}
+.check-item-igv{
+  color: var(--hueso);
+  background: transparent;
+  border-color: rgba(255,255,255,0.18);
+  margin: 12px 0 4px;
+}
+.check-item-igv:hover{ background: rgba(255,255,255,0.04); }
