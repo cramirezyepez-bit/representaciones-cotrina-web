@@ -28,6 +28,7 @@ import { TIPOS_SOLUCION, listarTiposApertura } from './catalogos.js';
 import { construirHtmlPdfProyecto } from './pdfGenerator.js';
 import { generarDibujoItem, tieneDibujo } from './svgGenerator.js';
 import { describirLineaAccesorioAuto } from './despieceTecnico.js';
+import { ICONOS_TIPO_SOLUCION, ICONOS_TIPO_APERTURA, ICONOS_DUCHA, VARIANTES_DUCHA } from './iconosConfigurador.js';
 
 // --- Mapeo del <select id="tipoVidrio"> legacy a categoría+variante nuevos ---
 const MAPEO_VIDRIO_LEGACY = {
@@ -94,6 +95,129 @@ function leerDatosFormulario() {
     // útiles para mostrar en la lista de ítems:
     colorAluminio: get('colorAluminio').value,
   };
+}
+
+/* ------------------------------------------------------------
+   CONFIGURADOR VISUAL DE ÍCONOS: Tipo de sistema, Tipo de
+   apertura, y variantes de Puerta de ducha. Cada grilla es un
+   conjunto de tarjetas con ícono SVG + etiqueta; al hacer click
+   se sincroniza el valor en el <select> oculto correspondiente
+   (fuente de verdad para leerDatosFormulario/validaciones), y se
+   re-disparan los eventos que ya dependían de esos selects.
+   ------------------------------------------------------------ */
+const ETIQUETAS_TIPO_SOLUCION = {
+  fachada: 'Fachada', mampara: 'Mampara', puertaDucha: 'Puerta de ducha',
+  ventana: 'Ventana', baranda: 'Baranda', puerta: 'Puerta', muroCortina: 'Muro de vidrio',
+  cerramiento: 'Cerramiento', divisionInterior: 'División', cerramientoPersonalizado: 'Personalizado',
+};
+const ORDEN_TIPO_SOLUCION = ['ventana', 'mampara', 'muroCortina', 'divisionInterior', 'puerta', 'puertaDucha', 'baranda', 'cerramientoPersonalizado'];
+
+const ETIQUETAS_TIPO_APERTURA = {
+  fijo: 'Fijo', corredizo2: 'Corredizo', dobleCorredizo: 'Doble corredizo',
+  batienteIzquierda: 'Batiente izq.', batienteDerecha: 'Batiente der.',
+  proyectante: 'Proyectante', oscilobatiente: 'Oscilobatiente', puerta: 'Puerta',
+};
+const ORDEN_TIPO_APERTURA = ['fijo', 'corredizo2', 'dobleCorredizo', 'batienteIzquierda', 'batienteDerecha', 'proyectante', 'oscilobatiente', 'puerta'];
+
+function renderGridIconos(contenedorId, iconos, orden, etiquetas, valorActual, onSeleccionar) {
+  const cont = document.getElementById(contenedorId);
+  cont.innerHTML = orden.map(key => `
+    <button type="button" class="icon-card ${key === valorActual ? 'is-selected' : ''}" data-valor="${key}" role="radio" aria-checked="${key === valorActual}">
+      <span class="icon-card-svg">${iconos[key] || ''}</span>
+      <span class="icon-card-label">${etiquetas[key] || key}</span>
+    </button>
+  `).join('');
+  cont.querySelectorAll('.icon-card').forEach(btn => {
+    btn.addEventListener('click', () => {
+      cont.querySelectorAll('.icon-card').forEach(b => { b.classList.remove('is-selected'); b.setAttribute('aria-checked', 'false'); });
+      btn.classList.add('is-selected');
+      btn.setAttribute('aria-checked', 'true');
+      onSeleccionar(btn.dataset.valor);
+    });
+  });
+}
+
+function renderGridTipoSolucion(valorActual = '') {
+  renderGridIconos('gridTipoSolucion', ICONOS_TIPO_SOLUCION, ORDEN_TIPO_SOLUCION, ETIQUETAS_TIPO_SOLUCION, valorActual, (valor) => {
+    const select = document.getElementById('tipoSolucion');
+    select.value = valor;
+    select.dispatchEvent(new Event('change', { bubbles: true }));
+    actualizarVisibilidadVariantesDucha(valor);
+  });
+}
+
+function renderGridTipoApertura(valorActual = 'fijo') {
+  renderGridIconos('gridTipoApertura', ICONOS_TIPO_APERTURA, ORDEN_TIPO_APERTURA, ETIQUETAS_TIPO_APERTURA, valorActual, (valor) => {
+    const select = document.getElementById('tipoApertura');
+    select.value = valor;
+    select.dispatchEvent(new Event('change', { bubbles: true }));
+    // Si el usuario elige manualmente una apertura simple, deseleccionamos
+    // cualquier variante de ducha activa (ya no aplica un preset de ducha).
+    document.querySelectorAll('#gridVariantesDucha .icon-card').forEach(b => b.classList.remove('is-selected'));
+  });
+}
+
+const ETIQUETAS_DUCHA = Object.fromEntries(Object.entries(VARIANTES_DUCHA).map(([k, v]) => [k, v.label]));
+const ORDEN_DUCHA = Object.keys(VARIANTES_DUCHA);
+
+function renderGridVariantesDucha() {
+  renderGridIconos('gridVariantesDucha', ICONOS_DUCHA, ORDEN_DUCHA, ETIQUETAS_DUCHA, '', (valor) => {
+    aplicarVarianteDucha(valor);
+  });
+}
+
+/**
+ * Aplica una variante visual de puerta de ducha al formulario:
+ * si es una apertura simple, selecciona esa tarjeta en el grid
+ * de apertura; si es una composición (ej. abatible + fijo),
+ * activa el modo composición mixta y precarga los módulos con
+ * las proporciones sugeridas sobre el ancho ya ingresado (si hay).
+ */
+function aplicarVarianteDucha(valorClaveDucha) {
+  const variante = VARIANTES_DUCHA[valorClaveDucha];
+  if (!variante) return;
+
+  if (!variante.composicion) {
+    document.getElementById('chkComposicionMixta').checked = false;
+    document.getElementById('composicionMixta').hidden = true;
+    document.getElementById('tipoApertura').disabled = false;
+    document.getElementById('composicionModulos').innerHTML = '';
+    const select = document.getElementById('tipoApertura');
+    select.value = variante.tipoApertura;
+    select.dispatchEvent(new Event('change', { bubbles: true }));
+    // El grid de apertura no tiene una tarjeta "batiente" genérica (solo
+    // izq./der.), así que para resaltar visualmente usamos batienteIzquierda
+    // como representación por defecto cuando el valor real es "batiente".
+    const valorVisualGrid = variante.tipoApertura === 'batiente' ? 'batienteIzquierda' : variante.tipoApertura;
+    renderGridTipoApertura(valorVisualGrid);
+    // Re-marcar la tarjeta de ducha elegida (renderGridTipoApertura no la toca, pero
+    // por las dudas reforzamos la selección visual tras el re-render del otro grid).
+    document.querySelectorAll('#gridVariantesDucha .icon-card').forEach(b => {
+      b.classList.toggle('is-selected', b.dataset.valor === valorClaveDucha);
+    });
+    return;
+  }
+
+  // Composición: activar checkbox y precargar módulos con anchos
+  // proporcionales sobre el ancho total ya ingresado (o vacío si no hay).
+  document.getElementById('chkComposicionMixta').checked = true;
+  document.getElementById('composicionMixta').hidden = false;
+  document.getElementById('tipoApertura').disabled = true;
+  const modulosWrap = document.getElementById('composicionModulos');
+  modulosWrap.innerHTML = '';
+  const anchoTotal = Number(document.getElementById('ancho').value) || 0;
+  variante.composicion.forEach((m, i) => {
+    const anchoSugerido = anchoTotal ? (anchoTotal * m.proporcion).toFixed(2) : '';
+    modulosWrap.appendChild(crearFilaModulo(i + 1, m.tipoApertura, anchoSugerido));
+  });
+  validarSumaComposicion();
+}
+
+function actualizarVisibilidadVariantesDucha(tipoSolucionValor) {
+  const grupo = document.getElementById('grupoVariantesDucha');
+  const esDucha = tipoSolucionValor === 'puertaDucha';
+  grupo.hidden = !esDucha;
+  if (esDucha) renderGridVariantesDucha();
 }
 
 /* ------------------------------------------------------------
@@ -446,6 +570,9 @@ function manejarAgregarItem() {
   document.getElementById('tipoApertura').value = 'fijo';
   document.querySelectorAll('input[name="accesorios"]:checked').forEach(cb => cb.checked = false);
   resetearComposicionMixta();
+  renderGridTipoSolucion('');
+  renderGridTipoApertura('fijo');
+  document.getElementById('grupoVariantesDucha').hidden = true;
 }
 
 function manejarListaClick(e) {
@@ -490,6 +617,8 @@ function cargarItemEnFormulario(id) {
   set('alto', d.alto);
   set('cantidad', d.cantidad);
   set('colorAluminio', d.colorAluminio);
+  renderGridTipoSolucion(d.tipoSolucion);
+  actualizarVisibilidadVariantesDucha(d.tipoSolucion);
 
   // Vidrio/material legacy: buscar la clave legacy que mapea a la categoría/serie guardada.
   const tipoVidrioSelect = document.getElementById('tipoVidrio');
@@ -512,8 +641,10 @@ function cargarItemEnFormulario(id) {
       modulosWrap.appendChild(crearFilaModulo(i + 1, m.tipoApertura, m.anchoModulo));
     });
     validarSumaComposicion();
+    renderGridTipoApertura('');
   } else {
     set('tipoApertura', d.tipoApertura || 'fijo');
+    renderGridTipoApertura(d.tipoApertura || 'fijo');
   }
 
   document.querySelectorAll('input[name="accesorios"]:checked').forEach(cb => cb.checked = false);
@@ -538,6 +669,9 @@ function manejarLimpiarTodo() {
   document.getElementById('btnAgregarItemTexto').textContent = 'Agregar ítem a la lista';
   document.getElementById('btnAgregarItem').classList.remove('btn-editando');
   document.getElementById('formAlert').hidden = true;
+  renderGridTipoSolucion('');
+  renderGridTipoApertura('fijo');
+  document.getElementById('grupoVariantesDucha').hidden = true;
   renderItems();
   renderAccesoriosProyecto();
   actualizarResultado();
@@ -655,6 +789,10 @@ document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('btnLimpiar').addEventListener('click', manejarLimpiarTodo);
   document.getElementById('btnGenerarPdf').addEventListener('click', manejarGenerarPdf);
   inicializarComposicionMixta();
+
+  // Configurador visual de íconos: sistema, apertura, variantes de ducha.
+  renderGridTipoSolucion('');
+  renderGridTipoApertura('fijo');
 
   // Recalcular el proyecto si cambian variables comerciales globales
   // (urgencia, utilidad, distrito) sin necesidad de re-agregar ítems.

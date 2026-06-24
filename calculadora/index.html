@@ -69,30 +69,40 @@
       </select>
     </div>
 
-    <!-- Tipo de solución -->
+    <!-- Configurador visual: Tipo de sistema -->
     <div class="field">
-      <label for="tipoSolucion">Tipo de solución <span class="req">*</span></label>
-      <select id="tipoSolucion" name="tipoSolucion" required>
+      <span class="label-secundaria label-secundaria-primera">Configurador de sistema</span>
+      <label>Tipo de sistema <span class="req">*</span></label>
+      <div class="icon-grid" id="gridTipoSolucion" role="radiogroup" aria-label="Tipo de sistema"></div>
+      <select id="tipoSolucion" name="tipoSolucion" required hidden>
         <option value="" disabled selected>Selecciona una opción</option>
         <option value="fachada">Fachada de vidrio</option>
         <option value="mampara">Mampara de baño</option>
+        <option value="puertaDucha">Puerta de ducha</option>
         <option value="ventana">Ventana de aluminio / PVC</option>
         <option value="baranda">Baranda de vidrio</option>
         <option value="puerta">Puerta de vidrio</option>
         <option value="muroCortina">Muro cortina</option>
         <option value="cerramiento">Cerramiento de terraza</option>
+        <option value="divisionInterior">División interior</option>
+        <option value="cerramientoPersonalizado">Proyecto personalizado</option>
       </select>
     </div>
 
-    <!-- Tipo de apertura -->
+    <!-- Configurador visual: Tipo de apertura -->
     <div class="field">
-      <label for="tipoApertura">Tipo de apertura <span class="req">*</span></label>
-      <select id="tipoApertura" name="tipoApertura" required>
+      <label>Tipo de apertura / paño <span class="req">*</span></label>
+      <div class="icon-grid icon-grid-apertura" id="gridTipoApertura" role="radiogroup" aria-label="Tipo de apertura"></div>
+      <select id="tipoApertura" name="tipoApertura" required hidden>
         <option value="fijo" selected>Fijo</option>
         <option value="corredizo2">Corredizo 2 hojas</option>
         <option value="corredizo3">Corredizo 3 hojas</option>
         <option value="corredizo4">Corredizo 4 hojas</option>
+        <option value="dobleCorredizo">Doble corredizo</option>
         <option value="batiente">Batiente</option>
+        <option value="batienteIzquierda">Batiente izquierda</option>
+        <option value="batienteDerecha">Batiente derecha</option>
+        <option value="proyectante">Proyectante</option>
         <option value="oscilobatiente">Oscilobatiente</option>
         <option value="pivotante">Pivotante</option>
         <option value="puerta">Puerta</option>
@@ -101,6 +111,12 @@
         <option value="especial">Especial / a definir</option>
       </select>
       <p class="field-hint field-hint-tight">Cada hoja y mecanismo adicional incrementa el costo (herrajes, carriles, sellado).</p>
+
+      <!-- Configurador visual: variantes de puerta de ducha (solo visible si Tipo de sistema = Puerta de ducha) -->
+      <div class="icon-grid-ducha-wrap" id="grupoVariantesDucha" hidden>
+        <label class="label-secundaria">Variante de puerta de ducha</label>
+        <div class="icon-grid icon-grid-ducha" id="gridVariantesDucha" role="radiogroup" aria-label="Variante de puerta de ducha"></div>
+      </div>
 
       <label class="check-item check-item-toggle">
         <input type="checkbox" id="chkComposicionMixta">

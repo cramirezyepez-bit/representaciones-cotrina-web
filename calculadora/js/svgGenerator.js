@@ -18,7 +18,7 @@
    alto se ajusta a la relación real ancho:alto del ítem.
    ============================================================ */
 
-const TIPOS_CON_DIBUJO = ['ventana', 'puerta', 'mampara'];
+const TIPOS_CON_DIBUJO = ['ventana', 'puerta', 'mampara', 'puertaDucha', 'divisionInterior'];
 
 const COLOR_LINEA = '#1A1A1A';
 const COLOR_VIDRIO = '#CFE3EC';
@@ -184,8 +184,12 @@ function dibujarModuloSegunApertura(tipoApertura, w, h) {
   switch (tipoApertura) {
     case 'corredizo2': return dibujarCorredizo(w, h, 2);
     case 'corredizo3': return dibujarCorredizo(w, h, 3);
-    case 'corredizo4': return dibujarCorredizo(w, h, 4);
+    case 'corredizo4':
+    case 'dobleCorredizo': return dibujarCorredizo(w, h, 4);
     case 'batiente':
+    case 'batienteIzquierda':
+    case 'batienteDerecha':
+    case 'proyectante':
     case 'pivotante':  return dibujarBatiente(w, h);
     case 'oscilobatiente': return dibujarOscilobatiente(w, h);
     case 'puerta':     return dibujarPuerta(w, h);
