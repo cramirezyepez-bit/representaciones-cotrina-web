@@ -995,6 +995,99 @@ function esperarImagenesListas(contenedor) {
   return Promise.all(imgs.map(esperarUna));
 }
 
+/**
+ * Calcula los puntos de corte "seguros" (en píxeles del canvas) a partir
+ * de los límites reales de los bloques no-cortables del documento: cada
+ * fila de ítem, el bloque de totales, el bloque de firma y el footer.
+ * Devuelve la lista de los bordes inferiores (`bottom`) de cada bloque,
+ * en el mismo sistema de coordenadas que el canvas (que captura a
+ * `scale: 2`, de ahí el factor de escala recibido).
+ */
+function calcularPuntosDeCorte(nodoPdf, factorEscala) {
+  const selectorBloques = '.item-row, .acc-row, .totales, .bloque-firma, .foot';
+  const bloques = Array.from(nodoPdf.querySelectorAll(selectorBloques));
+  const rectRaiz = nodoPdf.getBoundingClientRect();
+  return bloques
+    .map(el => (el.getBoundingClientRect().bottom - rectRaiz.top) * factorEscala)
+    .sort((a, b) => a - b);
+}
+
+/**
+ * Inserta un canvas (capturado con html2canvas) en un documento jsPDF,
+ * repartiéndolo en tantas páginas A4 como haga falta cuando el contenido
+ * es más alto que una sola página.
+ *
+ * BUG ORIGINAL: el código anterior calculaba `altoA4` proporcional al
+ * canvas completo y lo insertaba en una sola página A4 de 297mm fijos.
+ * Cuando el contenido real (ej. un presupuesto con 10+ ítems) superaba
+ * esa altura, jsPDF simplemente NO DIBUJABA lo que sobraba del límite
+ * de la página — sin error, sin aviso, el resto del documento
+ * desaparecía en silencio (footer, total, últimos ítems, según cuánto
+ * sobrara). Esto reproduce exactamente el síntoma reportado: PDFs de
+ * presupuestos largos que salían "incompletos" en una sola hoja.
+ *
+ * FIX (versión con corte inteligente): en vez de cortar el canvas en
+ * franjas de altura fija sin mirar el contenido (lo que a veces partía
+ * una fila a la mitad, o dejaba una página siguiente casi en blanco con
+ * solo el footer), se recibe opcionalmente `puntosDeCorte` — los bordes
+ * inferiores reales de cada bloque no-cortable (filas, totales, firma,
+ * footer). Cada página avanza hasta el punto de corte más cercano por
+ * debajo del límite de 297mm sin pasarlo, así el corte siempre cae en
+ * un espacio entre bloques, nunca a mitad de uno. Si no se reciben
+ * puntos de corte (o el bloque es tan alto que no cabe ninguno), se usa
+ * el límite fijo de página como respaldo, igual que antes.
+ */
+function agregarCanvasComoPaginasA4(doc, canvas, puntosDeCorte = []) {
+  const anchoA4mm = 210;
+  const altoA4mm = 297;
+  const altoMaxFranjaPx = Math.floor((altoA4mm * canvas.width) / anchoA4mm);
+  // Margen de tolerancia: el `canvas.height` real (de html2canvas) y los
+  // bordes medidos en el DOM con getBoundingClientRect() casi nunca
+  // coinciden al píxel exacto (redondeos de subpíxel, bordes de 1px,
+  // etc.). Sin este margen, un resto de pocos píxeles al final del
+  // documento generaba una página adicional casi en blanco.
+  const UMBRAL_RESTO_INSIGNIFICANTE_PX = 6;
+
+  let yOffsetPx = 0;
+  let esPrimeraPagina = true;
+  while (canvas.height - yOffsetPx > UMBRAL_RESTO_INSIGNIFICANTE_PX) {
+    const limiteFranjaPx = yOffsetPx + altoMaxFranjaPx;
+    let finFranjaPx = Math.min(limiteFranjaPx, canvas.height);
+
+    // Buscar el punto de corte real más cercano (de abajo hacia arriba)
+    // que no exceda el límite de la página y que avance al menos un
+    // poco respecto al inicio de esta franja (evita bucles infinitos
+    // si un único bloque, ej. una fila muy alta, ya supera una página).
+    const candidatos = puntosDeCorte.filter(p => p > yOffsetPx + altoMaxFranjaPx * 0.3 && p <= limiteFranjaPx);
+    if (candidatos.length > 0) finFranjaPx = candidatos[candidatos.length - 1];
+
+    // Si el punto de corte elegido deja un resto insignificante después
+    // (el caso típico: el último bloque del documento termina a 1-2px
+    // del borde real del canvas), se extiende esta franja hasta el final
+    // en vez de dejar ese resto para una página nueva.
+    if (canvas.height - finFranjaPx <= UMBRAL_RESTO_INSIGNIFICANTE_PX) finFranjaPx = canvas.height;
+
+    const altoEstaFranjaPx = Math.min(finFranjaPx - yOffsetPx, canvas.height - yOffsetPx);
+
+    const canvasFranja = document.createElement('canvas');
+    canvasFranja.width = canvas.width;
+    canvasFranja.height = altoEstaFranjaPx;
+    const ctx = canvasFranja.getContext('2d');
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(0, 0, canvasFranja.width, canvasFranja.height);
+    ctx.drawImage(canvas, 0, yOffsetPx, canvas.width, altoEstaFranjaPx, 0, 0, canvas.width, altoEstaFranjaPx);
+
+    const imagenFranja = canvasFranja.toDataURL('image/jpeg', 0.92);
+    const altoFranjaMm = (altoEstaFranjaPx * anchoA4mm) / canvas.width;
+
+    if (!esPrimeraPagina) doc.addPage();
+    doc.addImage(imagenFranja, 'JPEG', 0, 0, anchoA4mm, altoFranjaMm);
+
+    yOffsetPx += altoEstaFranjaPx;
+    esPrimeraPagina = false;
+  }
+}
+
 async function manejarGenerarPdf() {
   const items = obtenerItems();
   if (items.length === 0) {
@@ -1062,13 +1155,12 @@ async function manejarGenerarPdf() {
     const canvas = await window.html2canvas(nodoPdf, {
       scale: 2, useCORS: true, backgroundColor: '#ffffff', logging: false,
     });
-    const imagenCanvas = canvas.toDataURL('image/jpeg', 0.92);
+    const factorEscala = canvas.width / nodoPdf.getBoundingClientRect().width;
+    const puntosDeCorte = calcularPuntosDeCorte(nodoPdf, factorEscala);
 
     const { jsPDF } = window.jspdf;
     const doc = new jsPDF({ unit: 'mm', format: 'a4' });
-    const anchoA4 = 210;
-    const altoA4 = (canvas.height * anchoA4) / canvas.width;
-    doc.addImage(imagenCanvas, 'JPEG', 0, 0, anchoA4, altoA4);
+    agregarCanvasComoPaginasA4(doc, canvas, puntosDeCorte);
 
     const nombreArchivo = `Cotizacion_${numeroPropuesta}_${cliente.replace(/[^a-zA-Z0-9]/g, '_')}.pdf`;
     doc.save(nombreArchivo);
@@ -1092,7 +1184,7 @@ async function manejarGenerarPdf() {
    aunque SÍ reutilizan el mismo motor de dibujo SVG y la misma
    captura html2canvas + jsPDF que el flujo manual.
    ------------------------------------------------------------ */
-let _ultimaImportacionExcel = null; // { cliente, ruc, distrito, fecha, itemsImportados }
+let _ultimaImportacionExcel = null; // { cliente, ruc, distrito, direccion, fecha, numeroPresupuesto, lineasFirmante, etiquetaCliente, itemsImportados }
 
 /** Renderiza el HTML dado a un PDF A4 y lo descarga — misma lógica de captura que manejarGenerarPdf(), extraída aquí para no duplicarla. */
 async function renderizarHtmlComoPdf(htmlContenido, nombreArchivo) {
@@ -1117,13 +1209,12 @@ async function renderizarHtmlComoPdf(htmlContenido, nombreArchivo) {
     const canvas = await window.html2canvas(nodoPdf, {
       scale: 2, useCORS: true, backgroundColor: '#ffffff', logging: false,
     });
-    const imagenCanvas = canvas.toDataURL('image/jpeg', 0.92);
+    const factorEscala = canvas.width / nodoPdf.getBoundingClientRect().width;
+    const puntosDeCorte = calcularPuntosDeCorte(nodoPdf, factorEscala);
 
     const { jsPDF } = window.jspdf;
     const doc = new jsPDF({ unit: 'mm', format: 'a4' });
-    const anchoA4 = 210;
-    const altoA4 = (canvas.height * anchoA4) / canvas.width;
-    doc.addImage(imagenCanvas, 'JPEG', 0, 0, anchoA4, altoA4);
+    agregarCanvasComoPaginasA4(doc, canvas, puntosDeCorte);
     doc.save(nombreArchivo);
   } finally {
     if (contenedorTemporal && contenedorTemporal.parentNode) {
@@ -1164,7 +1255,7 @@ function renderPreviewImportExcel(resultado) {
     <tr>
       <td class="celda-material">${it.codigo}</td>
       <td class="celda-desc">${it.tipoTexto}${it.tipoReconocido ? '' : ' <span title="Tipo no reconocido: se incluirá sin dibujo técnico">⚠</span>'}</td>
-      <td>${Number(it.ancho).toFixed(2)} × ${Number(it.alto).toFixed(2)} m</td>
+      <td>${it.ancho != null && it.alto != null ? `${Number(it.ancho).toFixed(2)} × ${Number(it.alto).toFixed(2)} m` : '—'}</td>
       <td class="num">${it.cantidad}</td>
       <td class="num">${formatearSoles(it.precio)}</td>
     </tr>
@@ -1198,7 +1289,7 @@ async function manejarGenerarPdfExcel() {
   btn.innerHTML = 'Generando PDF…';
 
   try {
-    const { cliente, ruc, distrito, fecha, itemsImportados } = _ultimaImportacionExcel;
+    const { cliente, ruc, distrito, direccion, fecha, numeroPresupuesto, lineasFirmante, etiquetaCliente, itemsImportados } = _ultimaImportacionExcel;
     const fechaHoy = new Date();
     const numeroPropuesta = 'COT-' + fechaHoy.getFullYear() +
       String(fechaHoy.getMonth() + 1).padStart(2, '0') +
@@ -1206,9 +1297,13 @@ async function manejarGenerarPdfExcel() {
       String(fechaHoy.getHours()).padStart(2, '0') +
       String(fechaHoy.getMinutes()).padStart(2, '0');
     const fechaTexto = fecha || fechaHoy.toLocaleDateString('es-PE');
+    const numeroParaArchivo = numeroPresupuesto || numeroPropuesta; // preferir el número real del Excel para que el archivo sea identificable a simple vista
 
-    const htmlPropuesta = construirHtmlPdfExcel({ itemsImportados, cliente, ruc, distrito, fechaTexto, numeroPropuesta });
-    const nombreArchivo = `Cotizacion_${numeroPropuesta}_${cliente.replace(/[^a-zA-Z0-9]/g, '_')}.pdf`;
+    const htmlPropuesta = construirHtmlPdfExcel({
+      itemsImportados, cliente, ruc, distrito, direccion, fechaTexto, numeroPropuesta,
+      numeroPresupuesto, lineasFirmante, etiquetaCliente,
+    });
+    const nombreArchivo = `Cotizacion_${numeroParaArchivo}_${cliente.replace(/[^a-zA-Z0-9]/g, '_')}.pdf`;
     await renderizarHtmlComoPdf(htmlPropuesta, nombreArchivo);
   } finally {
     btn.disabled = false;

@@ -119,17 +119,66 @@ function construirPanosDesdeDescripcion(descripcion, anchoTotal) {
   }));
 }
 
-/** Busca, en la hoja, la primera celda de columna A cuyo texto contenga `etiqueta`; devuelve el valor de la celda de columna D (índice 3) de esa misma fila, o '' si no se encuentra. */
+/** Busca, en la hoja, la primera celda de columna A cuyo texto coincida EXACTAMENTE con `etiqueta` (evita que, p.ej., "Dirección" capture por error la fila "Dirección Obra"); devuelve el valor de la celda de columna D (índice 3) de esa misma fila, o '' si no se encuentra. */
 function buscarValorPorEtiqueta(filas, etiqueta) {
   const etiquetaNorm = normalizar(etiqueta);
   for (const fila of filas) {
     const colA = normalizar(fila[0]);
-    if (colA && colA.includes(etiquetaNorm)) {
+    if (colA === etiquetaNorm) {
       const valor = fila[3]; // columna D
       return valor != null ? String(valor).trim() : '';
     }
   }
   return '';
+}
+
+/**
+ * Busca el número de presupuesto real (ej. "PRESUPUESTO : 26130"), cuya
+ * posición de columna varía entre archivos (a veces en J/K/L, según el
+ * ancho de las columnas de cada hoja) — a diferencia de Cliente/Fecha,
+ * que siempre usan A y D. Se busca la celda con la etiqueta en
+ * cualquier columna y se toma el primer valor no vacío que aparezca
+ * después de ella en la misma fila (saltando los ":" sueltos).
+ */
+function buscarNumeroPresupuesto(filas) {
+  for (const fila of filas) {
+    const idxEtiqueta = fila.findIndex(celda => normalizar(celda).includes('presupuesto'));
+    if (idxEtiqueta === -1) continue;
+    for (let i = idxEtiqueta + 1; i < fila.length; i++) {
+      const v = fila[i];
+      if (v != null && normalizar(v) !== ':' && String(v).trim() !== '') return String(v).trim();
+    }
+  }
+  return '';
+}
+
+/**
+ * Extrae el bloque de firma que Jorge ya incluye al final de cada
+ * presupuesto (nombre del firmante + dirección + correo + teléfono,
+ * en columna B; "EL CLIENTE" en una columna a la derecha de la primera
+ * línea). Se busca a partir de la fila "TOTAL": las primeras filas no
+ * vacías de columna B después de esa fila componen el bloque.
+ */
+function extraerBloqueFirma(filas) {
+  const idxTotal = filas.findIndex(fila => fila.some(celda => normalizar(celda) === 'total'));
+  if (idxTotal === -1) return { lineasFirmante: [], etiquetaCliente: '' };
+
+  const lineasFirmante = [];
+  let etiquetaCliente = '';
+  for (let i = idxTotal + 1; i < filas.length; i++) {
+    const fila = filas[i];
+    const colB = fila[1];
+    if (colB != null && String(colB).trim() !== '') {
+      lineasFirmante.push(String(colB).trim());
+      if (!etiquetaCliente) {
+        const restoFila = fila.find((celda, idx) => idx > 1 && celda != null && String(celda).trim() !== '');
+        if (restoFila) etiquetaCliente = String(restoFila).trim();
+      }
+    } else if (lineasFirmante.length > 0) {
+      break; // primera fila vacía tras haber empezado a capturar: fin del bloque
+    }
+  }
+  return { lineasFirmante, etiquetaCliente };
 }
 
 /** Ubica el índice de fila (0-based, dentro de `filas`) que contiene los encabezados de la tabla de ítems, identificándola por la celda "ITEM" en cualquier columna. */
@@ -169,23 +218,37 @@ function procesarFilaItem(fila, numeroFilaExcel) {
   const cantidad = Number(cantidadRaw) || 1;
   const precio = Number(precioRaw);
 
+  const anchoPresente = anchoRaw != null && String(anchoRaw).trim() !== '' && !isNaN(ancho) && ancho > 0;
+  const altoPresente = altoRaw != null && String(altoRaw).trim() !== '' && !isNaN(alto) && alto > 0;
+  const precioPresente = precioRaw != null && String(precioRaw).trim() !== '' && !isNaN(precio);
+
   // Fila sin medidas ni precio numérico: no es un ítem cotizable (título
   // de sección, nota suelta) — se ignora en silencio, no es un error.
-  const pareceItem = (anchoRaw != null && String(anchoRaw).trim() !== '' && !isNaN(ancho)) ||
-                      (precioRaw != null && String(precioRaw).trim() !== '' && !isNaN(precio));
+  const pareceItem = anchoPresente || altoPresente || precioPresente;
   if (!pareceItem) return { item: null, error: null, esFilaIgnorable: true };
 
   const errores = [];
-  if (!ancho || ancho <= 0) errores.push('"Ancho" inválido o vacío (columna D)');
-  if (!alto || alto <= 0) errores.push('"Alto" inválido o vacío (columna F)');
-  if (precioRaw == null || String(precioRaw).trim() === '' || isNaN(precio)) errores.push('"Precio" inválido o vacío (columna L)');
+  // Las medidas son OPCIONALES como par: muchos ítems del presupuesto real
+  // son servicios sin vano físico (desmontaje, acarreo, eliminación de
+  // materiales, subida de cristales) — no tienen ancho×alto y eso es
+  // válido, simplemente se listan sin dibujo técnico. Lo que SÍ es un
+  // error de captura es tener solo una de las dos medidas (ej. ancho sin
+  // alto), porque ahí sí se esperaba un vano y falta un dato.
+  const tieneAmbasMedidas = anchoPresente && altoPresente;
+  const tieneNingunaMedida = !anchoPresente && !altoPresente;
+  if (!tieneAmbasMedidas && !tieneNingunaMedida) {
+    if (!anchoPresente) errores.push('"Ancho" inválido o vacío (columna D) — falta junto a un "Alto" sí presente');
+    if (!altoPresente) errores.push('"Alto" inválido o vacío (columna F) — falta junto a un "Ancho" sí presente');
+  }
+  if (!precioPresente) errores.push('"Precio" inválido o vacío (columna L)');
 
   if (errores.length > 0) {
     return { item: null, error: `Fila ${numeroFilaExcel}: ${errores.join(', ')}. Se omitió este ítem.`, esFilaIgnorable: false };
   }
 
+  const tieneMedidas = tieneAmbasMedidas; // por el chequeo anterior, en este punto o están ambas o ninguna
   const descripcionTexto = descripcion ? String(descripcion).trim() : '';
-  const tipoSolucion = detectarProducto(descripcionTexto);
+  const tipoSolucion = tieneMedidas ? detectarProducto(descripcionTexto) : null; // sin medidas no hay vano que dibujar, aunque la descripción mencione "mampara"/"ventana"
   const panos = tipoSolucion ? construirPanosDesdeDescripcion(descripcionTexto, ancho) : null;
 
   const item = {
@@ -194,8 +257,8 @@ function procesarFilaItem(fila, numeroFilaExcel) {
     tipoReconocido: !!tipoSolucion,
     tipoSolucion,
     panos,
-    ancho,
-    alto,
+    ancho: tieneMedidas ? ancho : null,
+    alto: tieneMedidas ? alto : null,
     cantidad,
     colorAluminio: '', // no hay columna propia de color en este formato; el color queda implícito en la descripción
     descripcion: '', // el texto completo ya está en tipoTexto (no hay columna separada de "Tipo" corto vs. "Descripción" larga en este formato) — se deja vacío para que pdfGeneratorExcel.js no lo concatene y duplique el mismo texto
@@ -207,7 +270,9 @@ function procesarFilaItem(fila, numeroFilaExcel) {
 /**
  * Punto de entrada del módulo. Recibe un ArrayBuffer (contenido
  * crudo del archivo .xlsx leído con FileReader) y devuelve:
- *   { cliente, ruc, distrito, fecha, itemsImportados, errores }
+ *   { cliente, ruc, distrito, direccion, direccionObra, fecha,
+ *     numeroPresupuesto, lineasFirmante, etiquetaCliente,
+ *     itemsImportados, errores }
  * Lanza Error solo si el archivo no se puede leer en absoluto
  * (no es un .xlsx válido) o no tiene tabla de ítems reconocible —
  * errores de fila individual NO detienen la importación completa.
@@ -234,8 +299,12 @@ export function importarPresupuestoExcel(arrayBuffer) {
 
   const cliente = buscarValorPorEtiqueta(filas, 'Cliente') || '—';
   const ruc = buscarValorPorEtiqueta(filas, 'RUC') || 'No registrado';
-  const distrito = buscarValorPorEtiqueta(filas, 'Dirección Obra') || buscarValorPorEtiqueta(filas, 'Dirección') || '—';
+  const direccion = buscarValorPorEtiqueta(filas, 'Dirección') || '';
+  const direccionObra = buscarValorPorEtiqueta(filas, 'Dirección Obra') || '';
+  const distrito = direccionObra || direccion || '—';
   const fecha = buscarValorPorEtiqueta(filas, 'Fecha') || '';
+  const numeroPresupuesto = buscarNumeroPresupuesto(filas);
+  const { lineasFirmante, etiquetaCliente } = extraerBloqueFirma(filas);
 
   const idxEncabezados = buscarFilaEncabezados(filas);
   if (idxEncabezados === -1) {
@@ -260,13 +329,20 @@ export function importarPresupuestoExcel(arrayBuffer) {
     throw new Error('No se encontraron ítems en la tabla. Verifica que las filas debajo del encabezado tengan ancho, alto y precio.');
   }
 
-  const itemsSinDibujo = itemsImportados.filter(it => !it.tipoReconocido);
-  if (itemsSinDibujo.length > 0) {
+  const itemsSinMedidas = itemsImportados.filter(it => it.ancho == null);
+  const itemsConMedidasSinTipo = itemsImportados.filter(it => it.ancho != null && !it.tipoReconocido);
+  if (itemsConMedidasSinTipo.length > 0) {
     errores.push(
-      `${itemsSinDibujo.length} ítem(s) sin un tipo de producto reconocible en la descripción (se incluirán en el PDF sin dibujo técnico): ` +
-      itemsSinDibujo.map(it => it.codigo).join(', ') + '.'
+      `${itemsConMedidasSinTipo.length} ítem(s) con medidas pero sin un tipo de producto reconocible en la descripción (se incluirán en el PDF sin dibujo técnico): ` +
+      itemsConMedidasSinTipo.map(it => it.codigo).join(', ') + '.'
+    );
+  }
+  if (itemsSinMedidas.length > 0) {
+    errores.push(
+      `${itemsSinMedidas.length} ítem(s) sin ancho/alto (servicios como desmontaje, acarreo o eliminación de materiales): ` +
+      itemsSinMedidas.map(it => it.codigo).join(', ') + '. Se incluyen en el PDF con su precio, sin dibujo — esto es normal para este tipo de servicio.'
     );
   }
 
-  return { cliente, ruc, distrito, fecha, itemsImportados, errores };
+  return { cliente, ruc, distrito, direccion, direccionObra, fecha, numeroPresupuesto, lineasFirmante, etiquetaCliente, itemsImportados, errores };
 }

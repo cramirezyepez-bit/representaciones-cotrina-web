@@ -49,8 +49,9 @@ function normalizar(texto) {
  * importado desde Excel. `itemsImportados` es la lista devuelta
  * por importarPresupuestoExcel() en excelImporter.js.
  */
-export function construirHtmlPdfExcel({ itemsImportados, cliente, ruc, distrito, fechaTexto, numeroPropuesta }) {
+export function construirHtmlPdfExcel({ itemsImportados, cliente, ruc, distrito, direccion, fechaTexto, numeroPropuesta, numeroPresupuesto, lineasFirmante, etiquetaCliente }) {
   const total = itemsImportados.reduce((acc, it) => acc + (Number(it.precio) || 0), 0);
+  const numeroMostrado = numeroPresupuesto || numeroPropuesta; // si el Excel no trae un número propio, se conserva el código generado como respaldo
 
   const filasItems = itemsImportados.map(it => {
     const itemParaDibujo = it.tipoSolucion ? { tipoSolucion: it.tipoSolucion, panos: it.panos, ancho: it.ancho, alto: it.alto, cantidad: it.cantidad } : null;
@@ -60,7 +61,9 @@ export function construirHtmlPdfExcel({ itemsImportados, cliente, ruc, distrito,
     const precioUnitario = it.cantidad > 0 ? it.precio / it.cantidad : it.precio;
 
     const descripcionTexto = it.descripcion && normalizar(it.descripcion) !== normalizar(it.tipoTexto) ? it.descripcion : '';
-    const medidasTexto = `${Number(it.ancho).toFixed(2)} × ${Number(it.alto).toFixed(2)} m`;
+    const medidasTexto = it.ancho != null && it.alto != null
+      ? `${Number(it.ancho).toFixed(2)} × ${Number(it.alto).toFixed(2)} m`
+      : null; // servicio sin vano físico (desmontaje, acarreo, eliminación de materiales): no aplica "medidas"
     const colorTexto = it.colorAluminio ? ` &nbsp;·&nbsp; Color: <b>${it.colorAluminio}</b>` : '';
 
     return `
@@ -77,7 +80,7 @@ export function construirHtmlPdfExcel({ itemsImportados, cliente, ruc, distrito,
         </td>
         <td class="cell-desc">
           <p class="desc-frase">${it.tipoTexto}${descripcionTexto ? ' — ' + descripcionTexto : ''}</p>
-          <p class="desc-medidas">Medidas: <b>${medidasTexto}</b>${colorTexto}</p>
+          ${medidasTexto ? `<p class="desc-medidas">Medidas: <b>${medidasTexto}</b>${colorTexto}</p>` : ''}
         </td>
         <td class="cell-num">${it.cantidad}</td>
         <td class="cell-num">${formatearSoles(precioUnitario)}</td>
@@ -125,6 +128,13 @@ export function construirHtmlPdfExcel({ itemsImportados, cliente, ruc, distrito,
 
         #pdfRoot .nota-legal{ margin:0 36px 16px; padding:10px 14px; background:${PDF_COLOR.fondoSuave}; border-radius:5px; font-size:8.3px; color:${PDF_COLOR.grisMedio}; line-height:1.4; }
 
+        #pdfRoot .bloque-firma{ margin:8px 36px 22px; display:flex; justify-content:space-between; gap:40px; }
+        #pdfRoot .firma-col{ flex:1; }
+        #pdfRoot .firma-nombre{ font-size:10px; font-weight:800; color:${PDF_COLOR.negroCarbon}; margin-bottom:2px; }
+        #pdfRoot .firma-linea{ font-size:8.3px; color:${PDF_COLOR.grisOscuro}; line-height:1.5; }
+        #pdfRoot .firma-raya{ border-top:1px solid ${PDF_COLOR.grisClaro}; margin-top:26px; }
+        #pdfRoot .firma-etiqueta{ font-size:8.5px; color:${PDF_COLOR.grisMedio}; text-align:center; margin-top:6px; text-transform:uppercase; letter-spacing:0.04em; }
+
         #pdfRoot .foot{ background:${PDF_COLOR.azulMarino}; padding:16px 36px; display:flex; justify-content:space-between; gap:16px; min-height:54px; align-items:center; }
         #pdfRoot .foot-block{ color:${PDF_COLOR.blanco}; font-size:8.5px; line-height:1.5; }
         #pdfRoot .foot-block b{ display:block; font-size:9.5px; margin-bottom:2px; }
@@ -138,14 +148,15 @@ export function construirHtmlPdfExcel({ itemsImportados, cliente, ruc, distrito,
         </div>
         <div class="head-right">
           <span class="head-title">PROPUESTA PRELIMINAR</span>
-          <span class="head-meta">N° ${numeroPropuesta} &nbsp;·&nbsp; Emitido: ${fechaTexto}</span>
+          <span class="head-meta">N° ${numeroMostrado} &nbsp;·&nbsp; Emitido: ${fechaTexto}</span>
         </div>
       </div>
 
       <div class="cliente-bar">
         <span>Cliente: <b>${cliente}</b></span>
         <span>RUC/DNI: <b>${ruc}</b></span>
-        <span>Distrito: <b>${distrito}</b></span>
+        ${direccion ? `<span>Dirección: <b>${direccion}</b></span>` : ''}
+        <span>Dirección de obra: <b>${distrito}</b></span>
       </div>
 
       <div style="padding:0 36px;">
@@ -180,6 +191,20 @@ export function construirHtmlPdfExcel({ itemsImportados, cliente, ruc, distrito,
         representaciones esquemáticas de la configuración de apertura, generadas automáticamente a partir
         del tipo de producto indicado — sujeto siempre a visita técnica y validación final de medidas.
       </p>
+
+      ${lineasFirmante && lineasFirmante.length > 0 ? `
+      <div class="bloque-firma">
+        <div class="firma-col">
+          <p class="firma-nombre">${lineasFirmante[0]}</p>
+          ${lineasFirmante.slice(1).map(linea => `<p class="firma-linea">${linea}</p>`).join('')}
+          <div class="firma-raya"></div>
+        </div>
+        <div class="firma-col">
+          <p class="firma-nombre">&nbsp;</p>
+          <div class="firma-raya"></div>
+          <p class="firma-etiqueta">${etiquetaCliente || 'EL CLIENTE'}</p>
+        </div>
+      </div>` : ''}
 
       <div class="foot">
         <div class="foot-block">
