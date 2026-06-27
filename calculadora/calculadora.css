@@ -130,6 +130,7 @@ img{ max-width:100%; display:block; }
   display: grid;
   grid-template-columns: 1.5fr 1fr;
   grid-template-areas:
+    "importExcel importExcel"
     "form    panel"
     "items   panel"
     "tablas  panel"
@@ -144,11 +145,13 @@ img{ max-width:100%; display:block; }
 .calc-wrap > #resultCard{ grid-area: panel; }
 .calc-wrap > #tablasCard{ grid-area: tablas; }
 .calc-wrap > #observacionesCard{ grid-area: obs; }
+.calc-wrap > .import-excel-wrap{ grid-area: importExcel; }
 
 @media (max-width: 960px){
   .calc-wrap{
     grid-template-columns: 1fr;
     grid-template-areas:
+      "importExcel"
       "form"
       "panel"
       "items"
@@ -1054,3 +1057,69 @@ img{ max-width:100%; display:block; }
   margin: 12px 0 4px;
 }
 .check-item-igv:hover{ background: rgba(255,255,255,0.04); }
+
+/* ============================================================
+   IMPORTAR PRESUPUESTO DESDE EXCEL (módulo temporal)
+   ============================================================ */
+.import-excel-card{ margin-bottom: 22px; }
+.import-excel-plantilla-link{
+  color: var(--naranja);
+  font-weight: 600;
+  text-decoration: underline;
+  margin-left: 6px;
+  white-space: nowrap;
+}
+.import-excel-plantilla-link:hover{ color: var(--naranja-2); }
+
+.import-excel-dropzone{
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+  padding: 18px;
+  border: 1.5px dashed #ddd8cd;
+  border-radius: var(--radius);
+  background: #fafaf8;
+}
+.import-excel-nombre{
+  font-size: 13.5px;
+  color: var(--acero);
+  font-style: italic;
+}
+
+.import-excel-mensajes{
+  margin-top: 16px;
+  padding: 12px 16px;
+  border-radius: var(--radius);
+  font-size: 13px;
+  line-height: 1.5;
+}
+.import-excel-mensajes.es-error{
+  background: rgba(192,57,43,0.08);
+  border: 1px solid rgba(192,57,43,0.25);
+  color: #962f23;
+}
+.import-excel-mensajes.es-advertencia{
+  background: rgba(224,123,57,0.08);
+  border: 1px solid rgba(224,123,57,0.3);
+  color: #8a4d1f;
+}
+.import-excel-mensajes ul{ margin: 6px 0 0 18px; padding: 0; }
+
+.import-excel-preview{ margin-top: 20px; }
+.import-excel-preview .tabla-scroll{ margin-bottom: 4px; }
+
+.import-excel-separador{
+  text-align: center;
+  color: var(--vidrio);
+  font-family: var(--font-condensed);
+  font-size: 13px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  margin: 30px 0;
+}
+.import-excel-nota{
+  margin-top: 6px;
+  color: var(--vidrio);
+  opacity: 0.85;
+}

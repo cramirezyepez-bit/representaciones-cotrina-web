@@ -56,7 +56,7 @@ import { calcularResumenConIgv } from './rules.js';
  *   width/height ya escalados manteniendo proporción (nunca exceden la caja),
  *   offsetX/offsetY para centrar el dibujo dentro de la caja disponible.
  */
-function fitDrawingToPage(dibujoWidth, dibujoHeight, cajaWidth, cajaHeight) {
+export function fitDrawingToPage(dibujoWidth, dibujoHeight, cajaWidth, cajaHeight) {
   if (!dibujoWidth || !dibujoHeight || !cajaWidth || !cajaHeight) {
     return { width: cajaWidth || 0, height: cajaHeight || 0, offsetX: 0, offsetY: 0 };
   }
@@ -73,7 +73,7 @@ function fitDrawingToPage(dibujoWidth, dibujoHeight, cajaWidth, cajaHeight) {
   return { width, height, offsetX, offsetY };
 }
 
-const PDF_COLOR = {
+export const PDF_COLOR = {
   azulMarino: '#07131C',
   azulMarino2: '#08151E',
   naranjaCobre: '#D57B37',
@@ -85,7 +85,7 @@ const PDF_COLOR = {
   fondoSuave: '#F4F2EE',
 };
 
-const EMPRESA = {
+export const EMPRESA = {
   nombre: 'COTRINA Proyectos',
   eslogan: 'Soluciones Arquitectónicas en Vidrio y Aluminio',
   correo: 'cotrinaproyectos@gmail.com',
@@ -95,7 +95,7 @@ const EMPRESA = {
   ciudad: 'Lima, Perú',
 };
 
-function formatearSoles(n) {
+export function formatearSoles(n) {
   return 'S/ ' + (Math.round(n) || 0).toLocaleString('es-PE');
 }
 

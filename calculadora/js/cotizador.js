@@ -31,6 +31,8 @@ import { describirLineaAccesorioAuto } from './despieceTecnico.js';
 import { ICONOS_TIPO_SOLUCION, ICONOS_TIPO_APERTURA, ICONOS_DUCHA, VARIANTES_DUCHA } from './iconosConfigurador.js';
 import { CODIGO_CORTO_APERTURA } from './panos.js';
 import { construirTablasProyecto, calcularResumenConIgv } from './rules.js';
+import { importarPresupuestoExcel } from './excelImporter.js';
+import { construirHtmlPdfExcel } from './pdfGeneratorExcel.js';
 
 // --- Mapeo del <select id="tipoVidrio"> legacy a categoría+variante nuevos ---
 const MAPEO_VIDRIO_LEGACY = {
@@ -1079,6 +1081,141 @@ async function manejarGenerarPdf() {
   }
 }
 
+/* ============================================================
+   IMPORTAR PRESUPUESTO DESDE EXCEL (módulo temporal)
+   ============================================================
+   Ver excelImporter.js y pdfGeneratorExcel.js para el detalle de
+   por qué este flujo NO reutiliza calcularItem()/manejarGenerarPdf()
+   tal cual: los ítems importados no pasan por el motor de cálculo,
+   así que necesitan su propio render de vista previa y su propia
+   función de construcción de HTML para el PDF (construirHtmlPdfExcel),
+   aunque SÍ reutilizan el mismo motor de dibujo SVG y la misma
+   captura html2canvas + jsPDF que el flujo manual.
+   ------------------------------------------------------------ */
+let _ultimaImportacionExcel = null; // { cliente, ruc, distrito, fecha, itemsImportados }
+
+/** Renderiza el HTML dado a un PDF A4 y lo descarga — misma lógica de captura que manejarGenerarPdf(), extraída aquí para no duplicarla. */
+async function renderizarHtmlComoPdf(htmlContenido, nombreArchivo) {
+  if (typeof window.jspdf === 'undefined' || typeof window.html2canvas === 'undefined') {
+    alert('No se pudo cargar el generador de PDF. Verifica tu conexión e intenta de nuevo.');
+    return;
+  }
+  let contenedorTemporal = null;
+  try {
+    contenedorTemporal = document.createElement('div');
+    contenedorTemporal.style.position = 'fixed';
+    contenedorTemporal.style.top = '0';
+    contenedorTemporal.style.left = '-9999px';
+    contenedorTemporal.style.zIndex = '-1';
+    contenedorTemporal.innerHTML = htmlContenido;
+    document.body.appendChild(contenedorTemporal);
+
+    await esperarImagenesListas(contenedorTemporal);
+    await new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+
+    const nodoPdf = contenedorTemporal.querySelector('#pdfRoot');
+    const canvas = await window.html2canvas(nodoPdf, {
+      scale: 2, useCORS: true, backgroundColor: '#ffffff', logging: false,
+    });
+    const imagenCanvas = canvas.toDataURL('image/jpeg', 0.92);
+
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF({ unit: 'mm', format: 'a4' });
+    const anchoA4 = 210;
+    const altoA4 = (canvas.height * anchoA4) / canvas.width;
+    doc.addImage(imagenCanvas, 'JPEG', 0, 0, anchoA4, altoA4);
+    doc.save(nombreArchivo);
+  } finally {
+    if (contenedorTemporal && contenedorTemporal.parentNode) {
+      contenedorTemporal.parentNode.removeChild(contenedorTemporal);
+    }
+  }
+}
+
+function mostrarMensajesImportExcel(errores) {
+  const cont = document.getElementById('importExcelMensajes');
+  if (!errores || errores.length === 0) {
+    cont.hidden = true;
+    cont.innerHTML = '';
+    return;
+  }
+  cont.hidden = false;
+  cont.className = 'import-excel-mensajes es-advertencia';
+  cont.innerHTML = `<b>Revisa lo siguiente antes de generar el PDF:</b><ul>${errores.map(e => `<li>${e}</li>`).join('')}</ul>`;
+}
+
+function mostrarErrorCriticoImportExcel(mensaje) {
+  const cont = document.getElementById('importExcelMensajes');
+  cont.hidden = false;
+  cont.className = 'import-excel-mensajes es-error';
+  cont.innerHTML = `<b>No se pudo leer el archivo:</b> ${mensaje}`;
+  document.getElementById('importExcelPreview').hidden = true;
+}
+
+function renderPreviewImportExcel(resultado) {
+  const { cliente, ruc, distrito, itemsImportados } = resultado;
+  const total = itemsImportados.reduce((acc, it) => acc + (Number(it.precio) || 0), 0);
+
+  document.getElementById('importExcelResumen').innerHTML =
+    `Cliente: <b>${cliente}</b> &nbsp;·&nbsp; ${itemsImportados.length} ítem(s) &nbsp;·&nbsp; Total: <b>${formatearSoles(total)}</b>`;
+
+  const tbody = document.getElementById('tablaImportExcelBody');
+  tbody.innerHTML = itemsImportados.map(it => `
+    <tr>
+      <td class="celda-material">${it.codigo}</td>
+      <td class="celda-desc">${it.tipoTexto}${it.tipoReconocido ? '' : ' <span title="Tipo no reconocido: se incluirá sin dibujo técnico">⚠</span>'}</td>
+      <td>${Number(it.ancho).toFixed(2)} × ${Number(it.alto).toFixed(2)} m</td>
+      <td class="num">${it.cantidad}</td>
+      <td class="num">${formatearSoles(it.precio)}</td>
+    </tr>
+  `).join('');
+
+  document.getElementById('importExcelPreview').hidden = false;
+}
+
+async function manejarArchivoExcelSeleccionado(archivo) {
+  document.getElementById('importExcelNombreArchivo').textContent = archivo.name;
+  mostrarMensajesImportExcel(null);
+  document.getElementById('importExcelPreview').hidden = true;
+
+  try {
+    const arrayBuffer = await archivo.arrayBuffer();
+    const resultado = importarPresupuestoExcel(arrayBuffer);
+    _ultimaImportacionExcel = resultado;
+    mostrarMensajesImportExcel(resultado.errores);
+    renderPreviewImportExcel(resultado);
+  } catch (e) {
+    _ultimaImportacionExcel = null;
+    mostrarErrorCriticoImportExcel(e.message || String(e));
+  }
+}
+
+async function manejarGenerarPdfExcel() {
+  if (!_ultimaImportacionExcel || _ultimaImportacionExcel.itemsImportados.length === 0) return;
+  const btn = document.getElementById('btnGenerarPdfExcel');
+  const htmlOriginalBoton = btn.innerHTML;
+  btn.disabled = true;
+  btn.innerHTML = 'Generando PDF…';
+
+  try {
+    const { cliente, ruc, distrito, fecha, itemsImportados } = _ultimaImportacionExcel;
+    const fechaHoy = new Date();
+    const numeroPropuesta = 'COT-' + fechaHoy.getFullYear() +
+      String(fechaHoy.getMonth() + 1).padStart(2, '0') +
+      String(fechaHoy.getDate()).padStart(2, '0') + '-' +
+      String(fechaHoy.getHours()).padStart(2, '0') +
+      String(fechaHoy.getMinutes()).padStart(2, '0');
+    const fechaTexto = fecha || fechaHoy.toLocaleDateString('es-PE');
+
+    const htmlPropuesta = construirHtmlPdfExcel({ itemsImportados, cliente, ruc, distrito, fechaTexto, numeroPropuesta });
+    const nombreArchivo = `Cotizacion_${numeroPropuesta}_${cliente.replace(/[^a-zA-Z0-9]/g, '_')}.pdf`;
+    await renderizarHtmlComoPdf(htmlPropuesta, nombreArchivo);
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = htmlOriginalBoton;
+  }
+}
+
 document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('btnAgregarItem').addEventListener('click', manejarAgregarItem);
   document.getElementById('itemsList').addEventListener('click', manejarListaClick);
@@ -1098,6 +1235,14 @@ document.addEventListener('DOMContentLoaded', () => {
     if (el) el.addEventListener('input', actualizarResultado);
   });
   document.getElementById('chkIgvActivo').addEventListener('change', actualizarResultado);
+
+  // Importar presupuesto desde Excel (módulo temporal)
+  const inputExcel = document.getElementById('inputExcelPresupuesto');
+  document.getElementById('btnSeleccionarExcel').addEventListener('click', () => inputExcel.click());
+  inputExcel.addEventListener('change', () => {
+    if (inputExcel.files && inputExcel.files[0]) manejarArchivoExcelSeleccionado(inputExcel.files[0]);
+  });
+  document.getElementById('btnGenerarPdfExcel').addEventListener('click', manejarGenerarPdfExcel);
 
   renderItems();
   renderAccesoriosProyecto();

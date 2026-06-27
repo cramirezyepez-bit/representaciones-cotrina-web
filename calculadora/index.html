@@ -39,6 +39,51 @@
 <!-- ===== CALCULADORA ===== -->
 <main class="calc-wrap">
 
+  <!-- ===== IMPORTAR DESDE EXCEL (módulo temporal) ===== -->
+  <div class="import-excel-wrap">
+  <section class="calc-card import-excel-card" id="importExcelCard">
+    <div class="calc-card-head">
+      <span class="calc-step">EXCEL</span>
+      <h2>Importar presupuesto desde Excel</h2>
+    </div>
+    <p class="field-hint field-hint-tight">
+      ¿Ya tienes el presupuesto armado en Excel, con el formato habitual (cliente, ítems con medidas,
+      descripción y precio)? Cárgalo aquí para generar la cotización en PDF directamente, con el
+      dibujo técnico de cada ítem incluido automáticamente.
+    </p>
+    <p class="field-hint field-hint-tight import-excel-nota">
+      El dibujo técnico se genera detectando palabras como "ventana", "mampara", "puerta", "fija" o
+      "corrediza" en la descripción de cada ítem. Si una descripción no las incluye, el ítem se
+      agrega igual al PDF (con su precio y medidas), solo que sin gráfico.
+    </p>
+
+    <div class="import-excel-dropzone" id="importExcelDropzone">
+      <input type="file" id="inputExcelPresupuesto" accept=".xlsx" hidden>
+      <button type="button" class="btn btn-ghost" id="btnSeleccionarExcel">Seleccionar archivo Excel (.xlsx)</button>
+      <span class="import-excel-nombre" id="importExcelNombreArchivo"></span>
+    </div>
+
+    <div class="import-excel-mensajes" id="importExcelMensajes" hidden></div>
+
+    <div class="import-excel-preview" id="importExcelPreview" hidden>
+      <p class="field-hint field-hint-tight" id="importExcelResumen"></p>
+      <div class="tabla-scroll">
+        <table class="tabla-detalle" id="tablaImportExcel">
+          <thead>
+            <tr><th>Código</th><th>Tipo</th><th>Medidas</th><th class="num">Cant.</th><th class="num">Precio</th></tr>
+          </thead>
+          <tbody id="tablaImportExcelBody"></tbody>
+        </table>
+      </div>
+      <button type="button" class="btn btn-pdf" id="btnGenerarPdfExcel">
+        Generar PDF de este presupuesto
+      </button>
+    </div>
+  </section>
+
+  <p class="import-excel-separador">— o cotiza manualmente a continuación —</p>
+  </div>
+
   <form class="calc-card" id="calcForm" novalidate>
 
     <div class="calc-card-head">
@@ -511,6 +556,7 @@
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script type="module" src="js/cotizador.js"></script>
 <script src="calculadora.js"></script>
 </body>
