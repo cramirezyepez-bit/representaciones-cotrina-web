@@ -36,7 +36,7 @@
    ============================================================ */
 
 import { CATALOGO_ACCESORIOS } from './accesorios.js';
-import { describirPerfil } from './perfiles.js';
+import { describirPerfil, obtenerPrecioPerfilMl } from './perfiles.js';
 import { NOMBRES_ACCESORIO_AUTO } from './despieceTecnico.js';
 
 /** Crea una línea de material con su total ya calculado (cantidad × precioUnitario). */
@@ -55,33 +55,22 @@ function lineaServicio({ descripcion, unidad, cantidad, precioUnitario, origen }
  * Genera las líneas de material de VIDRIO de un ítem, una por
  * paño (un [F][M][F] con 3 vidrios distintos da 3 líneas, no 1).
  *
- * IMPORTANTE — separación de costo real de vidrio vs. costo base
- * de la solución: antes esta función sumaba costoBasePano (el
- * costo base de TODA la ventana/mampara — perfilería, margen
- * estructural del precio histórico, etc., prorrateado a ese
- * paño) + adicionalVidrio (el % diferencial propio de ese tipo
- * de vidrio) en una sola línea llamada "Vidrio templado 8mm".
- * Eso hacía que el precio unitario mostrado (ej. S/1,097/m²)
- * pareciera el precio de compra del vidrio, cuando en realidad
- * ~93% de ese número era el costo de la ventana completa, no del
- * vidrio — confirmado contra el dato real de Jorge (USD26/m² ≈
- * S/91/m² de costo de compra).
- *
- * Ahora se generan DOS líneas por paño:
- * - "Vidrio [categoría]" = el precio REAL de mercado de ese
- *   vidrio (vidrioRealEstimado en reglasCalculo.js — desacoplado
- *   del tipo de sistema, ver vidrios.js), comparable a un costo
- *   de compra real.
- * - "Estructura / base [solución]" = el resto del costo del paño
- *   (costoBasePano + adicionalVidrio_legacy − vidrioRealEstimado),
- *   para que la suma de ambas líneas siga calzando EXACTO con el
- *   costo real ya calculado en reglasCalculo.js (que por ahora
- *   sigue usando el factor % legacy, ver nota en vidrios.js sobre
- *   el enfoque de transición — el total de la cotización no debe
- *   cambiar todavía, solo cómo se explica en la tabla).
+ * CAMBIO (27/06/2026) — eliminación de "Estructura / base":
+ * antes esta función generaba DOS líneas por paño: el vidrio real
+ * y una línea "Estructura / base [solución]" que cubría el resto
+ * de costoBasePano (el precio histórico de mercado de la categoría
+ * completa). El usuario identificó que ese concepto duplicaba el
+ * costo de perfilería, que YA se factura aparte en
+ * materialPerfilDeItem (por metro lineal real) — costoBasePano
+ * incluía implícitamente perfilería + mano de obra + margen, y
+ * adicionalPerfil (mostrado en la línea de Perfil) era un % más
+ * calculado SOBRE ese mismo costoBasePano. Por decisión explícita
+ * del usuario, costoBasePano se eliminó del cálculo central (ver
+ * calcularPano en reglasCalculo.js) y, en consecuencia, esta línea
+ * ya no se genera: solo queda el vidrio real de mercado por paño.
  */
 function materialesVidrioDeItem(itemCalculado) {
-  const { codigo, nombreSolucion, panosCalculados } = itemCalculado;
+  const { codigo, panosCalculados } = itemCalculado;
   const lineas = [];
   panosCalculados.forEach((p, i) => {
     const letra = String.fromCharCode(65 + i);
@@ -98,25 +87,6 @@ function materialesVidrioDeItem(itemCalculado) {
       precioUnitario: Number(precioUnitarioVidrio.toFixed(2)),
       origen: 'vidrio',
     }));
-
-    // El resto del costo del paño (estructura/base + el adicional legacy de
-    // vidrio que todavía alimenta el costo real) menos el vidrio real ya
-    // mostrado arriba — así las dos líneas suman EXACTO lo mismo que antes.
-    // Piso en 0: si el vidrio real (con merma) superara el costo legacy
-    // total del paño (posible en categorías de costo base bajo con vidrio
-    // caro), la estructura no debe mostrarse negativa — se deja en 0 y la
-    // diferencia queda absorbida (caso raro, a resolver con la recalibración
-    // completa cuando lleguen los datos de perfilería del Excel).
-    const costoEstructuraResto = Math.max((p.costoBasePano + p.adicionalVidrio) - costoVidrioReal, 0);
-    const precioUnitarioBase = area > 0 ? costoEstructuraResto / area : 0;
-    lineas.push(lineaMaterial({
-      material: `Estructura / base — ${nombreSolucion}`,
-      descripcion: descripcionPano,
-      unidad: 'm²',
-      cantidad: Number(area.toFixed(2)),
-      precioUnitario: Number(precioUnitarioBase.toFixed(2)),
-      origen: 'estructuraBase',
-    }));
   });
   return lineas;
 }
@@ -125,29 +95,22 @@ function materialesVidrioDeItem(itemCalculado) {
  * Genera la línea de material de PERFIL de un ítem (agregada,
  * no por paño individual, porque el sistema/serie de perfilería
  * es uno solo para todo el vano — distinto del vidrio, que sí
- * puede variar por paño). El precio por ml se deriva del
- * adicional de perfil + apertura ya calculado, repartido sobre
- * el total de metros lineales del despiece técnico.
+ * puede variar por paño). El precio por ml es el precio REAL de
+ * mercado de la serie (obtenerPrecioPerfilMl en perfiles.js),
+ * multiplicado por los metros lineales reales del despiece técnico.
  *
- * RELACIÓN CON "Estructura / base" (materialesVidrioDeItem): no
- * son el mismo costo contado dos veces. "Estructura / base" es
- * el costoBasePano histórico (precio promedio S//m² de la
- * categoría completa, menos el vidrio real ya mostrado aparte).
- * Esta línea de "Perfil" es el adicionalPerfil + adicionalApertura
- * — un % aparte que YA estaba separado del costoBasePano desde
- * antes de esta migración (ver calcularPano en reglasCalculo.js).
- * Ambas líneas son componentes reales y distintos del costo total,
- * no una duplicación.
+ * CAMBIO (27/06/2026): antes el precio por ml se DERIVABA de
+ * adicionalPerfil + adicionalApertura (% calculados sobre
+ * costoBasePano). Al eliminar costoBasePano del cálculo (decisión
+ * del usuario — ver reglasCalculo.js), esos adicionales quedaron en
+ * 0, así que esta línea pasó a usar un precio real de mercado por ml
+ * en vez de un % derivado — el mismo enfoque que ya se usaba para el
+ * vidrio (vidrioRealEstimado vs. costoBasePano).
  */
 function materialPerfilDeItem(itemCalculado) {
-  const { codigo, perfilSerie, despiecePerfiles, adicionalPerfil, adicionalApertura, costoBase } = itemCalculado;
+  const { codigo, perfilSerie, despiecePerfiles } = itemCalculado;
   if (!despiecePerfiles || !despiecePerfiles.totalMl) return null;
-  // El "costo de perfilería" agrupa el costo base proporcional a su función
-  // estructural (marco+hojas) más los adicionales de perfil y de mecanismo
-  // de apertura (carriles, refuerzos) — ambos son costos de la perfilería,
-  // no del vidrio ni de los herrajes sueltos.
-  const costoPerfilTotal = adicionalPerfil + adicionalApertura;
-  const precioUnitario = despiecePerfiles.totalMl > 0 ? costoPerfilTotal / despiecePerfiles.totalMl : 0;
+  const precioUnitario = obtenerPrecioPerfilMl(perfilSerie);
   return lineaMaterial({
     material: perfilSerie !== 'noAplica' ? describirPerfil(perfilSerie) : 'Perfil / marco estructural',
     descripcion: codigo || 'Perimetral + intermedios',
@@ -208,6 +171,31 @@ function materialAjusteLegacyDeItem(itemCalculado) {
 }
 
 /**
+ * Línea de material para el AJUSTE DE PISO MÍNIMO (costoBase).
+ * Desde que se eliminó costoBasePano del cálculo (decisión del
+ * usuario, 27/06/2026 — ver reglasCalculo.js), `costoBase` ya NO es
+ * "precio histórico de mercado": es el monto que falta para que el
+ * ítem alcance el piso mínimo (COSTO_MINIMO_PROYECTO, S/450) cuando
+ * la suma de sus costos técnicos reales (vidrio, perfil, accesorios)
+ * no llega a ese piso por sí sola — típico en ítems muy pequeños.
+ * Se muestra como línea explícita, igual que
+ * materialAjusteLegacyDeItem, para que materiales+servicios sume
+ * EXACTO el costo real del ítem.
+ */
+function materialAjustePisoMinimoDeItem(itemCalculado) {
+  const { codigo, costoBase } = itemCalculado;
+  if (!costoBase || costoBase <= 0) return null;
+  return lineaMaterial({
+    material: 'Ajuste a mínimo facturable del ítem',
+    descripcion: codigo || '—',
+    unidad: 'glb',
+    cantidad: 1,
+    precioUnitario: Number(costoBase.toFixed(2)),
+    origen: 'pisoMinimo',
+  });
+}
+
+/**
  * Genera TODAS las líneas de material de un ítem ya calculado:
  * vidrio (por paño) + perfil (agregado) + accesorios automáticos.
  * No incluye accesorios manuales con cantidad propia (accesorios[])
@@ -225,6 +213,8 @@ export function generarMaterialesDeItem(itemCalculado) {
   if (lineaPerfil) lineas.push(lineaPerfil);
   const lineaLegacy = materialAjusteLegacyDeItem(itemCalculado);
   if (lineaLegacy) lineas.push(lineaLegacy);
+  const lineaPisoMinimo = materialAjustePisoMinimoDeItem(itemCalculado);
+  if (lineaPisoMinimo) lineas.push(lineaPisoMinimo);
   return lineas;
 }
 

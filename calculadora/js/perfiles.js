@@ -73,6 +73,31 @@ export const CATALOGO_PERFILES = {
   },
 };
 
+/**
+ * PRECIO REAL DE PERFILERÍA POR METRO LINEAL (S//ml) — PLACEHOLDER.
+ * Decisión del usuario (27/06/2026): tras eliminar costoBasePano del
+ * cálculo (ver reglasCalculo.js), el "factor" de arriba — que solo
+ * multiplicaba sobre costoBasePano — quedó sin base sobre la que
+ * aplicarse, y la línea "Perfil / marco estructural" del PDF habría
+ * caído a S/0. Para evitar eso, se fija un precio real de compra por
+ * ml, en el mismo espíritu que PRECIO_VIDRIO_M2_USD de vidrios.js (un
+ * costo de mercado real, no un % derivado).
+ *
+ * S/10/ml es un PLACEHOLDER explícito a falta del dato real del
+ * proveedor de Jorge — el mismo orden de magnitud que ya se veía en
+ * cotizaciones generadas antes de este cambio. Reemplazar por serie
+ * en cuanto se tenga el precio real de compra (puede diferir bastante
+ * entre serie25 económica y serie80/europea premium — por ahora se
+ * usa el mismo valor para todas para no inventar una diferenciación
+ * sin dato real que la respalde).
+ */
+const PRECIO_PERFIL_ML_PLACEHOLDER = 10;
+
+export function obtenerPrecioPerfilMl(serie) {
+  // Mismo valor para toda serie reconocida; noAplica no factura perfil.
+  return serie && serie !== 'noAplica' ? PRECIO_PERFIL_ML_PLACEHOLDER : 0;
+}
+
 export const PERFIL_OBLIGATORIO_EN = ['ventana', 'fachada', 'cerramiento', 'muroCortina'];
 
 export function obtenerFactorPerfil(serie) {

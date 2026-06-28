@@ -23,7 +23,7 @@
 
 import { TIPOS_SOLUCION, AREA_MINIMA_POR_UNIDAD, COSTO_MINIMO_PROYECTO, FACTOR_INSTALACION, FACTOR_URGENCIA, obtenerFactorApertura, TIPOS_APERTURA } from './catalogos.js';
 import { obtenerFactorVidrio, obtenerPrecioVidrioM2, describirVidrio } from './vidrios.js';
-import { obtenerFactorPerfil } from './perfiles.js';
+import { obtenerFactorPerfil, obtenerPrecioPerfilMl } from './perfiles.js';
 import { calcularSubtotalAccesorios, calcularFactorAccesoriosLegacy } from './accesorios.js';
 import { calcularAccesoriosAutomaticos } from './despieceTecnico.js';
 import { resolverPanos, sumaAnchosPanos, notacionPanos } from './panos.js';
@@ -42,23 +42,45 @@ function calcularPano(pano, { refBase, perfilSerie, accesoriosLegacy, cantidad, 
   const areaPanoPorUnidad = Math.max(anchoPano * altoPano, 0); // el mínimo de 1m² se aplica al ítem completo, no por paño
   const areaPanoTotal = areaPanoPorUnidad * Number(cantidad);
 
-  const precioBaseM2Promedio = (refBase.costoM2Min + refBase.costoM2Max) / 2;
-  const costoBasePano = precioBaseM2Promedio * areaPanoTotal;
+  // DECISIÓN EXPLÍCITA DEL USUARIO (27/06/2026): se elimina el "costo base"
+  // de precio histórico de mercado (precioBaseM2Promedio, ej. S/954/m² para
+  // ventana) del cálculo. Antes este número — y los % de apertura/vidrio/
+  // perfil/accesorios legacy calculados SOBRE él — representaba la mayor
+  // parte del precio de cada ítem, y se mostraba en la tabla de materiales
+  // como "Estructura / base", duplicando conceptualmente el costo de
+  // perfilería que YA se muestra aparte (ver materialPerfilDeItem en
+  // rules.js, que factura perfilería por metro lineal real). El usuario
+  // confirmó eliminar ese concepto del costo, aceptando que el total de
+  // cada ítem baje a solo sus componentes reales (vidrio real, perfilería
+  // real en ml, accesorios reales, instalación) hasta que el tarifario
+  // completo (Excel de carga masiva pendiente con Jorge) permita calcular
+  // un costo de mano de obra/margen real para reintroducir aquí.
+  // costoM2Min/costoM2Max de catalogos.js quedan sin uso por ahora — no se
+  // borran del catálogo porque siguen siendo la referencia histórica para
+  // la futura recalibración.
+  const costoBasePano = 0;
 
   const factorApertura = obtenerFactorApertura(pano.tipoApertura);
   const factorVidrio = obtenerFactorVidrio(pano.vidrioCategoria, pano.vidrioVariante);
   const factorPerfil = obtenerFactorPerfil(perfilSerie);
   const factorAccesoriosLegacy = calcularFactorAccesoriosLegacy(accesoriosLegacy);
 
+  // Los siguientes 4 "adicionales" siempre fueron un % calculado SOBRE
+  // costoBasePano (ver versión anterior de este archivo) — con
+  // costoBasePano = 0, los cuatro son 0 matemáticamente. Se mantiene la
+  // multiplicación explícita (en vez de poner "0" directo) para que el
+  // resto del archivo no necesite tratarlos como caso especial, y para
+  // que reintroducir costoBasePano en el futuro (cuando haya tarifario
+  // real) sea un cambio de una sola línea, no una reescritura.
   const adicionalApertura = costoBasePano * factorApertura;
   const adicionalVidrio = costoBasePano * factorVidrio;
   const adicionalPerfil = costoBasePano * factorPerfil;
   const adicionalAccesoriosLegacy = costoBasePano * factorAccesoriosLegacy;
 
   // Precio REAL de vidrio (desacoplado del tipo de sistema, ver vidrios.js)
-  // — SOLO informativo para la tabla de materiales (rules.js). No participa
-  // del cálculo de costoBasePano/subtotalTecnicoPano hasta que se recalibre
-  // con datos completos de perfilería (ver Excel de carga masiva).
+  // — este SÍ es un costo real de mercado (USD/m² confirmado con Jorge) y
+  // no depende de costoBasePano, así que se mantiene como componente activo
+  // del costo del ítem (ver subtotalTecnicoPano más abajo).
   const vidrioRealEstimado = obtenerPrecioVidrioM2(pano.vidrioCategoria, pano.vidrioVariante) * areaPanoTotal;
 
   // Despiece técnico (perfiles ml + accesorios reales) por paño: el
@@ -70,8 +92,25 @@ function calcularPano(pano, { refBase, perfilSerie, accesoriosLegacy, cantidad, 
   });
   const subtotalAccesoriosAuto = calcularSubtotalAccesorios(despieceAuto.lineas);
 
+  // Costo REAL de perfilería (ml × precio real de mercado de la serie,
+  // ver perfiles.js) — reemplaza a adicionalPerfil/adicionalApertura
+  // (ahora en 0) como fuente de costo de perfilería. Se calcula aquí, a
+  // nivel de paño, para que el total del ítem (subtotalTecnico en
+  // calcularItem) ya lo incluya — y así la tabla de materiales
+  // (materialPerfilDeItem en rules.js, que muestra este mismo costo
+  // agregado a nivel de ítem completo) siga sumando EXACTO el costo real,
+  // sin que el usuario vea un "Perfil S/214" en el PDF que en realidad no
+  // se cobró en el total.
+  const costoPerfilReal = despieceAuto.despiece.totalMl * obtenerPrecioPerfilMl(perfilSerie);
+
+  // subtotalTecnicoPano = costoBasePano (0) + adicionales (0, ver arriba)
+  // + vidrioRealEstimado (real) + costoPerfilReal (real) +
+  // subtotalAccesoriosAuto (real, accesorios con cantidad y precio de
+  // mercado) — todos los componentes que quedan en el modelo de costo
+  // tras eliminar el precio histórico de mercado son costos reales
+  // verificables, no porcentajes derivados.
   const subtotalTecnicoPano = costoBasePano + adicionalApertura + adicionalVidrio + adicionalPerfil
-    + adicionalAccesoriosLegacy + subtotalAccesoriosAuto;
+    + adicionalAccesoriosLegacy + vidrioRealEstimado + costoPerfilReal + subtotalAccesoriosAuto;
 
   return {
     tipoApertura: pano.tipoApertura,
@@ -82,6 +121,7 @@ function calcularPano(pano, { refBase, perfilSerie, accesoriosLegacy, cantidad, 
     nombreVidrio: describirVidrio(pano.vidrioCategoria, pano.vidrioVariante),
     costoBasePano, adicionalApertura, adicionalVidrio, adicionalPerfil, adicionalAccesoriosLegacy,
     vidrioRealEstimado,
+    costoPerfilReal,
     despiecePerfiles: despieceAuto.despiece,
     accesoriosAuto: despieceAuto.lineas,
     subtotalAccesoriosAuto,
@@ -148,17 +188,12 @@ export function calcularItem(item) {
   const areaPorUnidad = Math.max(areaPorUnidadSinMinimo, AREA_MINIMA_POR_UNIDAD);
   const areaTotal = areaPorUnidad * Number(cantidad);
 
-  // Si el área real cae por debajo del mínimo facturable, se escala el
-  // costoBase agregado proporcionalmente para no perder el piso mínimo
-  // que antes garantizaba COSTO_MINIMO_PROYECTO a nivel de ítem completo.
-  const costoBaseSinPiso = panosCalculados.reduce((acc, p) => acc + p.costoBasePano, 0);
-  const factorEscalaPorMinimo = areaPorUnidadSinMinimo > 0 ? areaPorUnidad / areaPorUnidadSinMinimo : 1;
-  const costoBase = Math.max(costoBaseSinPiso * factorEscalaPorMinimo, COSTO_MINIMO_PROYECTO);
-
   const adicionalApertura = panosCalculados.reduce((acc, p) => acc + p.adicionalApertura, 0);
   const adicionalVidrio = panosCalculados.reduce((acc, p) => acc + p.adicionalVidrio, 0);
   const adicionalPerfil = panosCalculados.reduce((acc, p) => acc + p.adicionalPerfil, 0);
   const adicionalAccesoriosLegacy = panosCalculados.reduce((acc, p) => acc + p.adicionalAccesoriosLegacy, 0);
+  const vidrioRealEstimadoTotal = panosCalculados.reduce((acc, p) => acc + p.vidrioRealEstimado, 0);
+  const costoPerfilRealTotal = panosCalculados.reduce((acc, p) => acc + p.costoPerfilReal, 0);
   const subtotalAccesoriosAuto = panosCalculados.reduce((acc, p) => acc + p.subtotalAccesoriosAuto, 0);
 
   // Accesorios del nuevo modelo (cantidad × precio unitario, en soles directos),
@@ -166,8 +201,22 @@ export function calcularItem(item) {
   // a todo el vano, no a cada paño individualmente).
   const subtotalAccesoriosNuevos = calcularSubtotalAccesorios(accesorios);
 
+  // PISO MÍNIMO POR ÍTEM (decisión del usuario, 27/06/2026: se mantiene
+  // como red de seguridad aunque se elimine costoBasePano del cálculo).
+  // Antes el piso de COSTO_MINIMO_PROYECTO se aplicaba sobre costoBase
+  // (el precio histórico de mercado); como ese componente ya no existe,
+  // ahora se aplica sobre la suma de TODOS los costos técnicos reales que
+  // quedan en el modelo — si esa suma no alcanza el piso, se completa con
+  // un ajuste explícito (costoBase) en vez de dejar ítems pequeños en
+  // unos pocos soles. `costoBase` ya no es "precio base de mercado"; es
+  // el monto que falta para llegar al piso, cuando falta.
+  const costoTecnicoRealSinPiso = adicionalApertura + adicionalVidrio + adicionalPerfil + adicionalAccesoriosLegacy
+    + vidrioRealEstimadoTotal + costoPerfilRealTotal + subtotalAccesoriosNuevos + subtotalAccesoriosAuto;
+  const costoBase = Math.max(COSTO_MINIMO_PROYECTO - costoTecnicoRealSinPiso, 0);
+
   const subtotalTecnico = costoBase + adicionalApertura + adicionalVidrio + adicionalPerfil
-    + adicionalAccesoriosLegacy + subtotalAccesoriosNuevos + subtotalAccesoriosAuto;
+    + adicionalAccesoriosLegacy + vidrioRealEstimadoTotal + costoPerfilRealTotal
+    + subtotalAccesoriosNuevos + subtotalAccesoriosAuto;
 
   const costoInstalacion = subtotalTecnico * FACTOR_INSTALACION;
 
@@ -219,6 +268,7 @@ export function calcularItem(item) {
     accesorios, accesoriosLegacy,
     costoBase,
     adicionalApertura, adicionalVidrio, adicionalPerfil, adicionalAccesoriosLegacy, subtotalAccesoriosNuevos,
+    vidrioRealEstimadoTotal, costoPerfilRealTotal,
     despiecePerfiles,
     accesoriosAuto,
     subtotalAccesoriosAuto,
@@ -256,9 +306,15 @@ export function calcularProyecto(itemsCalculados, accesoriosProyecto = [], urgen
   // que viven dentro de costoBase/adicionales de cada ítem) de
   // "servicios" (instalación de cada ítem + accesorios de alcance
   // proyecto como transporte, desmontaje, instalación en altura).
+  // Incluye vidrioRealEstimadoTotal y costoPerfilRealTotal (los costos
+  // reales de mercado que reemplazaron a costoBasePano — ver
+  // reglasCalculo.js / calcularPano) para que este agregado siga
+  // representando el costo directo real completo, no solo lo que quedó
+  // del modelo anterior.
   const costosDirectosVidrioPerfilAccesorios = itemsCalculados.reduce((acc, it) =>
     acc + it.costoBase + it.adicionalApertura + it.adicionalVidrio + it.adicionalPerfil
-      + it.adicionalAccesoriosLegacy + it.subtotalAccesoriosNuevos + it.subtotalAccesoriosAuto, 0);
+      + it.adicionalAccesoriosLegacy + (it.vidrioRealEstimadoTotal || 0) + (it.costoPerfilRealTotal || 0)
+      + it.subtotalAccesoriosNuevos + it.subtotalAccesoriosAuto, 0);
   const costoManoDeObraInstalacion = itemsCalculados.reduce((acc, it) => acc + it.costoInstalacion, 0);
   const costoServiciosProyecto = costoAccesoriosProyecto;
 
