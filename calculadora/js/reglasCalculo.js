@@ -21,7 +21,7 @@
    ya se hicieron con el modelo de un solo vidrio por ítem.
    ============================================================ */
 
-import { TIPOS_SOLUCION, AREA_MINIMA_POR_UNIDAD, COSTO_MINIMO_PROYECTO, FACTOR_INSTALACION, FACTOR_URGENCIA, obtenerFactorApertura, TIPOS_APERTURA } from './catalogos.js';
+import { TIPOS_SOLUCION, AREA_MINIMA_POR_UNIDAD, COSTO_MINIMO_PROYECTO, COSTO_INSTALACION_MOVILIDAD_POR_UNIDAD, COSTO_SERVICIO_PERFORACION_POR_UNIDAD, FACTOR_URGENCIA, obtenerFactorApertura, TIPOS_APERTURA } from './catalogos.js';
 import { obtenerFactorVidrio, obtenerPrecioVidrioM2, describirVidrio } from './vidrios.js';
 import { obtenerFactorPerfil, obtenerPrecioPerfilMl } from './perfiles.js';
 import { calcularSubtotalAccesorios, calcularFactorAccesoriosLegacy } from './accesorios.js';
@@ -218,7 +218,16 @@ export function calcularItem(item) {
     + adicionalAccesoriosLegacy + vidrioRealEstimadoTotal + costoPerfilRealTotal
     + subtotalAccesoriosNuevos + subtotalAccesoriosAuto;
 
-  const costoInstalacion = subtotalTecnico * FACTOR_INSTALACION;
+  // COSTO DE INSTALACIÓN/MOVILIDAD Y SERVICIO DE PERFORACIÓN — montos
+  // fijos por unidad (ver catalogos.js para la fuente: dato real
+  // confirmado por Jorge en puertas de ducha, igual para fijo+batiente
+  // que para fijo+corredizo a pesar del área distinta — confirma que es
+  // un costo fijo por puerta/unidad, NO proporcional al costo técnico
+  // ni al área). Antes era subtotalTecnico * 18%; ese % dejó de tener
+  // sentido cuando subtotalTecnico se redujo a solo sus componentes
+  // reales (ver eliminación de costoBasePano más arriba).
+  const costoInstalacion = COSTO_INSTALACION_MOVILIDAD_POR_UNIDAD * Number(cantidad);
+  const costoServicioPerforacion = COSTO_SERVICIO_PERFORACION_POR_UNIDAD * Number(cantidad);
 
   const nombreAperturaCompuesto = esMixto
     ? panos.map(p => TIPOS_APERTURA[p.tipoApertura] ? TIPOS_APERTURA[p.tipoApertura].nombre : p.tipoApertura).join(' + ')
@@ -274,7 +283,8 @@ export function calcularItem(item) {
     subtotalAccesoriosAuto,
     subtotalTecnico,
     costoInstalacion,
-    costoItemAntesUrgencia: subtotalTecnico + costoInstalacion,
+    costoServicioPerforacion,
+    costoItemAntesUrgencia: subtotalTecnico + costoInstalacion + costoServicioPerforacion,
   };
 }
 
@@ -315,7 +325,7 @@ export function calcularProyecto(itemsCalculados, accesoriosProyecto = [], urgen
     acc + it.costoBase + it.adicionalApertura + it.adicionalVidrio + it.adicionalPerfil
       + it.adicionalAccesoriosLegacy + (it.vidrioRealEstimadoTotal || 0) + (it.costoPerfilRealTotal || 0)
       + it.subtotalAccesoriosNuevos + it.subtotalAccesoriosAuto, 0);
-  const costoManoDeObraInstalacion = itemsCalculados.reduce((acc, it) => acc + it.costoInstalacion, 0);
+  const costoManoDeObraInstalacion = itemsCalculados.reduce((acc, it) => acc + it.costoInstalacion + (it.costoServicioPerforacion || 0), 0);
   const costoServiciosProyecto = costoAccesoriosProyecto;
 
   return {

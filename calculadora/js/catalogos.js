@@ -71,7 +71,32 @@ export const TIPOS_APERTURA = {
 };
 
 export const COSTO_MINIMO_PROYECTO = 450;
-export const FACTOR_INSTALACION = 0.18;
+/**
+ * COSTO DE INSTALACIÓN Y SERVICIO DE PERFORACIÓN — MONTOS FIJOS POR UNIDAD.
+ * Reemplaza a FACTOR_INSTALACION (18% sobre subtotalTecnico), que dejó de
+ * tener sentido tras eliminar costoBasePano del cálculo (ver
+ * reglasCalculo.js): un % sobre un costo técnico ya reducido a sus
+ * componentes reales (vidrio + perfil + accesorios) ya no representa el
+ * verdadero costo de mano de obra de instalación.
+ *
+ * CONFIRMADO por Jorge (27/06/2026), desglose real de Puerta de ducha
+ * Batiente (fijo+batiente, 2.4 m² de vidrio) y Puerta de ducha Corrediza
+ * (fijo+corredizo, 3.6 m²): ambas muestran el MISMO monto de instalación
+ * y movilidad (S/380) y el mismo servicio de perforación (S/5), sin
+ * importar que el área de vidrio facturado sea distinta — confirma que
+ * es un costo FIJO por unidad/puerta, no proporcional al área ni al
+ * costo técnico.
+ *
+ * ALCANCE: por decisión explícita del usuario, este mismo monto fijo se
+ * aplica a TODOS los sistemas (ventana, fachada, mampara, baranda, etc.),
+ * no solo a puertas de ducha — a falta de un dato propio por sistema.
+ * Cuando se complete el tarifario real con Jorge, puede que cada
+ * sistema necesite su propio monto (instalar una fachada de 20m² con
+ * andamios no es lo mismo que una puerta de ducha) — por ahora se usa
+ * este único valor confirmado como mejor aproximación disponible.
+ */
+export const COSTO_INSTALACION_MOVILIDAD_POR_UNIDAD = 380;
+export const COSTO_SERVICIO_PERFORACION_POR_UNIDAD = 5;
 export const AREA_MINIMA_POR_UNIDAD = 1;
 export const UTILIDAD_MINIMA = 35;
 export const UTILIDAD_MAXIMA = 55;

@@ -219,23 +219,39 @@ export function generarMaterialesDeItem(itemCalculado) {
 }
 
 /**
- * Genera las líneas de SERVICIO de un ítem: mano de obra e
- * instalación (siempre presente, es costoInstalacion ya calculado
- * con FACTOR_INSTALACION) más los accesorios "manuales" del ítem
- * (accesorios[] con cantidad propia que el usuario ingresó, ej.
- * "control solar" o "aislamiento acústico" aplicado a ese ítem).
+ * Genera las líneas de SERVICIO de un ítem: instalación y movilidad
+ * + servicio de perforación (ambos montos fijos por unidad, ver
+ * catalogos.js — reemplazaron al % FACTOR_INSTALACION cuando se
+ * eliminó costoBasePano del cálculo) más los accesorios "manuales"
+ * del ítem (accesorios[] con cantidad propia que el usuario ingresó,
+ * ej. "control solar" o "aislamiento acústico" aplicado a ese ítem).
+ *
+ * Se muestran como DOS líneas separadas — "Instalación y movilidad"
+ * y "Servicio de perforación" — replicando el desglose real que
+ * Jorge ya usa en su propio costeo (columnas G y H de su Excel de
+ * puertas de ducha), en vez de fusionarlas en una sola "Instalación".
  */
 export function generarServiciosDeItem(itemCalculado) {
-  const { codigo, costoInstalacion, areaTotal, accesorios = [] } = itemCalculado;
+  const { codigo, costoInstalacion, costoServicioPerforacion, areaTotal, accesorios = [] } = itemCalculado;
   const lineas = [];
 
   if (costoInstalacion > 0) {
     lineas.push(lineaServicio({
-      descripcion: `Instalación — ${codigo || 'ítem'}`,
+      descripcion: `Instalación y movilidad — ${codigo || 'ítem'}`,
       unidad: 'glb',
       cantidad: 1,
       precioUnitario: Number(costoInstalacion.toFixed(2)),
       origen: 'instalacion',
+    }));
+  }
+
+  if (costoServicioPerforacion > 0) {
+    lineas.push(lineaServicio({
+      descripcion: `Servicio de perforación — ${codigo || 'ítem'}`,
+      unidad: 'glb',
+      cantidad: 1,
+      precioUnitario: Number(costoServicioPerforacion.toFixed(2)),
+      origen: 'perforacion',
     }));
   }
 
