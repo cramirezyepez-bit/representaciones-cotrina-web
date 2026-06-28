@@ -52,6 +52,8 @@ const MAPEO_PERFIL_LEGACY = {
   aluminioNacional: 'serie25',
   aluminioEuropeo:  'serieEuropea',
   aluminioPremium:  'serie80',
+  vl46:             'vl46',
+  ml46:             'ml46',
   pvc:              'pvc',
   aceroInoxidable:  'acero',
   fierro:           'fierro',

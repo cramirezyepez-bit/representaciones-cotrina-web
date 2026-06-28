@@ -13,6 +13,14 @@
    Las series 42/43 son nuevas subdivisiones dentro del rango
    aluminio nacional/europeo — deben validarse con el equipo
    comercial antes de diferenciarlas en cotizaciones reales.
+
+   VL46 / ML46 (agregadas 28/06/2026): líneas reales que Jorge usa
+   habitualmente, fabricadas en Perú por Corporación Limatambo —
+   imitación local del sistema europeo (rotura de puente térmico).
+   Mismo factor/precio que serieEuropea por ahora (placeholder
+   explícito: el usuario no tenía aún el costo diferenciado entre
+   VL46 y ML46 al momento de agregarlas) — ajustar en cuanto se
+   conozca el precio real de cada una.
    ============================================================ */
 
 export const CATALOGO_PERFILES = {
@@ -43,6 +51,16 @@ export const CATALOGO_PERFILES = {
   },
   serieEuropea: {
     nombre: 'Sistema europeo (rotura de puente térmico)',
+    factor: 0.25,
+    colores: ['natural', 'blanco', 'negro', 'champagne', 'madera'],
+  },
+  vl46: {
+    nombre: 'VL46 (Corporación Limatambo, línea europea fabricada en Perú)',
+    factor: 0.25,
+    colores: ['natural', 'blanco', 'negro', 'champagne', 'madera'],
+  },
+  ml46: {
+    nombre: 'ML46 (Corporación Limatambo, línea europea fabricada en Perú)',
     factor: 0.25,
     colores: ['natural', 'blanco', 'negro', 'champagne', 'madera'],
   },
