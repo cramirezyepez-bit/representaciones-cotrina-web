@@ -4,17 +4,16 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Cotrina Proyectos — Portafolio de Proyectos</title>
-<meta name="description" content="Portafolio de proyectos de Cotrina Proyectos: sistemas de vidrio y aluminio, barandas, mamparas, puertas de ducha y ventanas termoacústicas. Arquitectura que conecta, espacios que trascienden.">
+<meta name="description" content="Portafolio de proyectos de Cotrina Proyectos: viviendas, oficinas e interiorismo con sistemas de vidrio y aluminio de alta gama en Lima, Perú.">
 
-<!-- Open Graph / WhatsApp / social preview -->
 <meta property="og:type" content="website">
 <meta property="og:title" content="Cotrina Proyectos — Portafolio de Proyectos">
-<meta property="og:description" content="Sistemas de vidrio y aluminio de alta gama: barandas, mamparas, puertas de ducha, ventanas termoacústicas y fachadas. Conoce nuestros proyectos.">
+<meta property="og:description" content="Proyectos residenciales, comerciales y de interiorismo con sistemas de vidrio y aluminio de alta gama.">
 <meta property="og:image" content="assets/img/sistemas-thermia/cover.jpg">
 <meta property="og:locale" content="es_PE">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:title" content="Cotrina Proyectos — Portafolio de Proyectos">
-<meta name="twitter:description" content="Sistemas de vidrio y aluminio de alta gama para proyectos residenciales, comerciales y corporativos.">
+<meta name="twitter:description" content="Proyectos residenciales, comerciales y de interiorismo con sistemas de vidrio y aluminio de alta gama.">
 <meta name="twitter:image" content="assets/img/sistemas-thermia/cover.jpg">
 
 <link rel="icon" href="data:,">
@@ -28,16 +27,21 @@
 <!-- ============ HEADER ============ -->
 <header class="site-header">
   <div class="header-inner">
-    <a class="logo" href="#" aria-label="Cotrina Proyectos — inicio">
+    <a class="logo" href="#/" aria-label="Cotrina Proyectos — inicio del portafolio">
       <span class="logo-top">PROYECTOS</span>
       <span class="logo-bottom">COTRINA</span>
     </a>
     <div class="header-right">
       <a class="back-link" href="../index.html#gallery">&larr; Sitio principal</a>
       <span class="header-tag">PORTAFOLIO DE PROYECTOS</span>
-      <button class="btn-icon" id="btnShare" title="Compartir portafolio" aria-label="Compartir portafolio">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12v7a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-7"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg>
+
+      <button class="btn-icon" id="btnSearchToggle" title="Buscar" aria-label="Buscar" aria-expanded="false">
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
       </button>
+      <button class="btn-icon" id="btnShare" title="Compartir portafolio" aria-label="Compartir portafolio">
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12v7a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-7"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg>
+      </button>
+
       <div class="menu-wrap">
         <button class="btn-menu" id="btnMenu" aria-label="Abrir menú" aria-expanded="false">
           <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
@@ -50,25 +54,54 @@
       </div>
     </div>
   </div>
+
+  <!-- expandable search row (compact icon on mobile, opens this) -->
+  <div class="search-row" id="searchRow" hidden>
+    <div class="search-wrap">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+      <input type="search" id="searchInput" placeholder="Buscar por proyecto, distrito o categoría..." aria-label="Buscar proyecto">
+      <button class="search-close" id="searchClose" aria-label="Cerrar búsqueda">&times;</button>
+    </div>
+  </div>
 </header>
 
-<!-- ============ TOOLBAR: filters + search ============ -->
-<div class="toolbar" id="toolbar">
-  <nav class="filters" id="filters" aria-label="Filtrar por categoría">
-    <button class="filter-btn is-active" data-cat="todos">Todos</button>
-    <!-- category buttons injected by JS -->
-  </nav>
-  <div class="search-wrap">
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-    <input type="search" id="searchInput" placeholder="Buscar por categoría o nombre..." aria-label="Buscar proyecto">
+<!-- ============================================================
+     VISTA 1 — GRID DE PROYECTOS
+     ============================================================ -->
+<section id="viewProjects">
+  <div class="page-intro">
+    <span class="eyebrow">Portafolio</span>
+    <h1>Proyectos realizados</h1>
+    <p>Cada proyecto reúne la historia completa: ficha técnica, servicios ejecutados y galería fotográfica.</p>
   </div>
-</div>
 
-<!-- ============ GALLERY GRID ============ -->
-<main>
-  <section class="gallery" id="gallery" aria-live="polite"></section>
-  <p class="empty-state" id="emptyState" hidden>No se encontraron resultados. Prueba con otra categoría o término de búsqueda.</p>
-</main>
+  <nav class="filters" id="catFilters" aria-label="Filtrar por tipo de proyecto">
+    <button class="filter-btn is-active" data-cat="todos">Todos</button>
+    <button class="filter-btn" data-cat="residencial">Residencial</button>
+    <button class="filter-btn" data-cat="comercial">Comercial</button>
+    <button class="filter-btn" data-cat="interiorismo">Interiorismo</button>
+  </nav>
+
+  <main>
+    <div class="project-grid" id="projectGrid"></div>
+    <p class="empty-state" id="emptyState" hidden>No se encontraron proyectos con ese criterio.</p>
+  </main>
+</section>
+
+<!-- ============================================================
+     VISTA 2 — DETALLE DE PROYECTO
+     ============================================================ -->
+<section id="viewProject" hidden>
+  <main class="project-detail">
+    <a href="#/" class="breadcrumb">&larr; Todos los proyectos</a>
+
+    <div class="fact-sheet" id="factSheet"></div>
+
+    <nav class="filters filters-service" id="serviceFilters" aria-label="Filtrar por servicio"></nav>
+
+    <div class="project-gallery" id="projectGallery"></div>
+  </main>
+</section>
 
 <!-- ============ FOOTER ============ -->
 <footer class="site-footer">
@@ -104,7 +137,7 @@
   </button>
 </div>
 
-<!-- ============ TOAST (copiar link) ============ -->
+<!-- ============ TOAST ============ -->
 <div class="toast" id="toast">Link copiado al portapapeles</div>
 
 <script type="module" src="js/app.js"></script>

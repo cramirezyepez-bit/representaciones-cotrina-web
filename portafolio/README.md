@@ -1,99 +1,126 @@
 # Portafolio — Cotrina Proyectos
 
-Portafolio digital de proyectos de **Cotrina Proyectos**, listo para publicarse en GitHub Pages y compartirse por WhatsApp, LinkedIn o correo con arquitectos, constructoras y clientes.
+Portafolio digital de proyectos de **Cotrina Proyectos**, organizado por **proyecto**
+(no por foto suelta). Vive dentro del sitio principal, en `/portafolio`.
 
-Sitio estático — **HTML, CSS y JavaScript puro (ES Modules)**. Sin frameworks, sin build step, sin dependencias que instalar.
+Sitio estático — **HTML, CSS y JavaScript puro (ES Modules)**. Sin frameworks, sin
+build step. Usa hash routing (`#/` y `#/proyecto/<slug>`) para funcionar 100% en
+GitHub Pages sin configuración de servidor.
+
+## ⚠️ Contenido simulado — pendiente de reemplazar
+
+Los **8 proyectos**, sus **nombres, ubicaciones, arquitectos, constructoras, áreas
+y descripciones son simulados** (a pedido explícito, como punto de partida visual).
+Las fotografías son reales, pero **su asignación a cada proyecto es una agrupación
+sugerida**, no un registro real de qué foto pertenece a qué obra.
+
+**Antes de compartir el portafolio con clientes reales, reemplazar en `js/projects-data.js`:**
+- Nombre y ubicación real de cada proyecto
+- Arquitecto / constructora reales (o quitar el campo si no aplica)
+- Área real
+- Descripción real
+- Reasignar las fotos correctas a cada proyecto (ver sección siguiente)
 
 ## Estructura del proyecto
 
 ```
-/
-├── index.html          # página única: header, filtros, grid, lightbox, footer
-├── css/
-│   └── style.css       # todos los estilos (dark navy + copper)
+portafolio/
+├── index.html          # shell de la app: header, vista grid, vista detalle, lightbox
+├── css/style.css        # todos los estilos
 ├── js/
-│   ├── data.js         # categorías + lista de las 107 fotos (EDITAR AQUÍ)
-│   └── app.js          # lógica: filtros, búsqueda, lightbox, compartir
-└── assets/
-    └── img/
-        ├── barandas/
-        │   ├── cover.jpg
-        │   ├── thumb/   # versión liviana para el grid (~900px)
-        │   └── full/    # versión para el lightbox (~1920px)
-        ├── mamparas-cristal/
-        ├── mamparas-oficina/
-        ├── puertas-ducha/
-        ├── sistemas-thermia/
-        └── ventanas-termoacusticas/
+│   ├── projects-data.js # los 8 proyectos + sus fotos (EDITAR AQUÍ)
+│   └── app.js            # routing, filtros, ficha técnica, galería, lightbox, buscador
+└── assets/img/
+    ├── barandas/{cover.jpg, thumb/, full/}
+    ├── mamparas-cristal/
+    ├── mamparas-oficina/
+    ├── puertas-ducha/
+    ├── sistemas-thermia/
+    └── ventanas-termoacusticas/
 ```
 
-Todas las imágenes originales (213MB en total) fueron comprimidas a JPG optimizado
-(~26MB en total) para que el sitio cargue rápido, sin perder calidad visual perceptible.
+Las carpetas `assets/img/` se mantienen organizadas por **tipo de sistema**
+(igual que antes), pero ahora cada foto se **referencia desde uno o más proyectos**
+en `projects-data.js` en vez de mostrarse suelta.
 
-## Cómo ver el sitio localmente
+## Cómo funciona la navegación
 
-No necesitas instalar nada. Desde esta carpeta:
+- `#/` → grid de proyectos (portada del portafolio)
+- `#/proyecto/casa-casuarinas` → ficha técnica + galería filtrable de ese proyecto
 
-```bash
-python3 -m http.server 8080
-```
+Los enlaces son compartibles directamente: `.../portafolio/index.html#/proyecto/casa-asia`
+abre ese proyecto específico.
 
-Y abre `http://localhost:8080` en tu navegador.
+## Cómo editar un proyecto existente
 
-(También funciona abriendo `index.html` directamente en el navegador, aunque
-algunos navegadores restringen módulos JS con `file://` — por eso se recomienda
-el servidor local de arriba para probar.)
-
-## Cómo publicarlo en GitHub Pages
-
-1. Crea un repositorio en GitHub (sugerido: `portafolio-cotrina-proyectos`).
-2. Sube todo el contenido de esta carpeta a la rama `main`.
-3. En GitHub: **Settings → Pages → Source → Deploy from a branch → main / (root)**.
-4. Tu portafolio quedará publicado en:
-   `https://TU-USUARIO.github.io/portafolio-cotrina-proyectos/`
-
-## Cómo agregar o reemplazar proyectos
-
-Cada foto tiene **dos versiones**: una liviana para el grid (`thumb/`) y una
-grande para el lightbox (`full/`). Para agregar fotos nuevas:
-
-1. Coloca la foto optimizada en la carpeta de la categoría correspondiente,
-   dentro de `thumb/` (ideal: máx. 900px de ancho) y `full/` (ideal: máx. 1920px de ancho),
-   con el mismo nombre de archivo en ambas (ej. `26.jpg`).
-2. Abre `js/data.js` y agrega una entrada nueva al array `ITEMS`, siguiendo el
-   mismo formato que las existentes:
+Abre `js/projects-data.js`. Cada proyecto tiene esta forma:
 
 ```js
 {
-  "id": "barandas-26",
-  "category": "barandas",
-  "title": "Baranda 26",
-  "thumb": "assets/img/barandas/thumb/26.jpg",
-  "full": "assets/img/barandas/full/26.jpg"
-},
+  "slug": "casa-casuarinas",           // usado en la URL, no cambiar sin avisar
+  "name": "Casa Casuarinas",
+  "location": "Las Casuarinas, Santiago de Surco",
+  "category": "residencial",            // residencial | comercial | interiorismo
+  "type": "Vivienda unifamiliar de lujo",
+  "area": "480 m² construidos",         // opcional: quitar la línea si no aplica
+  "architect": "Estudio Lima Arquitectura", // opcional
+  "builder": null,                      // opcional
+  "description": "...",
+  "services": ["Barandas", "Puertas de Ducha", "Sistemas Thermia"],
+  "cover": "assets/img/sistemas-thermia/thumb/01.jpg",
+  "coverFull": "assets/img/sistemas-thermia/full/01.jpg",
+  "photoCount": 18,
+  "items": [
+    { "id": "barandas-01", "service": "Barandas", "title": "Baranda 01",
+      "thumb": "assets/img/barandas/thumb/01.jpg", "full": "assets/img/barandas/full/01.jpg" },
+    ...
+  ]
+}
 ```
 
-3. Guarda y vuelve a publicar (commit + push). No hace falta tocar el HTML ni el CSS.
+Los campos `area`, `architect` y `builder` son opcionales: si no aplican, se pueden
+quitar del objeto (o dejar en `null`) y esa fila simplemente no aparece en la ficha técnica.
 
-Para **crear una categoría nueva** (ej. "Fachadas"): agrega el objeto a `CATEGORIES`
-en `js/data.js` (con un `slug` único) y crea la carpeta correspondiente en `assets/img/`.
+Los `services` se calculan a partir de las etiquetas `service` presentes en `items`
+— los filtros dentro del proyecto se generan automáticamente según lo que ese
+proyecto realmente tiene, para no mostrar botones que devuelvan 0 resultados.
 
-## Personalización pendiente (marcado con placeholders)
+## Cómo agregar un proyecto nuevo
 
-- **Número de WhatsApp**: buscar `51999999999` en `index.html` (aparece 2 veces:
-  botón flotante y menú móvil) y reemplazar por el número real de Cotrina Proyectos.
-- **Imagen de vista previa al compartir** (Open Graph): actualmente usa
-  `assets/img/sistemas-thermia/cover.jpg`. Se puede cambiar en el `<head>` de
-  `index.html` (`og:image` y `twitter:image`).
+1. Coloca las fotos nuevas en la carpeta de categoría que corresponda (`thumb/` y
+   `full/`, mismo nombre de archivo en ambas — ver instrucciones de tamaño abajo).
+2. Agrega un objeto nuevo al array `PROJECTS` en `js/projects-data.js`, con un
+   `slug` único (sin espacios ni tildes) y sus `items` apuntando a las fotos.
+3. Guarda y publica (commit + push). No hace falta tocar HTML ni CSS.
 
-## Categorías actuales
+## Cómo agregar fotos a un proyecto existente
 
-| Categoría | Fotos |
+Agrega un objeto nuevo al array `items` de ese proyecto, con las rutas a la foto
+(en `thumb/` y `full/`), y actualiza `photoCount`.
+
+## Tamaño recomendado de imágenes
+
+- `thumb/`: máx. ~900px de ancho (para el grid)
+- `full/`: máx. ~1920px de ancho (para el lightbox)
+
+## Personalización pendiente
+
+- **WhatsApp**: ya conectado al número real (+51 957441379) en botón flotante,
+  footer y menú móvil.
+- **Imagen de vista previa al compartir** (Open Graph): en el `<head>` de
+  `index.html`, actualmente usa `assets/img/sistemas-thermia/cover.jpg`.
+
+## Categorías de proyecto y servicios
+
+| Categoría de proyecto | Proyectos |
 |---|---|
-| Barandas | 22 |
-| Mamparas de Cristal Templado | 11 |
-| Mamparas de Oficina | 8 |
-| Puertas de Ducha | 25 |
-| Sistemas Thermia | 24 |
-| Ventanas Termoacústicas | 17 |
-| **Total** | **107** |
+| Residencial | Casa Casuarinas, Casa La Molina, Casa San Isidro, Casa Asia, Casa Punta Hermosa |
+| Comercial | Oficinas Miraflores, Edificio Barranco |
+| Interiorismo | Interiorismo San Borja |
+
+Los servicios (filtros dentro de cada proyecto) consolidan las 6 categorías de
+producto originales en 5 etiquetas: **Barandas, Mamparas** (incluye mamparas de
+cristal templado y de oficina), **Puertas de Ducha, Sistemas Thermia, Ventanas**.
+No se creó una etiqueta "Fachadas" separada porque las fotos de fachada disponibles
+ya corresponden a los sistemas Thermia — se puede desdoblar más adelante si se
+cuenta con fotos de fachada específicas que no sean de ese sistema.

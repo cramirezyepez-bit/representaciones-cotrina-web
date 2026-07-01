@@ -1,16 +1,36 @@
-import { CATEGORIES, ITEMS } from './data.js';
+import { PROJECTS } from './projects-data.js';
+
+// ---------- constants ----------
+const CATEGORY_LABEL = {
+  residencial: 'Residencial',
+  comercial: 'Comercial',
+  interiorismo: 'Interiorismo',
+};
 
 // ---------- state ----------
 let activeCat = 'todos';
 let searchTerm = '';
-let filtered = ITEMS.slice();
+let currentProject = null;
+let activeService = 'todas';
+let lbItems = [];
 let lbIndex = 0;
 
 // ---------- elements ----------
-const filtersEl = document.getElementById('filters');
-const galleryEl = document.getElementById('gallery');
+const viewProjects = document.getElementById('viewProjects');
+const viewProject = document.getElementById('viewProject');
+
+const catFilters = document.getElementById('catFilters');
+const projectGrid = document.getElementById('projectGrid');
 const emptyStateEl = document.getElementById('emptyState');
+
+const factSheet = document.getElementById('factSheet');
+const serviceFilters = document.getElementById('serviceFilters');
+const projectGallery = document.getElementById('projectGallery');
+
+const btnSearchToggle = document.getElementById('btnSearchToggle');
+const searchRow = document.getElementById('searchRow');
 const searchInput = document.getElementById('searchInput');
+const searchClose = document.getElementById('searchClose');
 
 const lightbox = document.getElementById('lightbox');
 const lbImage = document.getElementById('lbImage');
@@ -28,79 +48,195 @@ const menuShare = document.getElementById('menuShare');
 
 document.getElementById('year').textContent = new Date().getFullYear();
 
-// ---------- build category filter buttons ----------
-CATEGORIES.forEach(cat => {
-  const btn = document.createElement('button');
-  btn.className = 'filter-btn';
-  btn.dataset.cat = cat.slug;
-  btn.textContent = cat.label;
-  filtersEl.appendChild(btn);
-});
+// ============================================================
+// ROUTING — #/  (grid)   |   #/proyecto/<slug>  (detail)
+// ============================================================
+function parseHash() {
+  const h = window.location.hash.replace(/^#\/?/, '');
+  const parts = h.split('/').filter(Boolean);
+  if (parts[0] === 'proyecto' && parts[1]) {
+    return { view: 'project', slug: parts[1] };
+  }
+  return { view: 'grid' };
+}
 
-filtersEl.addEventListener('click', (e) => {
+function render() {
+  const route = parseHash();
+  if (route.view === 'project') {
+    const project = PROJECTS.find(p => p.slug === route.slug);
+    if (!project) {
+      window.location.hash = '#/';
+      return;
+    }
+    showProjectView(project);
+  } else {
+    showGridView();
+  }
+  window.scrollTo({ top: 0, behavior: 'instant' in window ? 'instant' : 'auto' });
+}
+
+window.addEventListener('hashchange', render);
+
+// ============================================================
+// GRID VIEW
+// ============================================================
+function showGridView() {
+  viewProjects.hidden = false;
+  viewProject.hidden = true;
+  applyGridFilters();
+}
+
+catFilters.addEventListener('click', (e) => {
   const btn = e.target.closest('.filter-btn');
   if (!btn) return;
   activeCat = btn.dataset.cat;
-  [...filtersEl.children].forEach(b => b.classList.toggle('is-active', b === btn));
-  applyFilters();
+  [...catFilters.children].forEach(b => b.classList.toggle('is-active', b === btn));
+  applyGridFilters();
 });
 
-searchInput.addEventListener('input', (e) => {
-  searchTerm = e.target.value.trim().toLowerCase();
-  applyFilters();
-});
-
-function applyFilters() {
-  filtered = ITEMS.filter(item => {
-    const matchesCat = activeCat === 'todos' || item.category === activeCat;
-    const matchesSearch = !searchTerm ||
-      item.title.toLowerCase().includes(searchTerm) ||
-      catLabel(item.category).toLowerCase().includes(searchTerm);
+function applyGridFilters() {
+  const term = searchTerm.trim().toLowerCase();
+  const filtered = PROJECTS.filter(p => {
+    const matchesCat = activeCat === 'todos' || p.category === activeCat;
+    const matchesSearch = !term ||
+      p.name.toLowerCase().includes(term) ||
+      p.location.toLowerCase().includes(term) ||
+      CATEGORY_LABEL[p.category].toLowerCase().includes(term) ||
+      p.services.some(s => s.toLowerCase().includes(term));
     return matchesCat && matchesSearch;
   });
-  renderGallery();
+  renderProjectGrid(filtered);
 }
 
-function catLabel(slug) {
-  const c = CATEGORIES.find(c => c.slug === slug);
-  return c ? c.label : slug;
+function renderProjectGrid(list) {
+  projectGrid.innerHTML = '';
+  emptyStateEl.hidden = list.length > 0;
+
+  list.forEach((p, i) => {
+    const card = document.createElement('a');
+    card.href = `#/proyecto/${p.slug}`;
+    card.className = 'project-card';
+    card.style.animationDelay = `${Math.min(i, 10) * 50}ms`;
+
+    card.innerHTML = `
+      <div class="pc-image">
+        <img src="${p.cover}" alt="${p.name} — Cotrina Proyectos" loading="lazy" decoding="async">
+        <span class="pc-badge">${CATEGORY_LABEL[p.category]}</span>
+      </div>
+      <div class="pc-body">
+        <h3 class="pc-name">${p.name}</h3>
+        <p class="pc-location">${p.location}</p>
+        <div class="pc-meta">
+          <span>${p.photoCount} fotografías</span>
+          <span class="pc-cta">Ver proyecto <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span>
+        </div>
+      </div>
+    `;
+    projectGrid.appendChild(card);
+  });
 }
 
-// ---------- render grid ----------
-function renderGallery() {
-  galleryEl.innerHTML = '';
-  emptyStateEl.hidden = filtered.length > 0;
+// ============================================================
+// PROJECT DETAIL VIEW
+// ============================================================
+function showProjectView(project) {
+  currentProject = project;
+  activeService = 'todas';
+  viewProjects.hidden = true;
+  viewProject.hidden = false;
 
-  filtered.forEach((item, i) => {
+  renderFactSheet(project);
+  renderServiceFilters(project);
+  applyServiceFilter();
+}
+
+function renderFactSheet(p) {
+  const rows = [
+    ['Ubicación', p.location],
+    ['Tipo de proyecto', p.type],
+    ['Servicios realizados', p.services.join(', ')],
+    p.area ? ['Área', p.area] : null,
+    p.architect ? ['Arquitecto', p.architect] : null,
+    p.builder ? ['Constructora', p.builder] : null,
+  ].filter(Boolean);
+
+  factSheet.innerHTML = `
+    <div class="fs-image" style="background-image:url('${p.coverFull}')"></div>
+    <div class="fs-body">
+      <span class="pc-badge fs-badge">${CATEGORY_LABEL[p.category]}</span>
+      <h1 class="fs-name">${p.name}</h1>
+      <p class="fs-desc">${p.description}</p>
+      <dl class="fs-grid">
+        ${rows.map(([k, v]) => `<div class="fs-row"><dt>${k}</dt><dd>${v}</dd></div>`).join('')}
+      </dl>
+    </div>
+  `;
+}
+
+function renderServiceFilters(p) {
+  serviceFilters.innerHTML = '';
+  const todas = document.createElement('button');
+  todas.className = 'filter-btn is-active';
+  todas.dataset.service = 'todas';
+  todas.textContent = 'Todas';
+  serviceFilters.appendChild(todas);
+
+  p.services.forEach(s => {
+    const btn = document.createElement('button');
+    btn.className = 'filter-btn';
+    btn.dataset.service = s;
+    btn.textContent = s;
+    serviceFilters.appendChild(btn);
+  });
+}
+
+serviceFilters.addEventListener('click', (e) => {
+  const btn = e.target.closest('.filter-btn');
+  if (!btn) return;
+  activeService = btn.dataset.service;
+  [...serviceFilters.children].forEach(b => b.classList.toggle('is-active', b === btn));
+  applyServiceFilter();
+});
+
+function applyServiceFilter() {
+  if (!currentProject) return;
+  const items = activeService === 'todas'
+    ? currentProject.items
+    : currentProject.items.filter(i => i.service === activeService);
+  renderProjectGallery(items);
+}
+
+function renderProjectGallery(items) {
+  projectGallery.innerHTML = '';
+  lbItems = items;
+
+  items.forEach((item, i) => {
     const el = document.createElement('div');
     el.className = 'gallery-item';
-    el.style.animationDelay = `${Math.min(i, 12) * 40}ms`;
-    el.dataset.id = item.id;
+    el.style.animationDelay = `${Math.min(i, 12) * 35}ms`;
 
     const img = document.createElement('img');
     img.src = item.thumb;
-    img.alt = `${item.title} — Cotrina Proyectos`;
+    img.alt = `${item.title} — ${currentProject.name}`;
     img.loading = 'lazy';
     img.decoding = 'async';
 
     const overlay = document.createElement('div');
     overlay.className = 'overlay';
-    overlay.innerHTML = `
-      <span class="item-title">${item.title}</span>
-      <span class="item-cat">${catLabel(item.category)}</span>
-    `;
+    overlay.innerHTML = `<span class="item-cat">${item.service}</span>`;
 
     el.appendChild(img);
     el.appendChild(overlay);
-    el.addEventListener('click', () => openLightbox(item.id));
-    galleryEl.appendChild(el);
+    el.addEventListener('click', () => openLightbox(i));
+    projectGallery.appendChild(el);
   });
 }
 
-// ---------- lightbox ----------
-function openLightbox(id) {
-  lbIndex = filtered.findIndex(i => i.id === id);
-  if (lbIndex === -1) return;
+// ============================================================
+// LIGHTBOX
+// ============================================================
+function openLightbox(index) {
+  lbIndex = index;
   showLightboxItem();
   lightbox.hidden = false;
   document.body.style.overflow = 'hidden';
@@ -112,20 +248,20 @@ function closeLightbox() {
 }
 
 function showLightboxItem() {
-  const item = filtered[lbIndex];
+  const item = lbItems[lbIndex];
   lbImage.src = item.full;
-  lbImage.alt = `${item.title} — Cotrina Proyectos`;
-  lbTitle.textContent = `${item.title} · ${catLabel(item.category)}`;
-  lbCount.textContent = `${lbIndex + 1} / ${filtered.length}`;
+  lbImage.alt = `${item.title} — ${currentProject ? currentProject.name : ''}`;
+  lbTitle.textContent = `${currentProject ? currentProject.name + ' · ' : ''}${item.service}`;
+  lbCount.textContent = `${lbIndex + 1} / ${lbItems.length}`;
 }
 
 function nextItem() {
-  lbIndex = (lbIndex + 1) % filtered.length;
+  lbIndex = (lbIndex + 1) % lbItems.length;
   showLightboxItem();
 }
 
 function prevItem() {
-  lbIndex = (lbIndex - 1 + filtered.length) % filtered.length;
+  lbIndex = (lbIndex - 1 + lbItems.length) % lbItems.length;
   showLightboxItem();
 }
 
@@ -144,7 +280,6 @@ document.addEventListener('keydown', (e) => {
   if (e.key === 'ArrowLeft') prevItem();
 });
 
-// simple swipe support for mobile lightbox
 let touchStartX = 0;
 lightbox.addEventListener('touchstart', (e) => {
   touchStartX = e.changedTouches[0].clientX;
@@ -152,32 +287,53 @@ lightbox.addEventListener('touchstart', (e) => {
 
 lightbox.addEventListener('touchend', (e) => {
   const dx = e.changedTouches[0].clientX - touchStartX;
-  if (Math.abs(dx) > 50) {
-    dx < 0 ? nextItem() : prevItem();
-  }
+  if (Math.abs(dx) > 50) { dx < 0 ? nextItem() : prevItem(); }
 }, { passive: true });
 
-// ---------- share ----------
+// ============================================================
+// SEARCH (compact icon -> expandable row)
+// ============================================================
+btnSearchToggle.addEventListener('click', () => {
+  const isHidden = searchRow.hidden;
+  searchRow.hidden = !isHidden;
+  btnSearchToggle.setAttribute('aria-expanded', String(isHidden));
+  if (isHidden) searchInput.focus();
+});
+
+searchClose.addEventListener('click', () => {
+  searchRow.hidden = true;
+  btnSearchToggle.setAttribute('aria-expanded', 'false');
+  searchInput.value = '';
+  searchTerm = '';
+  applyGridFilters();
+});
+
+searchInput.addEventListener('input', (e) => {
+  searchTerm = e.target.value;
+  // searching always jumps back to the project grid
+  if (window.location.hash.startsWith('#/proyecto/')) {
+    window.location.hash = '#/';
+  }
+  applyGridFilters();
+});
+
+// ============================================================
+// SHARE
+// ============================================================
 async function sharePortfolio() {
   const url = window.location.href;
-  const shareData = {
-    title: 'Cotrina Proyectos — Portafolio de Proyectos',
-    text: 'Mira el portafolio de proyectos de Cotrina Proyectos: sistemas de vidrio y aluminio de alta gama.',
-    url,
-  };
+  const title = currentProject ? `${currentProject.name} — Cotrina Proyectos` : 'Cotrina Proyectos — Portafolio de Proyectos';
+  const text = currentProject
+    ? `Mira el proyecto ${currentProject.name} de Cotrina Proyectos.`
+    : 'Mira el portafolio de proyectos de Cotrina Proyectos.';
+
   if (navigator.share) {
-    try {
-      await navigator.share(shareData);
-      return;
-    } catch (err) {
-      // user cancelled or share failed — fall through to copy
-    }
+    try { await navigator.share({ title, text, url }); return; } catch (err) { /* fall through */ }
   }
   try {
     await navigator.clipboard.writeText(url);
     showToast();
   } catch (err) {
-    // fallback for older browsers
     const tmp = document.createElement('input');
     tmp.value = url;
     document.body.appendChild(tmp);
@@ -200,7 +356,6 @@ menuShare.addEventListener('click', () => {
   btnMenu.setAttribute('aria-expanded', 'false');
 });
 
-// mobile hamburger -> dropdown with share / whatsapp
 btnMenu.addEventListener('click', (e) => {
   e.stopPropagation();
   const expanded = btnMenu.getAttribute('aria-expanded') === 'true';
@@ -216,4 +371,4 @@ document.addEventListener('click', (e) => {
 });
 
 // ---------- init ----------
-applyFilters();
+render();
