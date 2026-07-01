@@ -64,6 +64,21 @@ export const CATALOGO_PERFILES = {
     factor: 0.25,
     colores: ['natural', 'blanco', 'negro', 'champagne', 'madera'],
   },
+  vl48: {
+    nombre: 'VL48 (Corporación Limatambo, línea europea fabricada en Perú)',
+    factor: 0.25, // placeholder — mismo factor que serieEuropea, pendiente precio real (Jorge)
+    colores: ['natural', 'blanco', 'negro'],
+  },
+  ml48: {
+    nombre: 'ML48 (Corporación Limatambo, línea europea fabricada en Perú)',
+    factor: 0.25, // placeholder — pendiente precio real (Jorge)
+    colores: ['natural', 'blanco', 'negro'],
+  },
+  mbl46: {
+    nombre: 'MBL46 (Corporación Limatambo, puerta batiente línea europea)',
+    factor: 0.25, // placeholder — pendiente precio real (Jorge)
+    colores: ['natural', 'blanco', 'negro'],
+  },
   pvc: {
     nombre: 'PVC',
     factor: 0.20,

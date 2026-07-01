@@ -209,6 +209,39 @@
     </div>
     <p class="field-hint">Si el área de una unidad es menor a 1 m², se calcula como mínimo 1 m² por unidad.</p>
 
+    <!-- ============================================================
+         PANEL INTERNO: Serie exacta Limatambo + despiece técnico
+         Solo visible para el equipo comercial en esta pantalla.
+         NO se incluye en el PDF que recibe el cliente — es una
+         herramienta de apoyo para no depender de llamar a
+         Limatambo por cada cotización.
+         ============================================================ -->
+    <div class="calc-card-internal" id="panelSerieExacta" hidden>
+      <div class="calc-card-head calc-card-head-spaced">
+        <span class="calc-step calc-step-internal">i</span>
+        <h2>Serie exacta Limatambo <span class="badge-interno">Solo equipo comercial — no va al PDF</span></h2>
+      </div>
+
+      <div class="field-row">
+        <div class="field">
+          <label for="serieExactaVariante">Configuración / N° de hojas</label>
+          <select id="serieExactaVariante" name="serieExactaVariante">
+            <option value="" disabled selected>Selecciona una opción</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="serieExactaInsulado">Vidrio insulado (DVH)</label>
+          <select id="serieExactaInsulado" name="serieExactaInsulado">
+            <option value="no" selected>No</option>
+            <option value="si">Sí</option>
+          </select>
+        </div>
+      </div>
+
+      <p class="field-hint field-hint-tight" id="serieExactaLimites"></p>
+      <div id="serieExactaResultado" class="serie-exacta-resultado"></div>
+    </div>
+
     <div class="calc-card-head calc-card-head-spaced">
       <span class="calc-step">02</span>
       <h2>Especificaciones técnicas</h2>
@@ -242,6 +275,9 @@
           <option value="aluminioPremium">Aluminio premium</option>
           <option value="vl46">VL46 (Corporación Limatambo)</option>
           <option value="ml46">ML46 (Corporación Limatambo)</option>
+          <option value="vl48">VL48 (Corporación Limatambo)</option>
+          <option value="ml48">ML48 (Corporación Limatambo)</option>
+          <option value="mbl46">MBL46 (Corporación Limatambo, puerta batiente)</option>
           <option value="pvc">PVC</option>
           <option value="aceroInoxidable">Acero inoxidable</option>
           <option value="fierro">Fierro / estructura metálica</option>
@@ -561,6 +597,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script type="module" src="js/cotizador.js"></script>
+<script type="module" src="js/panelDespieceInterno.js"></script>
 <script src="calculadora.js"></script>
 </body>
 </html>

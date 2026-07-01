@@ -1155,3 +1155,87 @@ img{ max-width:100%; display:block; }
   color: var(--vidrio);
   opacity: 0.85;
 }
+
+/* ============================================================
+   PANEL INTERNO: Serie exacta Limatambo (panelDespieceInterno.js)
+   Solo visible para el equipo comercial en pantalla — no se
+   exporta al PDF del cliente.
+   ============================================================ */
+.calc-card-internal{
+  margin-top: 24px;
+  padding: 18px 20px;
+  border: 1px dashed var(--naranja);
+  border-radius: var(--radius);
+  background: rgba(224,123,57,0.06);
+}
+.calc-step-internal{
+  background: var(--naranja);
+  color: var(--hueso);
+}
+.badge-interno{
+  display: inline-block;
+  margin-left: 10px;
+  padding: 2px 8px;
+  font-size: 11px;
+  font-family: var(--font-condensed);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  background: var(--naranja);
+  color: var(--hueso);
+  border-radius: 999px;
+  vertical-align: middle;
+}
+.serie-exacta-resultado{ margin-top: 14px; }
+.serie-exacta-warning{
+  background: rgba(224,123,57,0.15);
+  border: 1px solid var(--naranja);
+  border-radius: 6px;
+  padding: 8px 12px;
+  margin-bottom: 12px;
+  font-size: 13px;
+  color: var(--negro);
+}
+.serie-exacta-tabla{
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+  margin-top: 8px;
+}
+.serie-exacta-tabla th,
+.serie-exacta-tabla td{
+  border: 1px solid var(--linea-oscura);
+  padding: 6px 8px;
+  text-align: left;
+}
+.serie-exacta-tabla th{
+  background: var(--vidrio);
+  color: var(--hueso);
+  font-family: var(--font-condensed);
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+.serie-exacta-accesorios-titulo{
+  margin-top: 14px;
+  margin-bottom: 4px;
+  font-family: var(--font-condensed);
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  color: var(--acero);
+}
+.serie-exacta-accesorios{
+  margin: 0;
+  padding-left: 18px;
+  font-size: 13px;
+}
+.serie-exacta-accesorios code{
+  background: var(--hueso-2);
+  padding: 1px 5px;
+  border-radius: 4px;
+  font-size: 12px;
+}
+.serie-exacta-nota{
+  color: var(--acero);
+  font-style: italic;
+}
