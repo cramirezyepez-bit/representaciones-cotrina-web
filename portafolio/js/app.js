@@ -118,10 +118,10 @@ function renderProjectGrid(list) {
           <img src="${p.cover}" alt="${p.name} — Cotrina Proyectos" loading="lazy" decoding="async" width="900" height="675">
         </picture>
         <span class="pc-badge">${p.groupLabel}</span>
+        <div class="pc-overlay-name"><h3 class="pc-name-mobile">${p.name.toUpperCase()}</h3></div>
       </div>
       <div class="pc-body">
         <h3 class="pc-name">${p.name.toUpperCase()}</h3>
-        <p class="pc-usage">${p.usageType}<span class="pc-dot">&middot;</span>${p.district}</p>
         <ul class="pc-services">${servicesList}</ul>
         <div class="pc-meta">
           <span>${p.photoCount} fotografías</span>
