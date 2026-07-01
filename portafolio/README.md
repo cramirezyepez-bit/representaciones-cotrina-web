@@ -9,7 +9,7 @@ GitHub Pages sin configuración de servidor.
 
 ## ⚠️ Contenido simulado — pendiente de reemplazar
 
-Los **8 proyectos**, sus **nombres, ubicaciones, arquitectos, constructoras, áreas
+Los **9 proyectos**, sus **nombres, ubicaciones, arquitectos, constructoras, áreas
 y descripciones son simulados** (a pedido explícito, como punto de partida visual).
 Las fotografías son reales, pero **su asignación a cada proyecto es una agrupación
 sugerida**, no un registro real de qué foto pertenece a qué obra.
@@ -20,6 +20,19 @@ sugerida**, no un registro real de qué foto pertenece a qué obra.
 - Área real
 - Descripción real
 - Reasignar las fotos correctas a cada proyecto (ver sección siguiente)
+
+## Taxonomía de proyectos
+
+| Grupo | Proyectos | Fotos |
+|---|---|---|
+| Playa | Casa Asia, Casa Punta Hermosa | 30 |
+| Campo | Casa La Molina, Casa Casuarinas | 34 |
+| Residencial | Edificio Barranco, Departamento Miraflores, Casa San Borja, Casa San Isidro | 31 |
+| Oficinas | Oficinas San Isidro | 12 |
+
+Cada tarjeta de proyecto en el home muestra una ficha resumen: nombre, tipo de uso
+(Residencial/Corporativo), distrito, hasta 4 servicios con check (✓) y cantidad de
+fotografías — igual al formato acordado.
 
 ## Estructura del proyecto
 
@@ -112,15 +125,43 @@ Agrega un objeto nuevo al array `items` de ese proyecto, con las rutas a la foto
 
 ## Categorías de proyecto y servicios
 
-| Categoría de proyecto | Proyectos |
-|---|---|
-| Residencial | Casa Casuarinas, Casa La Molina, Casa San Isidro, Casa Asia, Casa Punta Hermosa |
-| Comercial | Oficinas Miraflores, Edificio Barranco |
-| Interiorismo | Interiorismo San Borja |
+Grupos de nivel superior (filtro principal del home): **Playa, Campo, Residencial,
+Oficinas** — ver tabla arriba.
 
-Los servicios (filtros dentro de cada proyecto) consolidan las 6 categorías de
-producto originales en 5 etiquetas: **Barandas, Mamparas** (incluye mamparas de
-cristal templado y de oficina), **Puertas de Ducha, Sistemas Thermia, Ventanas**.
-No se creó una etiqueta "Fachadas" separada porque las fotos de fachada disponibles
-ya corresponden a los sistemas Thermia — se puede desdoblar más adelante si se
-cuenta con fotos de fachada específicas que no sean de ese sistema.
+Cada tarjeta también muestra un **tipo de uso**: "Residencial" para viviendas,
+"Corporativo" para oficinas — se calcula automáticamente según el grupo.
+
+Los servicios (filtros dentro de cada proyecto, y checklist en la tarjeta del home)
+se definen libremente por foto en `projects-data.js` (campo `service` de cada item),
+así que un mismo tipo de foto puede tener una etiqueta distinta según el contexto del
+proyecto (ej. las mismas mamparas de vidrio aparecen como "Mamparas" en un proyecto
+residencial y como "Divisiones de Cristal" en Oficinas San Isidro).
+
+## Rendimiento
+
+- **Lazy loading**: todas las imágenes usan `loading="lazy"` — solo se descargan
+  las que entran en pantalla.
+- **WebP + fallback JPG**: cada foto del grid/galería se sirve como `<picture>` con
+  una fuente WebP (~30–40% más liviana) y JPG de respaldo para navegadores antiguos.
+  Las fotos del lightbox (tamaño completo) se mantienen en JPG optimizado.
+- No se cargan las 107 fotos al entrar al home — solo las 9 portadas de proyecto;
+  las fotos de cada galería se cargan al abrir ese proyecto específico.
+
+## Responsive — breakpoints reales
+
+La grilla de proyectos **cambia de columnas** (no solo escala) según el ancho:
+
+| Rango | Columnas |
+|---|---|
+| ≥ 1440px (laptop grande, desktop, 1600, 1920) | 4 |
+| 1200–1439px (laptop estándar/pequeña, incl. 1366) | 3 |
+| 1024–1199px (tablet horizontal) | 3 |
+| 641–1023px (tablet vertical) | 2 |
+| ≤ 640px (celular) | 1 |
+
+En celular, las tarjetas se comprimen agresivamente (imagen más corta, tipografía
+y paddings reducidos, subtítulo del home oculto) para que se vean ~3 proyectos
+completos en la primera pantalla sin scroll. En desktop (1440px) se ven ~8 de 9
+tarjetas sin scroll — llevarlo a las 9 exactas exigiría reducir aún más el texto
+de cada tarjeta y se sacrificaría legibilidad, así que se dejó en ese punto de
+equilibrio. Avísame si prefieres empujarlo más.

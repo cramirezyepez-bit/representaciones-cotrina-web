@@ -1,12 +1,5 @@
 import { PROJECTS } from './projects-data.js';
 
-// ---------- constants ----------
-const CATEGORY_LABEL = {
-  residencial: 'Residencial',
-  comercial: 'Comercial',
-  interiorismo: 'Interiorismo',
-};
-
 // ---------- state ----------
 let activeCat = 'todos';
 let searchTerm = '';
@@ -54,9 +47,7 @@ document.getElementById('year').textContent = new Date().getFullYear();
 function parseHash() {
   const h = window.location.hash.replace(/^#\/?/, '');
   const parts = h.split('/').filter(Boolean);
-  if (parts[0] === 'proyecto' && parts[1]) {
-    return { view: 'project', slug: parts[1] };
-  }
+  if (parts[0] === 'proyecto' && parts[1]) return { view: 'project', slug: parts[1] };
   return { view: 'grid' };
 }
 
@@ -64,15 +55,12 @@ function render() {
   const route = parseHash();
   if (route.view === 'project') {
     const project = PROJECTS.find(p => p.slug === route.slug);
-    if (!project) {
-      window.location.hash = '#/';
-      return;
-    }
+    if (!project) { window.location.hash = '#/'; return; }
     showProjectView(project);
   } else {
     showGridView();
   }
-  window.scrollTo({ top: 0, behavior: 'instant' in window ? 'instant' : 'auto' });
+  window.scrollTo(0, 0);
 }
 
 window.addEventListener('hashchange', render);
@@ -97,11 +85,13 @@ catFilters.addEventListener('click', (e) => {
 function applyGridFilters() {
   const term = searchTerm.trim().toLowerCase();
   const filtered = PROJECTS.filter(p => {
-    const matchesCat = activeCat === 'todos' || p.category === activeCat;
+    const matchesCat = activeCat === 'todos' || p.group === activeCat;
     const matchesSearch = !term ||
       p.name.toLowerCase().includes(term) ||
+      p.district.toLowerCase().includes(term) ||
       p.location.toLowerCase().includes(term) ||
-      CATEGORY_LABEL[p.category].toLowerCase().includes(term) ||
+      p.groupLabel.toLowerCase().includes(term) ||
+      p.usageType.toLowerCase().includes(term) ||
       p.services.some(s => s.toLowerCase().includes(term));
     return matchesCat && matchesSearch;
   });
@@ -116,19 +106,26 @@ function renderProjectGrid(list) {
     const card = document.createElement('a');
     card.href = `#/proyecto/${p.slug}`;
     card.className = 'project-card';
-    card.style.animationDelay = `${Math.min(i, 10) * 50}ms`;
+    card.style.animationDelay = `${Math.min(i, 12) * 40}ms`;
+
+    const servicesList = p.services.slice(0, 4)
+      .map(s => `<li>${s}</li>`).join('');
 
     card.innerHTML = `
       <div class="pc-image">
-        <img src="${p.cover}" alt="${p.name} — Cotrina Proyectos" loading="lazy" decoding="async">
-        <span class="pc-badge">${CATEGORY_LABEL[p.category]}</span>
+        <picture>
+          <source srcset="${p.coverWebp}" type="image/webp">
+          <img src="${p.cover}" alt="${p.name} — Cotrina Proyectos" loading="lazy" decoding="async" width="900" height="675">
+        </picture>
+        <span class="pc-badge">${p.groupLabel}</span>
       </div>
       <div class="pc-body">
-        <h3 class="pc-name">${p.name}</h3>
-        <p class="pc-location">${p.location}</p>
+        <h3 class="pc-name">${p.name.toUpperCase()}</h3>
+        <p class="pc-usage">${p.usageType}<span class="pc-dot">&middot;</span>${p.district}</p>
+        <ul class="pc-services">${servicesList}</ul>
         <div class="pc-meta">
           <span>${p.photoCount} fotografías</span>
-          <span class="pc-cta">Ver proyecto <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span>
+          <span class="pc-cta">Ver proyecto <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span>
         </div>
       </div>
     `;
@@ -163,7 +160,7 @@ function renderFactSheet(p) {
   factSheet.innerHTML = `
     <div class="fs-image" style="background-image:url('${p.coverFull}')"></div>
     <div class="fs-body">
-      <span class="pc-badge fs-badge">${CATEGORY_LABEL[p.category]}</span>
+      <span class="pc-badge fs-badge">${p.groupLabel}</span>
       <h1 class="fs-name">${p.name}</h1>
       <p class="fs-desc">${p.description}</p>
       <dl class="fs-grid">
@@ -213,20 +210,15 @@ function renderProjectGallery(items) {
   items.forEach((item, i) => {
     const el = document.createElement('div');
     el.className = 'gallery-item';
-    el.style.animationDelay = `${Math.min(i, 12) * 35}ms`;
+    el.style.animationDelay = `${Math.min(i, 12) * 30}ms`;
 
-    const img = document.createElement('img');
-    img.src = item.thumb;
-    img.alt = `${item.title} — ${currentProject.name}`;
-    img.loading = 'lazy';
-    img.decoding = 'async';
-
-    const overlay = document.createElement('div');
-    overlay.className = 'overlay';
-    overlay.innerHTML = `<span class="item-cat">${item.service}</span>`;
-
-    el.appendChild(img);
-    el.appendChild(overlay);
+    el.innerHTML = `
+      <picture>
+        <source srcset="${item.thumbWebp}" type="image/webp">
+        <img src="${item.thumb}" alt="${item.title} — ${currentProject.name}" loading="lazy" decoding="async" width="900" height="675">
+      </picture>
+      <div class="overlay"><span class="item-cat">${item.service}</span></div>
+    `;
     el.addEventListener('click', () => openLightbox(i));
     projectGallery.appendChild(el);
   });
@@ -255,23 +247,13 @@ function showLightboxItem() {
   lbCount.textContent = `${lbIndex + 1} / ${lbItems.length}`;
 }
 
-function nextItem() {
-  lbIndex = (lbIndex + 1) % lbItems.length;
-  showLightboxItem();
-}
-
-function prevItem() {
-  lbIndex = (lbIndex - 1 + lbItems.length) % lbItems.length;
-  showLightboxItem();
-}
+function nextItem() { lbIndex = (lbIndex + 1) % lbItems.length; showLightboxItem(); }
+function prevItem() { lbIndex = (lbIndex - 1 + lbItems.length) % lbItems.length; showLightboxItem(); }
 
 lbClose.addEventListener('click', closeLightbox);
 lbNext.addEventListener('click', nextItem);
 lbPrev.addEventListener('click', prevItem);
-
-lightbox.addEventListener('click', (e) => {
-  if (e.target === lightbox) closeLightbox();
-});
+lightbox.addEventListener('click', (e) => { if (e.target === lightbox) closeLightbox(); });
 
 document.addEventListener('keydown', (e) => {
   if (lightbox.hidden) return;
@@ -281,10 +263,7 @@ document.addEventListener('keydown', (e) => {
 });
 
 let touchStartX = 0;
-lightbox.addEventListener('touchstart', (e) => {
-  touchStartX = e.changedTouches[0].clientX;
-}, { passive: true });
-
+lightbox.addEventListener('touchstart', (e) => { touchStartX = e.changedTouches[0].clientX; }, { passive: true });
 lightbox.addEventListener('touchend', (e) => {
   const dx = e.changedTouches[0].clientX - touchStartX;
   if (Math.abs(dx) > 50) { dx < 0 ? nextItem() : prevItem(); }
@@ -310,10 +289,7 @@ searchClose.addEventListener('click', () => {
 
 searchInput.addEventListener('input', (e) => {
   searchTerm = e.target.value;
-  // searching always jumps back to the project grid
-  if (window.location.hash.startsWith('#/proyecto/')) {
-    window.location.hash = '#/';
-  }
+  if (window.location.hash.startsWith('#/proyecto/')) window.location.hash = '#/';
   applyGridFilters();
 });
 
