@@ -9,6 +9,15 @@ genéricas aproximadas de `despieceTecnico.js`.
 | `MotorPerfilesSerie25.js` | `SERIE25_V5.xlsx` (Excel interno, fórmulas Tabla3/Tabla2/Tabla285/Tabla5/Tabla2857) | Validado contra fórmulas reales del Excel |
 | `MotorPerfilesVL46.js` | "Series Europeas Edición II" — Corporación Limatambo, Tabla de Descuentos Serie VL46 (pág. 6) | Fórmulas oficiales del fabricante |
 | `MotorPerfilesML46.js` | "Serie ML46 – Mampara Corrediza" — Corporación Limatambo, Tabla de Descuentos Serie ML46 (pág. 11) | Fórmulas oficiales del fabricante |
+| `MotorPerfilesVL48.js` | "Series Europeas Edición III" — Corporación Limatambo, Tabla de Descuentos Serie VL48 (pág. 19) | Fórmulas oficiales del fabricante |
+| `MotorPerfilesML48.js` | "Series Europeas Edición III" — Corporación Limatambo, Tabla de Descuentos Serie ML48 (pág. 24) | Fórmulas oficiales del fabricante |
+| `MotorPerfilesMBL46.js` | "Series Europeas Edición III" — Corporación Limatambo, Tabla de Descuentos Serie MBL46 - Puerta Batiente (pág. 31) | Fórmulas oficiales del fabricante |
+
+Pendiente de agregar como motor propio: Sistema a 90° de la Serie ML46
+(pág. 15-16 de la ficha) — requiere dos anchos independientes (X1, X2)
+en vez de un solo X, por lo que necesita una firma de función distinta
+a `calcularDespieceML46`. Se deja fuera de esta tanda para no romper el
+patrón `{ancho, alto}` que comparten los 5 motores actuales.
 
 ## Pendiente de integrar en `cotizador.js`
 
