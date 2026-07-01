@@ -20,7 +20,7 @@
   --font-display: 'Oswald', sans-serif;
   --font-body: 'Jost', sans-serif;
 
-  --max-width: 1920px;
+  --max-width: 1600px;
   --gap: 18px;
 }
 
@@ -446,41 +446,24 @@ main { max-width: var(--max-width); margin: 0 auto; padding: 12px 24px 60px; }
    RESPONSIVE — breakpoints reales (cambia distribución, no solo escala)
    ============================================================ */
 
-/* Desktop grande — 1440–1899px (incl. 1600) */
-@media (min-width: 1440px) and (max-width: 1899px) {
-  .project-grid { grid-template-columns: repeat(4, 1fr); gap: 18px; }
-  main { padding-top: 10px; }
-}
-
-/* Desktop ultra ancho — 1900px+ (incl. 1920) */
-@media (min-width: 1900px) {
-  .project-grid { grid-template-columns: repeat(5, 1fr); gap: 18px; }
-  main { padding-top: 10px; }
-}
-
-/* Laptop estándar / pequeña — 1200–1439px (incl. 1366) */
-@media (min-width: 1200px) and (max-width: 1439px) {
-  .project-grid { grid-template-columns: repeat(3, 1fr); gap: 16px; }
-}
-
-/* Tablet horizontal — 1024–1199px */
-@media (min-width: 1024px) and (max-width: 1199px) {
-  .project-grid { grid-template-columns: repeat(3, 1fr); gap: 14px; }
-  .pc-services { display: none; }
-}
-
-/* Tablet vertical — 641–1023px */
-@media (min-width: 641px) and (max-width: 1023px) {
-  .project-grid { grid-template-columns: repeat(2, 1fr); gap: 16px; }
+/* Tablet y escritorio — 721px+: layout editorial de 2 columnas
+   (menos proyectos por pantalla, fotografías protagonistas, más aire) */
+@media (min-width: 721px) and (max-width: 1023px) {
+  .project-grid { grid-template-columns: repeat(2, 1fr); gap: 28px; }
   .project-gallery { grid-template-columns: repeat(2, 1fr); }
   .fact-sheet { grid-template-columns: 1fr; }
   .fs-image { min-height: 260px; }
   .fs-body { padding: 26px; }
 }
 
-/* Celular grande — 481–640px */
-@media (min-width: 481px) and (max-width: 640px) {
-  .project-grid { grid-template-columns: repeat(2, 1fr); gap: 10px; }
+@media (min-width: 1024px) {
+  .project-grid { grid-template-columns: repeat(2, 1fr); gap: 40px; }
+  main { padding-top: 20px; }
+  .pc-image { aspect-ratio: 4 / 3; }
+  .pc-name { font-size: 19px; }
+  .page-intro { padding: 40px 24px 12px; }
+  .page-intro h1 { font-size: clamp(28px, 3vw, 36px); }
+  .filters { padding: 16px 24px 6px; }
 }
 
 /* Celular estándar / pequeño — hasta 480px */
