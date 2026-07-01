@@ -108,9 +108,6 @@ function renderProjectGrid(list) {
     card.className = 'project-card';
     card.style.animationDelay = `${Math.min(i, 12) * 40}ms`;
 
-    const servicesList = p.services.slice(0, 4)
-      .map(s => `<li>${s}</li>`).join('');
-
     card.innerHTML = `
       <div class="pc-image">
         <picture>
@@ -118,15 +115,7 @@ function renderProjectGrid(list) {
           <img src="${p.cover}" alt="${p.name} — Cotrina Proyectos" loading="lazy" decoding="async" width="900" height="675">
         </picture>
         <span class="pc-badge">${p.groupLabel}</span>
-        <div class="pc-overlay-name"><h3 class="pc-name-mobile">${p.name.toUpperCase()}</h3></div>
-      </div>
-      <div class="pc-body">
-        <h3 class="pc-name">${p.name.toUpperCase()}</h3>
-        <ul class="pc-services">${servicesList}</ul>
-        <div class="pc-meta">
-          <span>${p.photoCount} fotografías</span>
-          <span class="pc-cta">Ver proyecto <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span>
-        </div>
+        <div class="pc-overlay-name"><h3 class="pc-name">${p.name.toUpperCase()}</h3></div>
       </div>
     `;
     projectGrid.appendChild(card);
