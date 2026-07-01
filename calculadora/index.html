@@ -210,16 +210,19 @@
     <p class="field-hint">Si el área de una unidad es menor a 1 m², se calcula como mínimo 1 m² por unidad.</p>
 
     <!-- ============================================================
-         PANEL INTERNO: Serie exacta Limatambo + despiece técnico
+         PANEL INTERNO: Serie exacta (Serie 25 / Limatambo) + despiece técnico
+         y costeo de instalación/armado.
          Solo visible para el equipo comercial en esta pantalla.
          NO se incluye en el PDF que recibe el cliente — es una
          herramienta de apoyo para no depender de llamar a
-         Limatambo por cada cotización.
+         Limatambo por cada cotización, ni de abrir el Excel
+         SERIE25_V5.xlsx / plantilla COTIZADOR para calcular
+         instalación y armado a mano.
          ============================================================ -->
     <div class="calc-card-internal" id="panelSerieExacta" hidden>
       <div class="calc-card-head calc-card-head-spaced">
         <span class="calc-step calc-step-internal">i</span>
-        <h2>Serie exacta Limatambo <span class="badge-interno">Solo equipo comercial — no va al PDF</span></h2>
+        <h2>Despiece y costeo de serie <span class="badge-interno">Solo equipo comercial — no va al PDF</span></h2>
       </div>
 
       <div class="field-row">
@@ -240,6 +243,35 @@
 
       <p class="field-hint field-hint-tight" id="serieExactaLimites"></p>
       <div id="serieExactaResultado" class="serie-exacta-resultado"></div>
+
+      <!-- Costeo de instalación y armado (formato plantilla "COTIZADOR" interna) -->
+      <div class="serie-exacta-costeo">
+        <p class="serie-exacta-accesorios-titulo">Costeo de instalación y armado</p>
+        <div class="field-row field-row-costeo">
+          <div class="field">
+            <label for="costeoMovilidad">Movilidad (S/)</label>
+            <input type="number" id="costeoMovilidad" min="0" step="0.01" value="0">
+          </div>
+          <div class="field">
+            <label for="costeoTipoCambio">Tipo de cambio (USD→PEN)</label>
+            <input type="number" id="costeoTipoCambio" min="0" step="0.01" value="3.80">
+          </div>
+          <div class="field">
+            <label for="costeoInstalacionM2">Instalación (S/ x m²)</label>
+            <input type="number" id="costeoInstalacionM2" min="0" step="0.01" value="0">
+          </div>
+          <div class="field">
+            <label for="costeoArmadoM2">Costo de armado (S/ x m²)</label>
+            <input type="number" id="costeoArmadoM2" min="0" step="0.01" value="0">
+          </div>
+          <div class="field">
+            <label for="costeoOtro">Otro costo (S/)</label>
+            <input type="number" id="costeoOtro" min="0" step="0.01" value="0">
+          </div>
+        </div>
+        <p class="field-hint field-hint-tight">Instalación y armado se calculan sobre el área del vano (m²) ya ingresada arriba. El material (perfil + vidrio) NO está incluido aquí — este bloque es solo mano de obra + costos adicionales, igual que la plantilla "COTIZADOR" interna.</p>
+        <div id="costeoResultado" class="costeo-resultado"></div>
+      </div>
     </div>
 
     <div class="calc-card-head calc-card-head-spaced">
@@ -270,7 +302,7 @@
         <select id="materialSistema" name="materialSistema" required>
           <option value="" disabled selected>Selecciona una opción</option>
           <option value="noAplica">No aplica</option>
-          <option value="aluminioNacional">Aluminio nacional</option>
+          <option value="aluminioNacional">Aluminio nacional (Serie 25)</option>
           <option value="aluminioEuropeo">Aluminio europeo</option>
           <option value="aluminioPremium">Aluminio premium</option>
           <option value="vl46">VL46 (Corporación Limatambo)</option>

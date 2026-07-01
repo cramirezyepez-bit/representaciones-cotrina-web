@@ -1239,3 +1239,22 @@ img{ max-width:100%; display:block; }
   color: var(--acero);
   font-style: italic;
 }
+
+/* Bloque de costeo (instalación/armado) dentro del panel interno */
+.serie-exacta-costeo{
+  margin-top: 20px;
+  padding-top: 16px;
+  border-top: 1px dashed var(--linea-oscura);
+}
+.field-row-costeo{
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 12px;
+}
+@media (max-width: 900px){
+  .field-row-costeo{ grid-template-columns: repeat(2, 1fr); }
+}
+.costeo-resultado{ margin-top: 10px; }
+.costeo-total td{
+  background: var(--hueso-2);
+}

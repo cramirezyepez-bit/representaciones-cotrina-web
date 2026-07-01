@@ -1,13 +1,16 @@
 /**
  * panelDespieceInterno.js
  * ------------------------------------------------------------------
- * Panel de "Serie exacta Limatambo": mientras el equipo comercial
+ * Panel de "Despiece y costeo de serie": mientras el equipo comercial
  * llena Ancho / Alto / Cantidad y elige un Material del sistema que
- * corresponde a una serie real de Corporación Limatambo (VL46, ML46,
- * VL48, ML48, MBL46), este módulo calcula el despiece técnico exacto
- * (perfiles, cortes, vidrio, compra de varillas, accesorios) usando
- * las fórmulas oficiales del fabricante — sin depender de llamar a
- * Limatambo por cada cotización.
+ * corresponde a una serie con motor de cálculo real — Serie 25
+ * (nacional, económica) o Corporación Limatambo (VL46, ML46, VL48,
+ * ML48, MBL46) — este módulo calcula el despiece técnico exacto
+ * (perfiles, cortes, vidrio, compra de varillas, accesorios) y un
+ * costeo de instalación + armado (formato plantilla "COTIZADOR"
+ * interna: movilidad, tipo de cambio, S/xm² instalación, S/xm²
+ * armado, otro costo) — sin depender de abrir el Excel SERIE25_V5.xlsx
+ * ni de llamar a Limatambo por cada cotización.
  *
  * DISEÑO INTENCIONAL: módulo completamente desacoplado de
  * cotizador.js / proyecto.js / pdfGenerator.js.
@@ -25,6 +28,7 @@ import { calcularDespieceML46, CONFIGURACIONES_ML46 } from './motores-series/Mot
 import { calcularDespieceVL48, CONFIGURACIONES_VL48 } from './motores-series/MotorPerfilesVL48.js';
 import { calcularDespieceML48, CONFIGURACIONES_ML48 } from './motores-series/MotorPerfilesML48.js';
 import { calcularDespieceMBL46, CONFIGURACIONES_MBL46 } from './motores-series/MotorPerfilesMBL46.js';
+import { calcularDespieceSerie25, CONFIGURACIONES_SERIE25 } from './motores-series/MotorPerfilesSerie25.js';
 
 // Mapa: valor del <select id="materialSistema"> -> motor + config + etiquetas de variante
 const MOTORES_SERIE = {
@@ -72,6 +76,23 @@ const MOTORES_SERIE = {
     ],
     limitesTexto: 'Máx. por hoja: 1000mm x 2400mm — peso máx. 150 Kg. Vidrio: 6/8/10mm monolítico, insulado hasta 20mm.',
     sinInsulado: true // MBL46 no tiene variante de perfil para insulado en la ficha
+  },
+  // Serie 25 (aluminio nacional, económica) — valor legacy del select es
+  // 'aluminioNacional', mapeado a 'serie25' en MAPEO_PERFIL_LEGACY de
+  // cotizador.js. Se replica aquí el mismo valor de <select> para
+  // engancharlo directamente sin duplicar el <select id="materialSistema">.
+  aluminioNacional: {
+    calcular: calcularDespieceSerie25,
+    variantes: [
+      { value: CONFIGURACIONES_SERIE25.DOS_HOJAS, label: '2 hojas correderas' },
+      { value: CONFIGURACIONES_SERIE25.TRES_HOJAS, label: '3 hojas (1 fijo interior + 2 correderas)' },
+      { value: CONFIGURACIONES_SERIE25.TRES_HOJAS_FIJO_EXT, label: '3 hojas (1 fijo exterior + 2 correderas)' },
+      { value: CONFIGURACIONES_SERIE25.CUATRO_HOJAS, label: '4 hojas correderas' },
+      { value: CONFIGURACIONES_SERIE25.SEIS_HOJAS, label: '6 hojas (2 fijos exteriores + 4 correderas)' },
+    ],
+    limitesTexto: 'Serie 25 nacional — línea económica. Precio de venta por m² pendiente de confirmar con Jorge para SEIS_HOJAS.',
+    sinInsulado: true, // el motor Serie25 no distingue variante de perfil insulado
+    esSerie25: true // marca para la normalización de resultado (nombres de campo distintos)
   }
 };
 
@@ -132,6 +153,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     if (!tipoConfiguracion || !anchoMM || !altoMM) {
       $resultado.innerHTML = '<p class="field-hint field-hint-tight">Completa Ancho, Alto y la Configuración para ver el despiece.</p>';
+      document.getElementById('costeoResultado').innerHTML = '';
       return;
     }
 
@@ -145,8 +167,56 @@ document.addEventListener('DOMContentLoaded', () => {
       return;
     }
 
+    if (serie.esSerie25) despiece = normalizarSerie25(despiece);
+
     $resultado.innerHTML = renderDespiece(despiece);
+    actualizarCosteo(despiece.areaVanoM2);
   }
+
+  // Serie25 devuelve areaM2/accesorios/vidrios sin warnings ni areaVidrioM2;
+  // los motores Limatambo devuelven areaVanoM2/accesoriosSugeridos/warnings/
+  // areaVidrioM2. Se normaliza aquí para reusar el mismo renderDespiece().
+  function normalizarSerie25(d) {
+    const areaVidrioM2 = d.vidrios.reduce((acc, v) => acc + (v.ancho * v.alto / 1_000_000) * v.cant, 0);
+    return {
+      ...d,
+      areaVanoM2: d.areaM2,
+      areaVidrioM2: Math.round(areaVidrioM2 * 1000) / 1000,
+      accesoriosSugeridos: d.accesorios.map(a => ({ nombre: a.nombre, codigo: '—', cant: a.cant, nota: null })),
+      warnings: d.precioVenta !== null
+        ? []
+        : ['Precio de venta por m² no definido para esta configuración en el Excel fuente — usar el bloque de costeo manual de abajo.']
+    };
+  }
+
+  function actualizarCosteo(areaVanoM2) {
+    const movilidad = parseFloat(document.getElementById('costeoMovilidad').value) || 0;
+    const instalacionM2 = parseFloat(document.getElementById('costeoInstalacionM2').value) || 0;
+    const armadoM2 = parseFloat(document.getElementById('costeoArmadoM2').value) || 0;
+    const otro = parseFloat(document.getElementById('costeoOtro').value) || 0;
+
+    const costoInstalacion = round2(instalacionM2 * areaVanoM2);
+    const costoArmado = round2(armadoM2 * areaVanoM2);
+    const totalManoObraYOtros = round2(costoInstalacion + costoArmado + movilidad + otro);
+    const precioXm2 = areaVanoM2 > 0 ? round2(totalManoObraYOtros / areaVanoM2) : 0;
+
+    document.getElementById('costeoResultado').innerHTML = `
+      <table class="serie-exacta-tabla">
+        <tbody>
+          <tr><td>Área total (m²)</td><td>${areaVanoM2}</td></tr>
+          <tr><td>Instalación (${instalacionM2} x ${areaVanoM2})</td><td>S/ ${costoInstalacion}</td></tr>
+          <tr><td>Armado (${armadoM2} x ${areaVanoM2})</td><td>S/ ${costoArmado}</td></tr>
+          <tr><td>Movilidad</td><td>S/ ${movilidad}</td></tr>
+          <tr><td>Otro costo</td><td>S/ ${otro}</td></tr>
+          <tr class="costeo-total"><td><strong>Total mano de obra + otros (S/)</strong></td><td><strong>S/ ${totalManoObraYOtros}</strong></td></tr>
+          <tr class="costeo-total"><td><strong>Equivalente por m² (S/)</strong></td><td><strong>S/ ${precioXm2}</strong></td></tr>
+        </tbody>
+      </table>
+      <p class="field-hint field-hint-tight">Este total NO incluye material (perfil + vidrio) — súmalo aparte según el despiece de arriba y el tarifario de Jorge.</p>
+    `;
+  }
+
+  function round2(n) { return Math.round(n * 100) / 100; }
 
   function renderDespiece(d) {
     const warningsHtml = d.warnings.length
@@ -192,6 +262,10 @@ document.addEventListener('DOMContentLoaded', () => {
   [$variante, $insulado, $ancho, $alto, $cantidad].forEach(el => {
     el.addEventListener('input', recalcular);
     el.addEventListener('change', recalcular);
+  });
+  ['costeoMovilidad', 'costeoTipoCambio', 'costeoInstalacionM2', 'costeoArmadoM2', 'costeoOtro'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.addEventListener('input', recalcular);
   });
 
   actualizarVisibilidadPanel(); // estado inicial
